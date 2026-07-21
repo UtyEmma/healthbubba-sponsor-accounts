@@ -1,0 +1,75 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@source '../views';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+@theme {
+    --font-sans:
+        'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --default-font-family: 'Inter', var(--font-sans);
+
+    --color-background: #ffffff;
+    --color-foreground: #181c25;
+    --color-card: #ffffff;
+    --color-card-foreground: #181c25;
+    --color-primary: #093126;
+    --color-primary-foreground: #ffffff;
+    --color-secondary: #40b93c;
+    --color-secondary-foreground: #165a1e;
+    --color-muted: #f3f4f6;
+    --color-muted-foreground: #616875;
+    --color-accent: #f5f5f5;
+    --color-accent-foreground: #181c25;
+    --color-border: #e2e4e9;
+    --color-divider: #cbcdcd;
+    --color-input: #dcdfe4;
+    --color-ring: #0a9999;
+    --color-success: #1b7e26;
+    --color-success-foreground: #ffffff;
+    --color-success-muted: #edf8ed;
+    --color-warning: #9a6700;
+    --color-warning-muted: #fef4c7;
+    --color-warning-border: #fde68a;
+    --color-information: #0a9999;
+    --color-destructive: #be123c;
+    --color-destructive-foreground: #ffffff;
+    --color-destructive-muted: #ffe4e6;
+    --color-destructive-border: #fecdd3;
+    --color-brand-lime: #57ee9f;
+    --color-sidebar: #fafafa;
+    --color-subtle: #9298a3;
+    --color-ink: #011313;
+
+    --radius-control: 0.475rem;
+    --radius-card: 1rem;
+    --shadow-card:
+        0 0 0 1px rgb(3 7 18 / 0.08), 0 1px 2px -1px rgb(3 7 18 / 0.08),
+        0 2px 4px rgb(3 7 18 / 0.04);
+    --shadow-control:
+        0 0.25px 0 rgb(1 19 19 / 0.16), 0 0.5px 0 rgb(1 19 19 / 0.16);
+}
+
+@layer base {
+    * {
+        border-color: var(--color-border);
+    }
+
+    body {
+        background: var(--color-background);
+        color: var(--color-foreground);
+        font-family: var(--font-sans);
+        -webkit-font-smoothing: antialiased;
+    }
+
+    button,
+    [role='button'] {
+        cursor: pointer;
+    }
+
+    button:disabled,
+    [aria-disabled='true'] {
+        cursor: not-allowed;
+    }
+}
