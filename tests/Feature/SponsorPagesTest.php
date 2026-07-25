@@ -61,3 +61,69 @@ it('renders the sponsor activity log page', function () {
         ->assertSuccessful()
         ->assertInertia(fn (Assert $page) => $page->component('sponsor/activity-log/index'));
 });
+
+it('renders the business sponsor dashboard', function () {
+    $this->get(route('business.dashboard'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page->component('business-sponsor/dashboard'));
+});
+
+it('renders the business sponsor consultation reports page', function () {
+    $this->get(route('business.reports'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page->component('business-sponsor/consultations/index'));
+});
+
+it('renders the business sponsor employees page', function () {
+    $this->get(route('business.employees'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page->component('business-sponsor/employees/index'));
+});
+
+it('renders the business sponsor plan and seats page', function () {
+    $this->get(route('business.plans'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page->component('business-sponsor/plan-and-seats/index'));
+});
+
+it('renders the institutional sponsor dashboard', function () {
+    $this->get(route('institutional.dashboard'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page->component('institutional-sponsor/dashboard'));
+});
+
+it('renders the institutional sponsor consultations page', function () {
+    $this->get(route('institutional.consultations'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page->component('institutional-sponsor/consultations/index'));
+});
+
+it('renders the institutional sponsor notifications page', function () {
+    $this->get(route('institutional.notifications'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page->component('institutional-sponsor/notifications/index'));
+});
+
+it('renders the institutional sponsor coverage page', function () {
+    $this->get(route('institutional.coverage'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page->component('institutional-sponsor/coverage/index'));
+});
+
+it('renders the institutional sponsor enrollment codes page', function () {
+    $this->get(route('institutional.enrollment_codes'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page->component('institutional-sponsor/enrollment-codes/index'));
+});
+
+it('renders the institutional sponsor reports page', function () {
+    $this->get(route('institutional.reports'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page->component('institutional-sponsor/reports/index'));
+});
+
+it('renders the institutional sponsor team page', function () {
+    $this->get(route('institutional.team'))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page->component('institutional-sponsor/team/index'));
+});
