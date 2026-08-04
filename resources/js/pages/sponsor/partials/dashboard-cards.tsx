@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { dashboard } from '@/routes';
+import { home } from '@/routes';
 
 export type DashboardStatistic = {
     icon: string;
@@ -116,7 +116,7 @@ export function SubscriptionCard() {
                 </dl>
                 <Separator className="mt-3" />
                 <Link
-                    href={dashboard()}
+                    href={home()}
                     className={cn(
                         buttonVariants({ variant: 'muted' }),
                         'mt-3 w-full',

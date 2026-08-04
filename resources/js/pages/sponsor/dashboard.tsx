@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 
 import { PageHeader } from '@/components/page-header';
 import { PortalShell } from '@/components/portal-shell';
@@ -11,7 +11,7 @@ import {
     SubscriptionCard,
 } from '@/pages/sponsor/partials/dashboard-cards';
 import type { DashboardStatistic } from '@/pages/sponsor/partials/dashboard-cards';
-import { dashboard } from '@/routes';
+import { home } from '@/routes';
 
 const statistics: DashboardStatistic[] = [
     {
@@ -41,17 +41,20 @@ const statistics: DashboardStatistic[] = [
 ];
 
 export default function Dashboard() {
+
+    const {auth: {user}} = usePage().props
+
     return (
         <>
             <Head title="Dashboard" />
             <PortalShell>
                 <div className="mx-auto w-full max-w-6xl">
                     <PageHeader
-                        title="Welcome back, Ifeoma"
+                        title={`Welcome back, ${user.name}`}
                         description="Here's an overview of your sponsorship and family coverage."
                         action={
                             <Link
-                                href={dashboard()}
+                                href={home()}
                                 className={cn(
                                     buttonVariants({ size: 'compact' }),
                                     'self-start sm:self-auto',

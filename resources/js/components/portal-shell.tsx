@@ -22,7 +22,7 @@ import {
     SheetTrigger,
 } from '@/components/ui/sheet';
 import { UserAccountMenu } from '@/components/user-account-menu';
-import { dashboard } from '@/routes';
+import { home } from '@/routes';
 import activityLog from '@/routes/activity_log';
 import beneficiaries from '@/routes/beneficiaries';
 import consultations from '@/routes/consultations';
@@ -33,11 +33,11 @@ import wallet from '@/routes/wallet';
 type NavigationItem = {
     label: string;
     icon: string;
-    href?: ReturnType<typeof dashboard>;
+    href?: ReturnType<typeof home>;
 };
 
 const navigation: NavigationItem[] = [
-    { label: 'Dashboard', icon: 'nav-dashboard.svg', href: dashboard() },
+    { label: 'Dashboard', icon: 'nav-dashboard.svg', href: home() },
     {
         label: 'Beneficiaries',
         icon: 'nav-beneficiaries.svg',

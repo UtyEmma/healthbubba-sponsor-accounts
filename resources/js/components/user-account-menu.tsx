@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import {
     ChevronsUpDownIcon,
     HeadphonesIcon,
@@ -15,10 +15,14 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { home } from '@/routes';
+import { home, logout } from '@/routes';
 import accountSettings from '@/routes/account_settings';
+import Avatar from './avatar';
 
 export function UserAccountMenu() {
+
+    const {auth} = usePage().props
+
     return (
         <DropdownMenu>
             <DropdownMenuTrigger
@@ -30,34 +34,22 @@ export function UserAccountMenu() {
                     />
                 }
             >
-                <span className="flex size-7 items-center justify-center rounded-full bg-success-muted text-sm font-medium text-secondary-foreground">
-                    IO
-                </span>
+                <Avatar title={auth.user.name} />
+                
                 <span className="hidden text-sm font-medium sm:inline">
-                    Ifeoma Okafor
+                    {auth.user.name}
                 </span>
                 <ChevronsUpDownIcon className="size-4 text-muted-foreground" />
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent
-                align="end"
-                sideOffset={8}
-                className="w-[272px] overflow-hidden rounded-2xl p-0 shadow-card"
-            >
+            <DropdownMenuContent align="end" sideOffset={8} className="w-[272px] overflow-hidden rounded-2xl p-0 shadow-card" >
                 <DropdownMenuGroup>
-                    <DropdownMenuLabel className="flex items-center gap-3 px-4 py-3 normal-case">
-                        <img
-                            src="/images/sponsor/beneficiary-alexander.png"
-                            alt=""
-                            className="size-9 shrink-0 rounded-full border border-border object-cover"
-                        />
+                    <DropdownMenuLabel className="flex items-center gap-2 px-4 py-3 normal-case">
+                        <Avatar size='lg' title={auth.user.name} />
+
                         <span className="min-w-0">
-                            <span className="block truncate text-sm font-semibold text-foreground">
-                                Ifeoma Okafor
-                            </span>
-                            <span className="block truncate pt-0.5 text-[13px] font-normal text-muted-foreground">
-                                ifeomaokafor@example.com
-                            </span>
+                            <span className="block truncate text-sm font-semibold text-foreground">{auth.user.name}</span>
+                            <span className="block truncate text-[13px] font-normal text-muted-foreground">{auth.user.email}</span>
                         </span>
                     </DropdownMenuLabel>
                 </DropdownMenuGroup>
@@ -83,11 +75,10 @@ export function UserAccountMenu() {
                 <DropdownMenuGroup className="p-2">
                     <DropdownMenuItem
                         variant="destructive"
-                        render={<Link href={home()} />}
-                        className="min-h-10 gap-3 rounded-lg px-2.5"
+                        render={<Link href={logout()} className='w-full' method='post' />}
+                        className="min-h-10 gap-3 rounded-lg px-2.5 cursor-pointer"
                     >
-                        <LogOutIcon />
-                        Log out
+                        <LogOutIcon /> Log out
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
             </DropdownMenuContent>

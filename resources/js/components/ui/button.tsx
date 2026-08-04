@@ -3,6 +3,7 @@ import type { ButtonHTMLAttributes } from 'react';
 
 import { cn } from '@/lib/utils';
 
+// font-medium text-information underline decoration-dotted underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring
 const buttonVariants = cva(
     'inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-control text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 [&_img]:pointer-events-none [&_img]:shrink-0 [&_svg]:pointer-events-none [&_svg]:shrink-0',
     {
@@ -16,7 +17,7 @@ const buttonVariants = cva(
                 destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
             },
             size: {
-                default: 'h-10 px-4',
+                default: 'h-11 px-4',
                 compact: 'h-8 px-3 text-[13px]',
                 sm: 'h-9 px-3',
                 lg: 'h-11 px-5',

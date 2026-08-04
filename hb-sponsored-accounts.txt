@@ -1,0 +1,14 @@
+sponsored-accounts user
+
+- sponsors (related to users) 
+- beneficiaries 
+- activity-log (notifications) 
+- medical-access 
+- plans 
+- wallet 
+- transactions 
+- team 
+- enrollment-codes
+
+
+
