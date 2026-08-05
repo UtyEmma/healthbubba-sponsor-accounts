@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
 import { PageHeader } from '@/components/page-header';
@@ -30,6 +30,10 @@ const initialTransactions: WalletTransaction[] = [
 export default function WalletIndex() {
     const [balance, setBalance] = useState(45000);
     const [totalIn, setTotalIn] = useState(50000);
+
+    const {auth: {user}} = usePage().props
+
+    console.log(user)
     const [totalOut, setTotalOut] = useState(5000);
     const [transactions, setTransactions] = useState(initialTransactions);
     const [announcement, setAnnouncement] = useState('');
@@ -94,10 +98,11 @@ export default function WalletIndex() {
                     />
 
                     <WalletSummary
-                        balance={balance}
+                        balance={user.wallet?.balance}
                         totalIn={totalIn}
                         totalOut={totalOut}
                     />
+
                     <TransactionsCard transactions={transactions} />
 
                     <p className="sr-only" role="status" aria-live="polite">

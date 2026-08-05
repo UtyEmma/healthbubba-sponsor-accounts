@@ -1,47 +1,47 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowRight, Building2Icon, ChevronLeft, LandmarkIcon, UserIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 
 import { BrandMark } from '@/components/brand-mark';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { dashboard, login, register } from '@/routes';
+import { login, register } from '@/routes';
 import { Disclose } from '@/components/toggle/disclose';
-import { FieldError, FieldLabel } from '@/components/ui/field';
+import { FieldLabel } from '@/components/ui/field';
 import InputError from '@/components/input/input-error';
+import { AccountTypes } from '@/constants/Account';
 
 const accountTypes = [
     {
         name: 'Individual Sponsor',
         description: 'Sponsor care for family & loved ones',
         icon: UserIcon,
-        value: 'individual',
+        value: AccountTypes.Individual.value,
     },
     {
         name: 'Business Sponsor',
         description: 'Provide healthcare for your employees',
         icon: Building2Icon,
-        value: 'business',
+        value: AccountTypes.Business.value,
     },
     {
         name: 'Institutional Sponsor',
         description: 'Fund healthcare access for communities',
         icon: LandmarkIcon,
-        value: 'institution',
+        value: AccountTypes.Institution.value,
     },
 ];
 
 export default function Login() {
-    const [resetRequested, setResetRequested] = useState(false);
-
     const [step, setStep] = useState(1)
 
     const form = useForm({
-        type: 'individual',
+        type: AccountTypes.Individual.value,
         name: '',
         email: '',
-        password: ''
+        password: '',
+        organization_name: ''
     })
 
     function submit() {
@@ -125,7 +125,7 @@ export default function Login() {
                         <Disclose show={step == 2} >
                             <div className="mt-0 w-full">
                                 <div>
-                                    <Button variant="link" onClick={() => setStep(1)} className="p-0" >
+                                    <Button variant='link' onClick={() => setStep(1)} className="p-0" >
                                         <ChevronLeft className="size-4" />Go back
                                     </Button>
                                 </div>
@@ -135,6 +135,18 @@ export default function Login() {
                                         <Input value={form.data.name} onChange={e => form.setData('name', e.currentTarget.value)} placeholder="Your Name" />
                                         <InputError error={form.errors.name} />
                                     </div>
+                                    
+                                    <Disclose as="div" show={form.data.type == AccountTypes.Business.value} className="space-y-1">
+                                        <FieldLabel className="text-sm font-medium" >Your Company Name</FieldLabel>
+                                        <Input value={form.data.organization_name} onChange={e => form.setData('organization_name', e.currentTarget.value)} placeholder="Your Company Name" />
+                                        <InputError error={form.errors.organization_name} />
+                                    </Disclose>
+                                    
+                                    <Disclose as="div" show={form.data.type == AccountTypes.Institution.value} className="space-y-1">
+                                        <FieldLabel className="text-sm font-medium" >Your Organization Name</FieldLabel>
+                                        <Input value={form.data.organization_name} onChange={e => form.setData('organization_name', e.currentTarget.value)} placeholder="Your Organization Name" />
+                                        <InputError error={form.errors.organization_name} />
+                                    </Disclose>
 
                                     <div className="space-y-2">
                                         <FieldLabel className="text-sm font-medium" >Email Address</FieldLabel>
