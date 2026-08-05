@@ -1,4 +1,4 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowRight, Building2Icon, LandmarkIcon, UserIcon } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
@@ -6,7 +6,9 @@ import type { FormEvent } from 'react';
 import { BrandMark } from '@/components/brand-mark';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { login } from '@/routes';
+import { login, register } from '@/routes';
+import password from '@/routes/password';
+import InputPassword from '@/components/input/password';
 
 export default function Login() {
 
@@ -51,34 +53,29 @@ export default function Login() {
                                     // required
                                 />
                             </label>
-                            <label
-                                className="grid gap-2 text-sm font-medium"
-                                htmlFor="password"
-                            >
-                                Password
-                                <Input
+
+                            <div className="grid gap-2 text-sm font-medium">
+                                <div className="flex items-center justify-between">
+                                    <label  htmlFor="password">Password</label>
+                                    <Link href={password.request().url}>Forgot password?</Link>
+                                </div>
+                                <InputPassword
                                     value={form.data.password}
                                     onChange={e => form.setData('password', e.currentTarget.value)}
                                     name="password"
                                     type="password"
                                     autoComplete="current-password"
                                     placeholder="Password"
-                                    // required
                                     minLength={8}
                                 />
-                            </label>
+                            </div>
                             <Button onClick={submit} className="h-11 w-full">
                                 Continue to portal <ArrowRight className='size-4' />
                             </Button>
-                            <p className="text-center text-[13px] text-muted-foreground">
-                                Forgot password?{' '}
-                                <button
-                                    type="button"
-                                    onClick={() => setResetRequested(true)}
-                                    className="font-medium text-information underline decoration-dotted underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                                >
-                                    Reset here
-                                </button>
+
+                            <p className="text-center font-medium text-sm text-muted-foreground">
+                                <span className='me-1'>Don't have an account?</span>
+                                <Link href={register().url} >Sign Up</Link>
                             </p>
                         </div>
                     </div>

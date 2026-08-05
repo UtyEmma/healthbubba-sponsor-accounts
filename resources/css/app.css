@@ -72,4 +72,8 @@
     [aria-disabled='true'] {
         cursor: not-allowed;
     }
+
+    a {
+        @apply text-secondary;
+    }
 }
