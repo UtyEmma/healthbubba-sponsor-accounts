@@ -1,11 +1,11 @@
 export const AccountTypes = {
     Individual: {
-        value: 'indidivual',
+        value: 'individual',
     },
     Business: {
-        value: 'business'
+        value: 'business',
     },
     Institution: {
-        value: 'institution'
-    }
-}
+        value: 'institution',
+    },
+};

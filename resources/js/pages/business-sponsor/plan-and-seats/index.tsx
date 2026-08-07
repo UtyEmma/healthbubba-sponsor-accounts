@@ -1,112 +1,23 @@
 import { Head } from '@inertiajs/react';
-import {
-    CheckIcon,
-    CircleHelpIcon,
-    MinusIcon,
-    PlusIcon,
-    XIcon,
-} from 'lucide-react';
+import { MinusIcon, PlusIcon } from 'lucide-react';
 import { useState } from 'react';
 
 import { BusinessPortalShell } from '@/components/business-portal-shell';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardFooter,
-    CardHeader,
-} from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import type { PlanBillingPageProps } from '@/types';
 
+import { PlanCard } from '../../billing/partials/plan-cards';
 import { SeatConfirmationDialog } from './partials/seat-confirmation-dialog';
-
-type BusinessPlan = {
-    name: string;
-    audience: string;
-    price: string;
-    details: Array<[string, string]>;
-    features: Array<{ label: string; included: boolean; help?: boolean }>;
-    action: 'Downgrade' | 'Current plan';
-};
-
-const plans: BusinessPlan[] = [
-    {
-        name: 'Business Basic',
-        audience: 'SMEs & corporate teams',
-        price: '₦5,000',
-        details: [
-            ['GP consultations', '2 per employee / month'],
-            ['Specialist', 'Not included'],
-        ],
-        features: [
-            {
-                label: '2 GP Consultations / employee',
-                included: true,
-                help: true,
-            },
-            { label: 'Specialist Consultations', included: false, help: true },
-            { label: 'GP Consult Now / Scheduled', included: true, help: true },
-            {
-                label: 'Bulk HR Upload & List Export',
-                included: true,
-                help: true,
-            },
-            { label: 'Activity & Coverage Logs', included: true, help: true },
-            {
-                label: 'Lab Test & Medication Discounts',
-                included: false,
-                help: true,
-            },
-            { label: 'Enhanced Analytics Suite', included: false, help: true },
-        ],
-        action: 'Downgrade',
-    },
-    {
-        name: 'Business Premium',
-        audience: 'Enterprises & logistics companies',
-        price: '₦10,500',
-        details: [
-            ['GP consultations', '3 per employee / month'],
-            ['Specialist', '1 per employee / month'],
-        ],
-        features: [
-            {
-                label: '3 GP Consultations / employee',
-                included: true,
-                help: true,
-            },
-            {
-                label: '1 Specialist Consultation / employee',
-                included: true,
-                help: true,
-            },
-            {
-                label: 'GP & Specialist Consult Now / Scheduled',
-                included: true,
-                help: true,
-            },
-            {
-                label: 'Bulk HR Upload & List Export',
-                included: true,
-                help: true,
-            },
-            { label: 'Activity & Coverage Logs', included: true, help: true },
-            { label: 'Priority Customer Support', included: true, help: true },
-            {
-                label: 'Lab Test & Medication Discounts',
-                included: true,
-                help: true,
-            },
-            { label: 'Enhanced Analytics Suite', included: true, help: true },
-        ],
-        action: 'Current plan',
-    },
-];
 
 const proRatedSeatPrice = 1050;
 
-export default function BusinessPlanAndSeatsPage() {
+export default function BusinessPlanAndSeatsPage({
+    accountTypeLabel,
+    plans,
+    subscription,
+}: PlanBillingPageProps) {
     const [seatsToAdd, setSeatsToAdd] = useState(1);
     const [currentSeats, setCurrentSeats] = useState(6);
     const [confirmationOpen, setConfirmationOpen] = useState(false);
@@ -128,32 +39,54 @@ export default function BusinessPlanAndSeatsPage() {
                 <div className="mx-auto w-full max-w-6xl pb-10">
                     <PageHeader
                         title="Plan & Billing"
-                        description="Manage your subscription, capacity, and billing cycle."
+                        description={`Manage the subscription, capacity, and billing cycle for your ${accountTypeLabel.toLowerCase()} account.`}
                     />
 
                     <Card className="mt-6">
-                        <CardContent className="flex min-h-[89px] items-center justify-between gap-4 px-5 py-4">
-                            <div>
-                                <div className="flex items-center gap-5">
+                        <CardContent className="grid gap-5 px-5 py-5 sm:grid-cols-2 sm:items-center">
+                            {subscription?.plan ? (
+                                <>
+                                    <div>
+                                        <div className="flex flex-wrap items-center gap-3">
+                                            <h2 className="font-semibold">
+                                                {subscription.plan.name}
+                                            </h2>
+                                            <span className="rounded-full bg-success/10 px-2.5 py-1 text-xs font-medium text-success">
+                                                {subscription.statusLabel}
+                                            </span>
+                                        </div>
+                                        <p className="pt-1 text-sm text-muted-foreground">
+                                            {currentSeats} seats
+                                            {subscription.endsAt
+                                                ? ` · current term ends ${new Date(subscription.endsAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                                                : ' · ongoing term'}
+                                        </p>
+                                    </div>
+                                    <div className="sm:text-right">
+                                        <p className="text-2xl font-semibold">
+                                            ₦
+                                            {(
+                                                Number(
+                                                    subscription.plan.price,
+                                                ) * currentSeats
+                                            ).toLocaleString('en-NG')}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            per month for {currentSeats} seats
+                                        </p>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="grid gap-1 sm:col-span-2">
                                     <h2 className="font-semibold">
-                                        Business Premium
+                                        No subscription yet
                                     </h2>
-                                    <span className="text-xs font-medium text-success">
-                                        Active
-                                    </span>
+                                    <p className="text-sm text-muted-foreground">
+                                        Select an available business plan to get
+                                        started.
+                                    </p>
                                 </div>
-                                <p className="pt-1 text-sm text-muted-foreground">
-                                    {currentSeats} seats · renews 3 July
-                                </p>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-2xl font-semibold">
-                                    ₦63,000
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    per month
-                                </p>
-                            </div>
+                            )}
                         </CardContent>
                     </Card>
 
@@ -233,14 +166,14 @@ export default function BusinessPlanAndSeatsPage() {
                         >
                             Available plans
                         </h2>
-                        <div className="grid max-w-[764px] gap-4 md:grid-cols-2">
+                        <div className="grid max-w-4xl items-stretch gap-5 md:grid-cols-2">
                             {plans.map((plan) => (
-                                <BusinessPlanCard
-                                    key={plan.name}
+                                <PlanCard
+                                    key={plan.id}
                                     plan={plan}
-                                    onDowngrade={() =>
+                                    onSelect={() =>
                                         setAnnouncement(
-                                            'Business Basic downgrade selected.',
+                                            `${plan.name} selected.`,
                                         )
                                     }
                                 />
@@ -260,79 +193,5 @@ export default function BusinessPlanAndSeatsPage() {
                 </div>
             </BusinessPortalShell>
         </>
-    );
-}
-
-function BusinessPlanCard({
-    plan,
-    onDowngrade,
-}: {
-    plan: BusinessPlan;
-    onDowngrade: () => void;
-}) {
-    const isCurrent = plan.action === 'Current plan';
-
-    return (
-        <Card
-            className={cn(
-                'flex min-h-[563px] flex-col',
-                isCurrent && 'border-success',
-            )}
-        >
-            <CardHeader className="gap-1 px-6 pt-6 pb-3">
-                <h3 className="text-base font-semibold">{plan.name}</h3>
-                <p className="text-sm text-muted-foreground">{plan.audience}</p>
-                <p className="pt-3 text-3xl leading-9 font-semibold tracking-[-0.7px]">
-                    {plan.price}
-                    <span className="text-sm font-normal text-muted-foreground">
-                        /mo per seat
-                    </span>
-                </p>
-            </CardHeader>
-            <CardContent className="flex-1 px-6 pt-3">
-                <dl className="grid gap-2 border-b pb-4 text-sm">
-                    {plan.details.map(([label, value]) => (
-                        <div key={label} className="flex justify-between gap-3">
-                            <dt className="text-muted-foreground">{label}</dt>
-                            <dd className="text-right font-medium">{value}</dd>
-                        </div>
-                    ))}
-                </dl>
-                <ul className="grid gap-2 pt-4 text-sm">
-                    {plan.features.map((feature) => (
-                        <li
-                            key={feature.label}
-                            className={cn(
-                                'flex items-center gap-2',
-                                !feature.included && 'text-muted-foreground',
-                            )}
-                        >
-                            {feature.included ? (
-                                <CheckIcon className="size-4 shrink-0 text-success" />
-                            ) : (
-                                <XIcon className="size-4 shrink-0 text-muted-foreground/60" />
-                            )}
-                            <span>{feature.label}</span>
-                            {feature.help && (
-                                <CircleHelpIcon
-                                    className="size-3.5 text-muted-foreground"
-                                    aria-hidden="true"
-                                />
-                            )}
-                        </li>
-                    ))}
-                </ul>
-            </CardContent>
-            <CardFooter className="px-6 pb-6">
-                <Button
-                    className="w-full"
-                    disabled={isCurrent}
-                    variant={isCurrent ? 'muted' : 'outline'}
-                    onClick={isCurrent ? undefined : onDowngrade}
-                >
-                    {plan.action}
-                </Button>
-            </CardFooter>
-        </Card>
     );
 }

@@ -18,6 +18,7 @@ return new class extends Migration
             $table->morphs('owner');
             $table->string('reference');
             $table->string('type');
+            $table->json('meta')->nullable();
             $table->string('status');
             $table->string('flow');
             $table->timestamps();

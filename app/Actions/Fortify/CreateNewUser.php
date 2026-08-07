@@ -2,7 +2,7 @@
 
 namespace App\Actions\Fortify;
 
-use App\Actions\Organizations\CreateNewOrganization;
+use App\Actions\Organizations\CreateNewWorkspace;
 use App\Enums\AccountTypes;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -44,26 +44,20 @@ class CreateNewUser implements CreatesNewUsers
         DB::beginTransaction();
 
         $user_data = collect($input)
-                        ->only(['name', 'email', 'type'])
+                        ->only(['name', 'email'])
                         ->merge([
                             'password' => Hash::make($input['password'])
                         ])->toArray();
 
         $user = User::create($user_data);
 
-        if(!in_array($input['type'], [AccountTypes::INDIVIDUAL->value])) {
-            $org_data = [
-                'name' => $input['organization_name'],
-                'type' => $input['type']
-            ];
+        $org_data = [
+            'name' => $input['organization_name'] ?? "{$user->name}'s Workspace",
+            'type' => $input['type']
+        ];
 
-            $organization = (new CreateNewOrganization)->execute($user, $org_data);
-
-            if(!$organization) throw ValidationException::withMessages([
-                'organization_name' => "The user already belongs to an organization"
-            ]);
-        }
-
+        (new CreateNewWorkspace)->execute($user, $org_data);
+        
         DB::commit();
 
         return $user;

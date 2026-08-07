@@ -1,31 +1,44 @@
 <?php
+
 namespace App\Concerns;
 
 use App\Models\Wallet;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 /**
- * @mixin \Illuminate\Database\Eloquent\Model
+ * @mixin Model
  */
-trait HasWallet {
-
-    static function bootHasWallet(){
-        static::created(function(self $model) {
-            if($model->canCreateWallet()) {
+trait HasWallet
+{
+    public static function bootHasWallet(): void
+    {
+        static::created(function (self $model): void {
+            if ($model->canCreateWallet()) {
                 $model->wallet()->create();
             }
         });
 
-        static::deleted(function(self $model) {
-            $model->wallet()->delete();
+        static::deleted(function (self $model): void {
+            $model->wallets()->delete();
         });
     }
 
-    protected function canCreateWallet(){
+    protected function canCreateWallet(): bool
+    {
         return true;
     }
 
-    public function wallet(){
+    /** @return MorphOne<Wallet, $this> */
+    public function wallet(): MorphOne
+    {
         return $this->morphOne(Wallet::class, 'owner');
     }
 
+    /** @return MorphMany<Wallet, $this> */
+    public function wallets(): MorphMany
+    {
+        return $this->morphMany(Wallet::class, 'owner');
+    }
 }

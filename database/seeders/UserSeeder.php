@@ -6,18 +6,24 @@ use App\Enums\Account\Roles;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
-class UserSeeder extends Seeder {
+class UserSeeder extends Seeder
+{
     use WithoutModelEvents;
-    
+
     /**
      * Run the database seeds.
      */
-    public function run(): void {
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'admin@'.env("APP_DOMAIN"),
-            'role' => Roles::SUPER_ADMIN
-        ]);
+    public function run(): void
+    {
+        User::firstOrCreate(
+            ['email' => 'admin@'.env('APP_DOMAIN')],
+            [
+                'name' => 'Test User',
+                'role' => Roles::SUPER_ADMIN,
+                'password' => Hash::make('1234567890'),
+            ]
+        );
     }
 }

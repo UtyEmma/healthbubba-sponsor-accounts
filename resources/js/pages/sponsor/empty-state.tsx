@@ -5,7 +5,7 @@ import { PortalShell } from '@/components/portal-shell';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { dashboard } from '@/routes';
+import { home } from '@/routes';
 import {
     GettingStartedStep,
     SponsorBenefitCard,
@@ -82,7 +82,7 @@ export default function EmptyState() {
                                     control of their own records.
                                 </p>
                                 <Link
-                                    href={dashboard()}
+                                    href={home()}
                                     className={cn(
                                         buttonVariants({
                                             variant: 'outline',
@@ -146,7 +146,7 @@ export default function EmptyState() {
                                 </p>
                             </div>
                             <Link
-                                href={dashboard()}
+                                href={home()}
                                 className={cn(
                                     buttonVariants({ size: 'sm' }),
                                     'shrink-0',

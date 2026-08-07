@@ -11,15 +11,16 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { dashboard } from '@/routes';
-import beneficiaries from '@/routes/beneficiaries';
+import { home } from '@/routes';
 
 export function PlanSuccessDialog({
     open,
     onOpenChange,
+    planName,
 }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    planName: string | null;
 }) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -29,18 +30,18 @@ export function PlanSuccessDialog({
                         <CheckIcon className="size-16 stroke-[5]" />
                     </div>
                     <DialogTitle className="text-base leading-6 font-semibold">
-                        You’re on Coordinated Care Plan
+                        {planName ?? 'Plan'} selected
                     </DialogTitle>
                     <DialogDescription className="max-w-[390px] pt-1 leading-5">
-                        Payment successful — ₦59,000/mo. Your upgrade is active
-                        right away.
+                        Review and payment confirmation are required before this
+                        plan becomes active.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter className="flex-row justify-end border-t px-6 py-4">
                     <DialogClose
                         render={
                             <Link
-                                href={dashboard()}
+                                href={home()}
                                 className={buttonVariants({
                                     variant: 'outline',
                                     size: 'compact',
@@ -49,16 +50,6 @@ export function PlanSuccessDialog({
                         }
                     >
                         Go dashboard
-                    </DialogClose>
-                    <DialogClose
-                        render={
-                            <Link
-                                href={beneficiaries.index()}
-                                className={buttonVariants({ size: 'compact' })}
-                            />
-                        }
-                    >
-                        Continue to adding beneficiary
                     </DialogClose>
                 </DialogFooter>
             </DialogContent>

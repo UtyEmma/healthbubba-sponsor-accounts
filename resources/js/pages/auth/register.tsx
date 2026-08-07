@@ -1,5 +1,11 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { ArrowRight, Building2Icon, ChevronLeft, LandmarkIcon, UserIcon } from 'lucide-react';
+import {
+    ArrowRight,
+    Building2Icon,
+    ChevronLeft,
+    LandmarkIcon,
+    UserIcon,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 
@@ -10,7 +16,7 @@ import { login, register } from '@/routes';
 import { Disclose } from '@/components/toggle/disclose';
 import { FieldLabel } from '@/components/ui/field';
 import InputError from '@/components/input/input-error';
-import { AccountTypes } from '@/constants/Account';
+import { AccountTypes } from '@/constants/account';
 
 const accountTypes = [
     {
@@ -34,23 +40,23 @@ const accountTypes = [
 ];
 
 export default function Login() {
-    const [step, setStep] = useState(1)
+    const [step, setStep] = useState(1);
 
     const form = useForm({
         type: AccountTypes.Individual.value,
         name: '',
         email: '',
         password: '',
-        organization_name: ''
-    })
+        organization_name: '',
+    });
 
     function submit() {
-        form.post(register().url)
+        form.post(register().url);
     }
 
     useEffect(() => {
-        if(form.errors.type) setStep(1)
-    }, [form.errors])
+        if (form.errors.type) setStep(1);
+    }, [form.errors]);
 
     return (
         <>
@@ -68,24 +74,38 @@ export default function Login() {
                             Create your account
                         </h1>
                         <p className="text-sm leading-6 text-muted-foreground">
-                            {step == 1 && 'Choose your account type to continue.'}
+                            {step == 1 &&
+                                'Choose your account type to continue.'}
                             {step == 2 && 'Setup your account information.'}
                         </p>
                     </header>
 
                     <div className="w-full">
-                        <Disclose show={step == 1} >
+                        <Disclose show={step == 1}>
                             <div className="space-y-5">
                                 <fieldset className="mt-3 w-full">
-                                    <legend className="sr-only">Account type</legend>
-                                    <div className="grid gap-3 mb-2">
+                                    <legend className="sr-only">
+                                        Account type
+                                    </legend>
+                                    <div className="mb-2 grid gap-3">
                                         {accountTypes.map(
-                                            ({ icon: Icon, value, ...type }) => (
+                                            ({
+                                                icon: Icon,
+                                                value,
+                                                ...type
+                                            }) => (
                                                 <button
                                                     key={type.name}
                                                     type="button"
-                                                    aria-pressed={form.data.type === value}
-                                                    onClick={() => form.setData('type', value)}
+                                                    aria-pressed={
+                                                        form.data.type === value
+                                                    }
+                                                    onClick={() =>
+                                                        form.setData(
+                                                            'type',
+                                                            value,
+                                                        )
+                                                    }
                                                     className={
                                                         form.data.type === value
                                                             ? 'flex min-h-[75px] w-full items-center gap-3 rounded-card border-[1.5px] border-secondary bg-success-muted p-4 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring'
@@ -94,7 +114,8 @@ export default function Login() {
                                                 >
                                                     <span
                                                         className={
-                                                            form.data.type === value
+                                                            form.data.type ===
+                                                            value
                                                                 ? 'flex size-10 shrink-0 items-center justify-center rounded-[9.6px] bg-secondary text-success-foreground'
                                                                 : 'flex size-10 shrink-0 items-center justify-center rounded-[9.6px] bg-muted text-gray-500'
                                                         }
@@ -117,57 +138,162 @@ export default function Login() {
                                 </fieldset>
 
                                 <div>
-                                    <Button onClick={() => setStep(2)} className="w-full">Get Started <ArrowRight className="size-4" /></Button>
+                                    <Button
+                                        onClick={() => setStep(2)}
+                                        className="w-full"
+                                    >
+                                        Get Started{' '}
+                                        <ArrowRight className="size-4" />
+                                    </Button>
                                 </div>
                             </div>
                         </Disclose>
-                        
-                        <Disclose show={step == 2} >
+
+                        <Disclose show={step == 2}>
                             <div className="mt-0 w-full">
                                 <div>
-                                    <Button variant='link' onClick={() => setStep(1)} className="p-0" >
-                                        <ChevronLeft className="size-4" />Go back
+                                    <Button
+                                        variant="link"
+                                        onClick={() => setStep(1)}
+                                        className="p-0"
+                                    >
+                                        <ChevronLeft className="size-4" />
+                                        Go back
                                     </Button>
                                 </div>
                                 <div className="grid gap-4 pt-3">
                                     <div className="space-y-1">
-                                        <FieldLabel className="text-sm font-medium" >Your Name</FieldLabel>
-                                        <Input value={form.data.name} onChange={e => form.setData('name', e.currentTarget.value)} placeholder="Your Name" />
+                                        <FieldLabel className="text-sm font-medium">
+                                            Your Name
+                                        </FieldLabel>
+                                        <Input
+                                            value={form.data.name}
+                                            onChange={(e) =>
+                                                form.setData(
+                                                    'name',
+                                                    e.currentTarget.value,
+                                                )
+                                            }
+                                            placeholder="Your Name"
+                                        />
                                         <InputError error={form.errors.name} />
                                     </div>
-                                    
-                                    <Disclose as="div" show={form.data.type == AccountTypes.Business.value} className="space-y-1">
-                                        <FieldLabel className="text-sm font-medium" >Your Company Name</FieldLabel>
-                                        <Input value={form.data.organization_name} onChange={e => form.setData('organization_name', e.currentTarget.value)} placeholder="Your Company Name" />
-                                        <InputError error={form.errors.organization_name} />
+
+                                    <Disclose
+                                        as="div"
+                                        show={
+                                            form.data.type ==
+                                            AccountTypes.Business.value
+                                        }
+                                        className="space-y-1"
+                                    >
+                                        <FieldLabel className="text-sm font-medium">
+                                            Your Company Name
+                                        </FieldLabel>
+                                        <Input
+                                            value={form.data.organization_name}
+                                            onChange={(e) =>
+                                                form.setData(
+                                                    'organization_name',
+                                                    e.currentTarget.value,
+                                                )
+                                            }
+                                            placeholder="Your Company Name"
+                                        />
+                                        <InputError
+                                            error={
+                                                form.errors.organization_name
+                                            }
+                                        />
                                     </Disclose>
-                                    
-                                    <Disclose as="div" show={form.data.type == AccountTypes.Institution.value} className="space-y-1">
-                                        <FieldLabel className="text-sm font-medium" >Your Organization Name</FieldLabel>
-                                        <Input value={form.data.organization_name} onChange={e => form.setData('organization_name', e.currentTarget.value)} placeholder="Your Organization Name" />
-                                        <InputError error={form.errors.organization_name} />
+
+                                    <Disclose
+                                        as="div"
+                                        show={
+                                            form.data.type ==
+                                            AccountTypes.Institution.value
+                                        }
+                                        className="space-y-1"
+                                    >
+                                        <FieldLabel className="text-sm font-medium">
+                                            Your Organization Name
+                                        </FieldLabel>
+                                        <Input
+                                            value={form.data.organization_name}
+                                            onChange={(e) =>
+                                                form.setData(
+                                                    'organization_name',
+                                                    e.currentTarget.value,
+                                                )
+                                            }
+                                            placeholder="Your Organization Name"
+                                        />
+                                        <InputError
+                                            error={
+                                                form.errors.organization_name
+                                            }
+                                        />
                                     </Disclose>
 
                                     <div className="space-y-2">
-                                        <FieldLabel className="text-sm font-medium" >Email Address</FieldLabel>
-                                        <Input value={form.data.email} onChange={e => form.setData('email', e.currentTarget.value)} type="email" autoComplete="email" placeholder="Email Address" />
+                                        <FieldLabel className="text-sm font-medium">
+                                            Email Address
+                                        </FieldLabel>
+                                        <Input
+                                            value={form.data.email}
+                                            onChange={(e) =>
+                                                form.setData(
+                                                    'email',
+                                                    e.currentTarget.value,
+                                                )
+                                            }
+                                            type="email"
+                                            autoComplete="email"
+                                            placeholder="Email Address"
+                                        />
                                         <InputError error={form.errors.email} />
                                     </div>
 
                                     <div>
-                                        <FieldLabel className="grid gap-2 text-sm font-medium" htmlFor="password">Password</FieldLabel>
-                                        <Input value={form.data.password} onChange={e => form.setData('password', e.currentTarget.value)} type="password" autoComplete="current-password" placeholder="Password" minLength={8} />
-                                        <InputError error={form.errors.password} />
+                                        <FieldLabel
+                                            className="grid gap-2 text-sm font-medium"
+                                            htmlFor="password"
+                                        >
+                                            Password
+                                        </FieldLabel>
+                                        <Input
+                                            value={form.data.password}
+                                            onChange={(e) =>
+                                                form.setData(
+                                                    'password',
+                                                    e.currentTarget.value,
+                                                )
+                                            }
+                                            type="password"
+                                            autoComplete="current-password"
+                                            placeholder="Password"
+                                            minLength={8}
+                                        />
+                                        <InputError
+                                            error={form.errors.password}
+                                        />
                                     </div>
                                     <Button onClick={submit} className="w-full">
-                                        Continue to portal <ArrowRight className="size-4" />
+                                        Continue to portal{' '}
+                                        <ArrowRight className="size-4" />
                                     </Button>
                                 </div>
                             </div>
                         </Disclose>
 
-                        <p className="text-center mt-4 text-sm text-muted-foreground">
-                            Already have an account? <Link href={login.get().url} className="font-medium text-information underline decoration-dotted underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ms-1" >Login</Link>
+                        <p className="mt-4 text-center text-sm text-muted-foreground">
+                            Already have an account?{' '}
+                            <Link
+                                href={login.get().url}
+                                className="ms-1 font-medium text-information underline decoration-dotted underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                            >
+                                Login
+                            </Link>
                         </p>
                     </div>
                 </div>

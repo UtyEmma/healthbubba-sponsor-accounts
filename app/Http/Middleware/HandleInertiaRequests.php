@@ -3,6 +3,8 @@
 namespace App\Http\Middleware;
 
 use App\Http\Resources\UserResource;
+use App\Http\Resources\WorkspaceResource;
+use App\Models\Workspace;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -39,6 +41,7 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'workspace' => Workspace::current() ? new WorkspaceResource(Workspace::current()) : null,
             'auth' => [
                 'user' => $request->user() ? new UserResource($request->user()) : null, 
             ],

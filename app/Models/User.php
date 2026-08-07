@@ -5,14 +5,16 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 use App\Concerns\HasRole;
-use App\Concerns\HasWallet;
 use App\Concerns\HasStatus;
-use App\Enums\AccountTypes;
 use App\Enums\Account\Roles;
+use App\Enums\Account\Status;
 use Database\Factories\UserFactory;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -21,6 +23,8 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string $name
  * @property string $email
+ * @property Roles $role
+ * @property Status $status
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string|null $remember_token
@@ -29,10 +33,15 @@ use Illuminate\Support\Carbon;
  */
 #[Fillable(['name', 'email', 'password', 'type', 'role'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, HasRole, HasWallet, HasStatus;
+    use HasFactory, HasRole, HasStatus, Notifiable;
+
+    
+    protected $attributes = [
+        'role' => Roles::USER,
+    ];
 
     /**
      * Get the attributes that should be cast.
@@ -41,35 +50,27 @@ class User extends Authenticatable
      */
     protected function casts(): array {
         return [
-            'type' => AccountTypes::class,
             'role' => Roles::class,
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
 
-    protected $attributes = [
-        'role' => Roles::USER
-    ];
+    protected $appends = ['workspace'];
 
-    protected $with = ['wallet'];
-
-    protected function canCreateWallet(){
-        return !$this->isAdmin() && $this->type == AccountTypes::INDIVIDUAL;
+    public function canAccessPanel(Panel $panel): bool {
+        return $panel->getId() === 'admin' && $this->isAdmin();
     }
 
-    function organizations(){
-        return $this->belongsToMany(Organization::class)
-                    ->withPivot('role', 'status')
-                    ->withTimestamps();
+    /** @return BelongsToMany<Workspace, $this> */
+    public function workspaces(): BelongsToMany {
+        return $this->belongsToMany(Workspace::class)
+            ->withPivot('role', 'status')
+            ->withTimestamps();
     }
 
-    function getOrganizationAttribute(){
-        return $this->organizations()->latest()->first();
+    public function getWorkspaceAttribute(): ?Workspace {
+        return $this->workspaces()->latest()->first();
     }
-
-
-
-
 
 }

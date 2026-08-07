@@ -1,6 +1,7 @@
 import {
     BarChart3Icon,
     BellIcon,
+    CreditCardIcon,
     LayoutGridIcon,
     ShieldPlusIcon,
     StethoscopeIcon,
@@ -11,6 +12,7 @@ import {
 
 import type { PortalNavigationItem } from '@/components/business-portal-shell';
 import institutional from '@/routes/institutional';
+import plans from '@/routes/plans';
 
 export const institutionalNavigation: PortalNavigationItem[] = [
     {
@@ -43,6 +45,11 @@ export const institutionalNavigation: PortalNavigationItem[] = [
         label: 'Team',
         icon: UserRoundCheckIcon,
         href: institutional.team().url,
+    },
+    {
+        label: 'Plan & Billing',
+        icon: CreditCardIcon,
+        href: plans.index().url,
     },
     {
         label: 'Notifications',
