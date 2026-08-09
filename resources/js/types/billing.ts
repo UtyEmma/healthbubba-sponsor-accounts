@@ -1,22 +1,16 @@
 export type AccountType = 'individual' | 'business' | 'institution';
 
-export type BillingPlanAction = 'current' | 'downgrade' | 'upgrade' | 'select';
+export type FeatureType = 'toggle' | 'limit' | 'consumable' | 'metered';
 
-export type FeatureType = 'toggle' | 'limit' | 'consumable' | 'metered'
-
-export type Feature = {
+export type PlanFeature = {
     name: string;
     slug: string;
     description: string | null;
     type: FeatureType;
-    limits?: FeatureLimit
+    included: boolean;
+    value: string | null;
+    unitPrice: string | null;
 };
-
-export interface FeatureLimit {
-    reset_interval: null,
-    unit_price?: string
-    value: string
-}
 
 export type Plan = {
     id: number;
@@ -25,16 +19,16 @@ export type Plan = {
     description: string | null;
     price: string;
     is_current: boolean;
-    features: Feature[];
-    quotas: QuotaFeature[]
+    features: PlanFeature[];
+    quotas: PlanQuota[];
 };
 
-export type QuotaFeature = {
+export type PlanQuota = {
     name: string;
-    quota: string;
     slug: string;
-    description: string | null;
-}
+    quota: string | null;
+    description: string;
+};
 
 export type SubscriptionSummary = {
     id: number;
@@ -57,6 +51,6 @@ export type SubscriptionSummary = {
 export type PlanBillingPageProps = {
     accountType: AccountType;
     accountTypeLabel: string;
-    plans: BillingPlan[];
+    plans: Plan[];
     subscription: SubscriptionSummary | null;
 };

@@ -2,30 +2,22 @@
 
 namespace App\Http\Resources;
 
-use App\Models\Workspace;
-use App\Repositories\FeaturesRepository;
+use App\DTOs\WorkspacePlan;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class PlanResource extends JsonResource
+final class PlanResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
      *
      * @return array<string, mixed>
      */
-    public function toArray(Request $request): array {
-        $workspace = Workspace::current();
+    public function toArray(Request $request): array
+    {
+        /** @var WorkspacePlan $plan */
+        $plan = $this->resource;
 
-        return [
-            'id' => $this->getKey(),
-            'name' => $this->name,
-            'slug' => $this->slug,
-            'description' => $this->description,
-            'price' => $this->price,
-            'features' => (new FeaturesRepository)->getPlanFeatures($this->resource),
-            'quotas' => (new FeaturesRepository)->getPlanQuotas($this->resource),
-            'is_current' => $workspace->onPlan($this->resource),
-        ];
+        return $plan->toArray();
     }
 }

@@ -3,24 +3,28 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\PlanResource;
-use App\Models\User;
+use App\Mappers\WorkspacePlanMapper;
 use App\Models\Workspace;
-use App\Queries\Plans\GetPlanBillingData;
-use App\Repositories\PlansRepository;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-final class BillingController extends Controller {
+final class BillingController extends Controller
+{
+    public function __construct(
+        private readonly WorkspacePlanMapper $workspacePlans,
+    ) {}
 
-    function __construct(private PlansRepository $plansRepository) {
-    }
+    public function __invoke(Request $request): Response
+    {
+        $workspace = Workspace::current();
 
-    public function __invoke(Request $request): Response {
-        $plans = $this->plansRepository->getWorkspacePlans();
+        abort_if($workspace === null, 404);
 
         return Inertia::render('billing/index', [
-            'plans' => PlanResource::collection($plans)
+            'plans' => PlanResource::collection(
+                $this->workspacePlans->mapAvailable($workspace),
+            ),
         ]);
     }
 }
