@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\Features\Schemas;
 
-use App\Enums\Subscriptions\FeatureSlug;
+use App\Enums\Subscriptions\Features;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -27,7 +27,7 @@ class FeatureForm
                                     ->maxLength(255)
                                     ->columnSpanFull(),
                                 Select::make('slug')
-                                    ->options(FeatureSlug::options())
+                                    ->options(Features::options())
                                     ->searchable()
                                     ->required()
                                     ->unique(ignoreRecord: true)

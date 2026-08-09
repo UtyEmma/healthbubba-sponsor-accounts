@@ -44,7 +44,7 @@ export function PlanCard({
 }: {
     plan: Plan;
 }) {
-    console.log(plan.features)
+
     const allowanceFeatures = plan.features.filter(
         (feature) => feature.included && feature.value !== null,
     );
@@ -60,7 +60,7 @@ export function PlanCard({
                 plan.isCurrent && 'border-success ring-1 ring-success/20',
             )}
         >
-            <CardHeader className="gap-1 px-6 pt-6 pb-3">
+            <CardHeader className="gap-1 px-4 pt-6 pb-3">
                 <div className="flex items-start justify-between gap-3">
                     <h3 className="text-base font-semibold">{plan.name}</h3>
                     {plan.isCurrent && (
@@ -79,19 +79,19 @@ export function PlanCard({
                     </span> */}
                 </p>
             </CardHeader>
-            <CardContent className="flex flex-1 flex-col gap-4 px-6 pt-3">
+            <CardContent className="flex flex-1 flex-col gap-4 px-4 pt-3">
                 {allowanceFeatures.length > 0 && (
-                    <dl className="grid gap-2 border-b pb-4 text-sm">
-                        {allowanceFeatures.map((feature) => (
+                    <dl className="grid gap-2 border-b pb-4 text-[13px]">
+                        {plan.quotas.map((feature) => (
                             <div
                                 key={feature.slug}
                                 className="flex justify-between gap-3"
                             >
                                 <dt className="text-muted-foreground">
-                                    {feature.label}
+                                    {feature.name}
                                 </dt>
                                 <dd className="text-right font-medium">
-                                    {featureValue(feature)}
+                                    {feature.description}
                                 </dd>
                             </div>
                         ))}
@@ -122,7 +122,8 @@ export function PlanCard({
                     ))}
                 </ul>
             </CardContent>
-            <CardFooter className="px-6 pt-5 pb-6">
+            
+            <CardFooter className="px-4 pt-5 pb-6">
                 <Button
                     className="w-full"
                     disabled={plan.is_current}

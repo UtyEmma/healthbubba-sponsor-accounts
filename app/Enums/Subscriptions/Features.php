@@ -2,8 +2,8 @@
 
 namespace App\Enums\Subscriptions;
 
-enum Features:string
-{
+enum Features:string {
+
     case ON_DEMAND_CONSULTATIONS = 'on-demand-consultations';
     case SCHEDULED_APPOINTMENTS = 'scheduled-appointments';
     case BENEFICIARIES_INCLUDED = 'beneficiaries-included';
@@ -28,8 +28,7 @@ enum Features:string
     case COVERAGE_RULES = 'coverage-rules';
     case COVERAGE_REPORTING = 'coverage-reporting';
 
-    public function label(): string
-    {
+    public function label(): string {
         return match ($this) {
             self::ON_DEMAND_CONSULTATIONS => 'On-Demand Consultations',
             self::SCHEDULED_APPOINTMENTS => 'Scheduled Appointments',
@@ -58,8 +57,7 @@ enum Features:string
     }
 
     /** @return array<string, string> */
-    public static function options(): array
-    {
+    public static function options(): array {
         return collect(self::cases())
             ->mapWithKeys(fn (self $feature): array => [$feature->value => $feature->label()])
             ->all();

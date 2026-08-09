@@ -24,6 +24,7 @@ class PlanResource extends JsonResource
             'description' => $this->description,
             'price' => $this->price,
             'features' => (new FeaturesRepository)->getPlanFeatures($this->resource),
+            'quotas' => (new FeaturesRepository)->getPlanQuotas($this->resource),
             'is_current' => $workspace->onPlan($this->resource),
         ];
     }

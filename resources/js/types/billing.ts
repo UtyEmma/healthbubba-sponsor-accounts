@@ -26,7 +26,15 @@ export type Plan = {
     price: string;
     is_current: boolean;
     features: Feature[];
+    quotas: QuotaFeature[]
 };
+
+export type QuotaFeature = {
+    name: string;
+    quota: string;
+    slug: string;
+    description: string | null;
+}
 
 export type SubscriptionSummary = {
     id: number;

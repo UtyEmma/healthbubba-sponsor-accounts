@@ -2,7 +2,7 @@
 
 namespace App\Actions\Fortify;
 
-use App\Actions\Organizations\CreateNewWorkspace;
+use App\Actions\Workspaces\CreateNewWorkspace;
 use App\Enums\AccountTypes;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;

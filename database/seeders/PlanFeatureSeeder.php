@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\AccountTypes;
-use App\Enums\Subscriptions\FeatureSlug;
+use App\Enums\Subscriptions\Features;
 use App\Models\Plan;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -38,11 +38,11 @@ class PlanFeatureSeeder extends Seeder
 
                 $pivots = [];
 
-                foreach ($planFeatures as $featureSlug => $pivot) {
-                    $feature = $features->get($featureSlug);
+                foreach ($planFeatures as $Features => $pivot) {
+                    $feature = $features->get($Features);
 
                     if (! $feature instanceof Feature) {
-                        throw new LogicException("Feature [{$featureSlug}] is missing from the catalog.");
+                        throw new LogicException("Feature [{$Features}] is missing from the catalog.");
                     }
 
                     $pivots[$feature->getKey()] = [
@@ -65,29 +65,26 @@ class PlanFeatureSeeder extends Seeder
     private function featureDefinitions(): array
     {
         return [
-            FeatureSlug::ON_DEMAND_CONSULTATIONS->value => $this->toggle(FeatureSlug::ON_DEMAND_CONSULTATIONS->label(), 'Start an eligible consultation immediately.', 1),
-            FeatureSlug::SCHEDULED_APPOINTMENTS->value => $this->toggle(FeatureSlug::SCHEDULED_APPOINTMENTS->label(), 'Book eligible consultations for a later time.', 2),
-            FeatureSlug::BENEFICIARIES_INCLUDED->value => $this->limit(FeatureSlug::BENEFICIARIES_INCLUDED->label(), 'Beneficiaries included before overage pricing applies.', 3),
-            FeatureSlug::MAXIMUM_BENEFICIARIES->value => $this->limit(FeatureSlug::MAXIMUM_BENEFICIARIES->label(), 'Maximum beneficiaries allowed on an individual plan.', 4),
-            FeatureSlug::GP_CONSULTATIONS->value => $this->limit(FeatureSlug::GP_CONSULTATIONS->label(), 'Shared or pooled general practitioner consultation allowance.', 5),
-            FeatureSlug::SPECIALIST_CONSULTATIONS->value => $this->limit(FeatureSlug::SPECIALIST_CONSULTATIONS->label(), 'Shared or pooled specialist consultation allowance.', 6),
-            FeatureSlug::FOLLOW_UP_TRACKING->value => $this->toggle(FeatureSlug::FOLLOW_UP_TRACKING->label(), 'Track recommended follow-up care after consultations.', 7),
-            FeatureSlug::PRIORITY_SUPPORT->value => $this->toggle(FeatureSlug::PRIORITY_SUPPORT->label(), 'Receive prioritized customer support.', 8),
-            FeatureSlug::DEDICATED_COORDINATOR->value => $this->toggle(FeatureSlug::DEDICATED_COORDINATOR->label(), 'Access a dedicated care coordinator.', 9),
-            FeatureSlug::CHRONIC_DISEASE_MONITORING->value => $this->toggle(FeatureSlug::CHRONIC_DISEASE_MONITORING->label(), 'Ongoing monitoring for eligible chronic conditions.', 10),
-            FeatureSlug::GP_CONSULTATIONS_PER_SEAT->value => $this->limit(FeatureSlug::GP_CONSULTATIONS_PER_SEAT->label(), 'Monthly GP consultation allowance for each employee seat.', 11),
-            FeatureSlug::SPECIALIST_CONSULTATIONS_PER_SEAT->value => $this->limit(FeatureSlug::SPECIALIST_CONSULTATIONS_PER_SEAT->label(), 'Monthly specialist consultation allowance for each employee seat.', 12),
-            FeatureSlug::EMPLOYEE_SEAT_MANAGEMENT->value => $this->toggle(FeatureSlug::EMPLOYEE_SEAT_MANAGEMENT->label(), 'Provision and manage isolated employee coverage seats.', 13),
-            FeatureSlug::BULK_HR_UPLOAD_AND_LIST_EXPORT->value => $this->toggle(FeatureSlug::BULK_HR_UPLOAD_AND_LIST_EXPORT->label(), 'Bulk import employees and export workforce lists.', 14),
-            FeatureSlug::ACTIVITY_AND_COVERAGE_LOGS->value => $this->toggle(FeatureSlug::ACTIVITY_AND_COVERAGE_LOGS->label(), 'Review activity and coverage utilization history.', 15),
-            FeatureSlug::LAB_TEST_AND_MEDICATION_DISCOUNTS->value => $this->toggle(FeatureSlug::LAB_TEST_AND_MEDICATION_DISCOUNTS->label(), 'Receive eligible laboratory and medication discounts.', 16),
-            FeatureSlug::ENHANCED_ANALYTICS_SUITE->value => $this->toggle(FeatureSlug::ENHANCED_ANALYTICS_SUITE->label(), 'Access enhanced utilization and coverage analytics.', 17),
-            FeatureSlug::SHARED_COVERAGE_POOL->value => $this->toggle(FeatureSlug::SHARED_COVERAGE_POOL->label(), 'Share purchased consultation units across beneficiaries.', 18),
-            FeatureSlug::COVERAGE_TOP_UPS->value => $this->toggle(FeatureSlug::COVERAGE_TOP_UPS->label(), 'Purchase additional consultation units during a coverage term.', 19),
-            FeatureSlug::BULK_BENEFICIARY_UPLOAD->value => $this->toggle(FeatureSlug::BULK_BENEFICIARY_UPLOAD->label(), 'Bulk import institutional beneficiaries.', 20),
-            FeatureSlug::ENROLLMENT_CODES->value => $this->toggle(FeatureSlug::ENROLLMENT_CODES->label(), 'Create and manage beneficiary enrollment codes.', 21),
-            FeatureSlug::COVERAGE_RULES->value => $this->toggle(FeatureSlug::COVERAGE_RULES->label(), 'Configure institutional coverage allocation rules.', 22),
-            FeatureSlug::COVERAGE_REPORTING->value => $this->toggle(FeatureSlug::COVERAGE_REPORTING->label(), 'Download institutional coverage and utilization reports.', 23),
+            Features::ON_DEMAND_CONSULTATIONS->value => $this->toggle(Features::ON_DEMAND_CONSULTATIONS->label(), 'Start an eligible consultation immediately.', 1),
+            Features::SCHEDULED_APPOINTMENTS->value => $this->toggle(Features::SCHEDULED_APPOINTMENTS->label(), 'Book eligible consultations for a later time.', 2),
+            Features::BENEFICIARIES_INCLUDED->value => $this->limit(Features::BENEFICIARIES_INCLUDED->label(), 'Beneficiaries included before overage pricing applies.', 3),
+            Features::MAXIMUM_BENEFICIARIES->value => $this->limit(Features::MAXIMUM_BENEFICIARIES->label(), 'Maximum beneficiaries allowed on an individual plan.', 4),
+            Features::GP_CONSULTATIONS->value => $this->limit(Features::GP_CONSULTATIONS->label(), 'Shared or pooled general practitioner consultation allowance.', 5),
+            Features::SPECIALIST_CONSULTATIONS->value => $this->limit(Features::SPECIALIST_CONSULTATIONS->label(), 'Shared or pooled specialist consultation allowance.', 6),
+            Features::FOLLOW_UP_TRACKING->value => $this->toggle(Features::FOLLOW_UP_TRACKING->label(), 'Track recommended follow-up care after consultations.', 7),
+            Features::PRIORITY_SUPPORT->value => $this->toggle(Features::PRIORITY_SUPPORT->label(), 'Receive prioritized customer support.', 8),
+            Features::DEDICATED_COORDINATOR->value => $this->toggle(Features::DEDICATED_COORDINATOR->label(), 'Access a dedicated care coordinator.', 9),
+            Features::CHRONIC_DISEASE_MONITORING->value => $this->toggle(Features::CHRONIC_DISEASE_MONITORING->label(), 'Ongoing monitoring for eligible chronic conditions.', 10),
+            Features::BULK_HR_UPLOAD_AND_LIST_EXPORT->value => $this->toggle(Features::BULK_HR_UPLOAD_AND_LIST_EXPORT->label(), 'Bulk import employees and export workforce lists.', 14),
+            Features::ACTIVITY_AND_COVERAGE_LOGS->value => $this->toggle(Features::ACTIVITY_AND_COVERAGE_LOGS->label(), 'Review activity and coverage utilization history.', 15),
+            Features::LAB_TEST_AND_MEDICATION_DISCOUNTS->value => $this->toggle(Features::LAB_TEST_AND_MEDICATION_DISCOUNTS->label(), 'Receive eligible laboratory and medication discounts.', 16),
+            Features::ENHANCED_ANALYTICS_SUITE->value => $this->toggle(Features::ENHANCED_ANALYTICS_SUITE->label(), 'Access enhanced utilization and coverage analytics.', 17),
+            Features::SHARED_COVERAGE_POOL->value => $this->toggle(Features::SHARED_COVERAGE_POOL->label(), 'Share purchased consultation units across beneficiaries.', 18),
+            Features::COVERAGE_TOP_UPS->value => $this->toggle(Features::COVERAGE_TOP_UPS->label(), 'Purchase additional consultation units during a coverage term.', 19),
+            Features::BULK_BENEFICIARY_UPLOAD->value => $this->toggle(Features::BULK_BENEFICIARY_UPLOAD->label(), 'Bulk import institutional beneficiaries.', 20),
+            Features::ENROLLMENT_CODES->value => $this->toggle(Features::ENROLLMENT_CODES->label(), 'Create and manage beneficiary enrollment codes.', 21),
+            Features::COVERAGE_RULES->value => $this->toggle(Features::COVERAGE_RULES->label(), 'Configure institutional coverage allocation rules.', 22),
+            Features::COVERAGE_REPORTING->value => $this->toggle(Features::COVERAGE_REPORTING->label(), 'Download institutional coverage and utilization reports.', 23),
         ];
     }
 
@@ -127,12 +124,12 @@ class PlanFeatureSeeder extends Seeder
                 price: '20000.00',
                 sortOrder: 1,
                 features: [
-                    FeatureSlug::ON_DEMAND_CONSULTATIONS->value => [],
-                    FeatureSlug::SCHEDULED_APPOINTMENTS->value => [],
-                    FeatureSlug::BENEFICIARIES_INCLUDED->value => ['value' => '3', 'unit_price' => '7000'],
-                    FeatureSlug::MAXIMUM_BENEFICIARIES->value => ['value' => '6'],
-                    FeatureSlug::GP_CONSULTATIONS->value => ['value' => '5', ...$monthlyReset],
-                    FeatureSlug::SPECIALIST_CONSULTATIONS->value => ['value' => '2', ...$monthlyReset],
+                    Features::ON_DEMAND_CONSULTATIONS->value => [],
+                    Features::SCHEDULED_APPOINTMENTS->value => [],
+                    Features::BENEFICIARIES_INCLUDED->value => ['value' => '3', 'unit_price' => '7000'],
+                    Features::MAXIMUM_BENEFICIARIES->value => ['value' => '6'],
+                    Features::GP_CONSULTATIONS->value => ['value' => '5', ...$monthlyReset],
+                    Features::SPECIALIST_CONSULTATIONS->value => ['value' => '2', ...$monthlyReset],
                 ],
             ),
             'individual-premium' => $this->plan(
@@ -142,14 +139,14 @@ class PlanFeatureSeeder extends Seeder
                 price: '33000.00',
                 sortOrder: 2,
                 features: [
-                    FeatureSlug::ON_DEMAND_CONSULTATIONS->value => [],
-                    FeatureSlug::SCHEDULED_APPOINTMENTS->value => [],
-                    FeatureSlug::BENEFICIARIES_INCLUDED->value => ['value' => '6', 'unit_price' => '7000'],
-                    FeatureSlug::MAXIMUM_BENEFICIARIES->value => ['value' => '12'],
-                    FeatureSlug::GP_CONSULTATIONS->value => ['value' => '10', ...$monthlyReset],
-                    FeatureSlug::SPECIALIST_CONSULTATIONS->value => ['value' => '3', ...$monthlyReset],
-                    FeatureSlug::FOLLOW_UP_TRACKING->value => [],
-                    FeatureSlug::PRIORITY_SUPPORT->value => [],
+                    Features::ON_DEMAND_CONSULTATIONS->value => [],
+                    Features::SCHEDULED_APPOINTMENTS->value => [],
+                    Features::BENEFICIARIES_INCLUDED->value => ['value' => '6', 'unit_price' => '7000'],
+                    Features::MAXIMUM_BENEFICIARIES->value => ['value' => '12'],
+                    Features::GP_CONSULTATIONS->value => ['value' => '10', ...$monthlyReset],
+                    Features::SPECIALIST_CONSULTATIONS->value => ['value' => '3', ...$monthlyReset],
+                    Features::FOLLOW_UP_TRACKING->value => [],
+                    Features::PRIORITY_SUPPORT->value => [],
                 ],
             ),
             'individual-coordinated-care' => $this->plan(
@@ -159,16 +156,16 @@ class PlanFeatureSeeder extends Seeder
                 price: '59000.00',
                 sortOrder: 3,
                 features: [
-                    FeatureSlug::ON_DEMAND_CONSULTATIONS->value => [],
-                    FeatureSlug::SCHEDULED_APPOINTMENTS->value => [],
-                    FeatureSlug::BENEFICIARIES_INCLUDED->value => ['value' => '2'],
-                    FeatureSlug::MAXIMUM_BENEFICIARIES->value => ['value' => '2'],
-                    FeatureSlug::GP_CONSULTATIONS->value => ['value' => '12', ...$monthlyReset],
-                    FeatureSlug::SPECIALIST_CONSULTATIONS->value => ['value' => '4', ...$monthlyReset],
-                    FeatureSlug::FOLLOW_UP_TRACKING->value => [],
-                    FeatureSlug::PRIORITY_SUPPORT->value => [],
-                    FeatureSlug::DEDICATED_COORDINATOR->value => [],
-                    FeatureSlug::CHRONIC_DISEASE_MONITORING->value => [],
+                    Features::ON_DEMAND_CONSULTATIONS->value => [],
+                    Features::SCHEDULED_APPOINTMENTS->value => [],
+                    Features::BENEFICIARIES_INCLUDED->value => ['value' => '2'],
+                    Features::MAXIMUM_BENEFICIARIES->value => ['value' => '2'],
+                    Features::GP_CONSULTATIONS->value => ['value' => '12', ...$monthlyReset],
+                    Features::SPECIALIST_CONSULTATIONS->value => ['value' => '4', ...$monthlyReset],
+                    Features::FOLLOW_UP_TRACKING->value => [],
+                    Features::PRIORITY_SUPPORT->value => [],
+                    Features::DEDICATED_COORDINATOR->value => [],
+                    Features::CHRONIC_DISEASE_MONITORING->value => [],
                 ],
             ),
             'business-basic' => $this->plan(
@@ -178,12 +175,12 @@ class PlanFeatureSeeder extends Seeder
                 price: '5000.00',
                 sortOrder: 1,
                 features: [
-                    FeatureSlug::GP_CONSULTATIONS_PER_SEAT->value => ['value' => '2', ...$monthlyReset],
-                    FeatureSlug::ON_DEMAND_CONSULTATIONS->value => [],
-                    FeatureSlug::SCHEDULED_APPOINTMENTS->value => [],
-                    FeatureSlug::EMPLOYEE_SEAT_MANAGEMENT->value => [],
-                    FeatureSlug::BULK_HR_UPLOAD_AND_LIST_EXPORT->value => [],
-                    FeatureSlug::ACTIVITY_AND_COVERAGE_LOGS->value => [],
+                    Features::GP_CONSULTATIONS_PER_SEAT->value => ['value' => '2', ...$monthlyReset],
+                    Features::ON_DEMAND_CONSULTATIONS->value => [],
+                    Features::SCHEDULED_APPOINTMENTS->value => [],
+                    Features::EMPLOYEE_SEAT_MANAGEMENT->value => [],
+                    Features::BULK_HR_UPLOAD_AND_LIST_EXPORT->value => [],
+                    Features::ACTIVITY_AND_COVERAGE_LOGS->value => [],
                 ],
             ),
             'business-premium' => $this->plan(
@@ -193,16 +190,15 @@ class PlanFeatureSeeder extends Seeder
                 price: '10500.00',
                 sortOrder: 2,
                 features: [
-                    FeatureSlug::GP_CONSULTATIONS_PER_SEAT->value => ['value' => '3', ...$monthlyReset],
-                    FeatureSlug::SPECIALIST_CONSULTATIONS_PER_SEAT->value => ['value' => '1', ...$monthlyReset],
-                    FeatureSlug::ON_DEMAND_CONSULTATIONS->value => [],
-                    FeatureSlug::SCHEDULED_APPOINTMENTS->value => [],
-                    FeatureSlug::EMPLOYEE_SEAT_MANAGEMENT->value => [],
-                    FeatureSlug::BULK_HR_UPLOAD_AND_LIST_EXPORT->value => [],
-                    FeatureSlug::ACTIVITY_AND_COVERAGE_LOGS->value => [],
-                    FeatureSlug::PRIORITY_SUPPORT->value => [],
-                    FeatureSlug::LAB_TEST_AND_MEDICATION_DISCOUNTS->value => [],
-                    FeatureSlug::ENHANCED_ANALYTICS_SUITE->value => [],
+                    Features::GP_CONSULTATIONS->value => ['value' => '3', ...$monthlyReset],
+                    Features::SPECIALIST_CONSULTATIONS->value => ['value' => '1', ...$monthlyReset],
+                    Features::ON_DEMAND_CONSULTATIONS->value => [],
+                    Features::SCHEDULED_APPOINTMENTS->value => [],
+                    Features::BULK_HR_UPLOAD_AND_LIST_EXPORT->value => [],
+                    Features::ACTIVITY_AND_COVERAGE_LOGS->value => [],
+                    Features::PRIORITY_SUPPORT->value => [],
+                    Features::LAB_TEST_AND_MEDICATION_DISCOUNTS->value => [],
+                    Features::ENHANCED_ANALYTICS_SUITE->value => [],
                 ],
             ),
             'institution-community-health-program-2026' => $this->plan(
@@ -213,16 +209,16 @@ class PlanFeatureSeeder extends Seeder
                 sortOrder: 1,
                 billingInterval: Interval::Year,
                 features: [
-                    FeatureSlug::GP_CONSULTATIONS->value => ['value' => '2000', ...$annualReset],
-                    FeatureSlug::SPECIALIST_CONSULTATIONS->value => ['value' => '500', ...$annualReset],
-                    FeatureSlug::SHARED_COVERAGE_POOL->value => [],
-                    FeatureSlug::COVERAGE_TOP_UPS->value => [],
-                    FeatureSlug::BULK_BENEFICIARY_UPLOAD->value => [],
-                    FeatureSlug::ENROLLMENT_CODES->value => [],
-                    FeatureSlug::COVERAGE_RULES->value => [],
-                    FeatureSlug::COVERAGE_REPORTING->value => [],
-                    FeatureSlug::ACTIVITY_AND_COVERAGE_LOGS->value => [],
-                    FeatureSlug::ENHANCED_ANALYTICS_SUITE->value => [],
+                    Features::GP_CONSULTATIONS->value => ['value' => '2000', ...$annualReset],
+                    Features::SPECIALIST_CONSULTATIONS->value => ['value' => '500', ...$annualReset],
+                    Features::SHARED_COVERAGE_POOL->value => [],
+                    Features::COVERAGE_TOP_UPS->value => [],
+                    Features::BULK_BENEFICIARY_UPLOAD->value => [],
+                    Features::ENROLLMENT_CODES->value => [],
+                    Features::COVERAGE_RULES->value => [],
+                    Features::COVERAGE_REPORTING->value => [],
+                    Features::ACTIVITY_AND_COVERAGE_LOGS->value => [],
+                    Features::ENHANCED_ANALYTICS_SUITE->value => [],
                 ],
             ),
         ];

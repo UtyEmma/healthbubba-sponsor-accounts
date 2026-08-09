@@ -2,6 +2,10 @@
 
 namespace App\Enums;
 
+use App\Accounts\BusinessAccounts\BusinessAccountProvider;
+use App\Accounts\IndividualAccounts\IndividualAccountProvider;
+use App\Accounts\InstitutionalAccounts\InstitutionalAccountProvider;
+
 enum AccountTypes: string
 {
     case INDIVIDUAL = 'individual';
@@ -25,5 +29,13 @@ enum AccountTypes: string
             self::BUSINESS->value => self::BUSINESS->label(),
             self::INSTITUTION->value => self::INSTITUTION->label(),
         ];
+    }
+
+    function provider(){
+        return match($this) {
+            self::INDIVIDUAL => IndividualAccountProvider::class,
+            self::BUSINESS => BusinessAccountProvider::class,
+            self::INSTITUTION => InstitutionalAccountProvider::class
+        };
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Accounts\BusinessAccounts\BusinessAccountProvider;
 use App\Concerns\HasWallet;
 use App\Enums\AccountTypes;
 use Illuminate\Database\Eloquent\Model;
@@ -26,14 +27,25 @@ class Workspace extends Model implements Subscribable {
             ->withTimestamps();
     }
 
-    static function current(): self {
+    static function current(): self|null {
         $user = Auth::user();
-        return $user->workspace;
+        return $user?->workspace;
     }
 
     static function isCurrent(Workspace $workspace): bool {
         return $workspace->is(self::current());
     }
 
+    function provider(){
+        return $this->type->provider();
+    }
+
+    function plans() {
+        return Plan::with('features')->whereAccountType($this->type)->get();
+    }
+
+    function features(){
+        return (new $this->provider())->features($this->plans());
+    }
     
 }
