@@ -3,8 +3,10 @@
 namespace App\Mappers;
 
 use App\DTOs\WorkspacePlan;
+use App\Enums\AccountTypes;
 use App\Models\Plan;
 use App\Models\Workspace;
+use App\Services\Payments\CapacityPricingService;
 use App\Support\Billing\QuotaDescriptionFormatter;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
@@ -16,6 +18,7 @@ final readonly class WorkspacePlanMapper
 {
     public function __construct(
         private QuotaDescriptionFormatter $quotaDescriptions,
+        private CapacityPricingService $capacityPricing,
     ) {}
 
     public function map(Workspace $workspace, Plan $plan): WorkspacePlan
@@ -77,6 +80,9 @@ final readonly class WorkspacePlanMapper
         Collection $featureCatalog,
     ): WorkspacePlan {
         $mappedFeatures = $this->mapFeatureCatalog($plan, $featureCatalog);
+        $isCurrent = $workspace->onPlan($plan);
+        $checkout = $this->checkoutState($workspace, $plan, $isCurrent);
+        $capacity = $this->capacityPricing->configuration($plan);
 
         return new WorkspacePlan(
             id: (int) $plan->getKey(),
@@ -84,10 +90,111 @@ final readonly class WorkspacePlanMapper
             slug: $plan->slug,
             description: $plan->description,
             price: $plan->price,
-            isCurrent: $workspace->onPlan($plan),
+            cadence: $this->billingCadence($plan),
+            currency: config()->string('payments.currency', 'NGN'),
+            isCurrent: $isCurrent,
+            checkoutAvailable: $checkout['available'],
+            includedSeats: $plan->account_type === AccountTypes::BUSINESS
+                ? $plan->included_seats
+                : null,
+            additionalSeatPrice: $plan->account_type === AccountTypes::BUSINESS
+                ? $plan->additional_seat_price
+                : null,
+            allowsCapacityPurchases: $plan->allows_capacity_purchases,
+            capacity: $capacity === null ? null : [
+                'unit' => $capacity->unit,
+                'unit_plural' => $capacity->unitPlural,
+                'included' => $capacity->includedCapacity,
+                'maximum' => $capacity->maximumCapacity,
+                'additional_unit_price' => $capacity->unitPrice?->toMajorAmount(),
+                'purchases_enabled' => $capacity->purchasesEnabled,
+                'unavailable_reason' => $capacity->unavailableReason,
+            ],
+            unavailableReason: $checkout['reason'],
             features: $mappedFeatures['features'],
             quotas: $mappedFeatures['quotas'],
         );
+    }
+
+    private function billingCadence(Plan $plan): string
+    {
+        $interval = $plan->billing_interval->value;
+
+        return $plan->billing_period === 1
+            ? "per {$interval}"
+            : "every {$plan->billing_period} {$interval}s";
+    }
+
+    /** @return array{available: bool, reason: string|null} */
+    private function checkoutState(Workspace $workspace, Plan $plan, bool $isCurrent): array
+    {
+        if ($isCurrent) {
+            return [
+                'available' => false,
+                'reason' => 'This is your current plan.',
+            ];
+        }
+
+        if ($workspace->subscribed()) {
+            return [
+                'available' => false,
+                'reason' => 'An active subscription is already attached to this workspace.',
+            ];
+        }
+
+        if ($plan->account_type === AccountTypes::INSTITUTION) {
+            return [
+                'available' => false,
+                'reason' => 'Contact us to arrange institutional billing.',
+            ];
+        }
+
+        if ($plan->isFree()) {
+            return [
+                'available' => false,
+                'reason' => 'This plan does not require online checkout.',
+            ];
+        }
+
+        if ($plan->trial_days > 0) {
+            return [
+                'available' => false,
+                'reason' => 'Online checkout is unavailable for plans with a trial period.',
+            ];
+        }
+
+        if ((float) $plan->price <= 0) {
+            return [
+                'available' => false,
+                'reason' => 'A paid price has not been configured for this plan.',
+            ];
+        }
+
+        if (
+            $plan->account_type === AccountTypes::BUSINESS
+            && ($plan->included_seats === null || $plan->included_seats < 1)
+        ) {
+            return [
+                'available' => false,
+                'reason' => 'The included seats have not been configured for this plan.',
+            ];
+        }
+
+        if (
+            $plan->account_type === AccountTypes::BUSINESS
+            && $plan->allows_capacity_purchases
+            && ($plan->additional_seat_price === null || (float) $plan->additional_seat_price <= 0)
+        ) {
+            return [
+                'available' => false,
+                'reason' => 'The additional-seat price has not been configured for this plan.',
+            ];
+        }
+
+        return [
+            'available' => true,
+            'reason' => null,
+        ];
     }
 
     /**
@@ -125,16 +232,19 @@ final readonly class WorkspacePlanMapper
      */
     private function mapFeatureCatalog(Plan $plan, Collection $featureCatalog): array
     {
-        $planFeatures = $plan->features->keyBy('slug');
+        $planFeatures = $plan->features->keyBy(
+            fn (Feature $feature): string => $feature->slug,
+        );
         $includedFeatures = [];
         $excludedFeatures = [];
         $quotas = [];
 
         foreach ($featureCatalog as $feature) {
-            /** @var Feature|null $includedFeature */
-            $includedFeature = $planFeatures->get($feature->slug);
-            $limits = $includedFeature?->limits;
-            $limits = $limits instanceof FeaturePlan ? $limits : null;
+            $isIncluded = $planFeatures->has($feature->slug);
+            $includedFeature = $isIncluded
+                ? $planFeatures->get($feature->slug)
+                : null;
+            $limits = $this->featureAssignment($includedFeature);
 
             if ($feature->hasQuota()) {
                 $quota = $limits?->getValue();
@@ -158,12 +268,12 @@ final readonly class WorkspacePlanMapper
                 'name' => $feature->name,
                 'description' => $feature->description,
                 'type' => $feature->type->value,
-                'included' => $includedFeature !== null,
+                'included' => $isIncluded,
                 'value' => $limits?->getValue(),
                 'unitPrice' => $limits?->getUnitPrice(),
             ];
 
-            if ($includedFeature === null) {
+            if (! $isIncluded) {
                 $excludedFeatures[] = $mappedFeature;
 
                 continue;
@@ -176,5 +286,16 @@ final readonly class WorkspacePlanMapper
             'features' => [...$includedFeatures, ...$excludedFeatures],
             'quotas' => $quotas,
         ];
+    }
+
+    private function featureAssignment(?Feature $feature): ?FeaturePlan
+    {
+        if ($feature === null || ! $feature->relationLoaded('limits')) {
+            return null;
+        }
+
+        $assignment = $feature->getRelation('limits');
+
+        return $assignment instanceof FeaturePlan ? $assignment : null;
     }
 }

@@ -4,15 +4,19 @@ import { useState } from 'react';
 
 import { BusinessPortalShell } from '@/components/business-portal-shell';
 import { PageHeader } from '@/components/page-header';
+import { PaymentStatusNotice } from '@/components/payment-status-notice';
 import { PortalShell } from '@/components/portal-shell';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { AccountType, PlanBillingPageProps } from '@/types';
 
 import { institutionalNavigation } from '../institutional-sponsor/partials/institutional-navigation';
+import { CapacityPurchaseCard } from './partials/capacity-purchase-card';
 import { PlanCard } from './partials/plan-cards';
+import { PlanCheckoutDialog } from './partials/plan-checkout-dialog';
 import { PlanFaq } from './partials/plan-faq';
-import { PlanSuccessDialog } from './partials/plan-success-dialog';
+import { Disclose } from '@/components/toggle/disclose';
+import {format} from 'date-fns'
 
 const nairaFormatter = new Intl.NumberFormat('en-NG', {
     style: 'currency',
@@ -21,9 +25,8 @@ const nairaFormatter = new Intl.NumberFormat('en-NG', {
 });
 
 const dateFormatter = new Intl.DateTimeFormat('en-NG', {
-    day: 'numeric',
+    day: '2-digit',
     month: 'short',
-    year: 'numeric',
 });
 
 const statusTone: Record<
@@ -67,14 +70,19 @@ function BillingShell({
 }
 
 function formatDate(value: string | null): string {
-    return value ? dateFormatter.format(new Date(value)) : 'Not scheduled';
+    return value ? format(new Date(value), 'do MMM') : 'Not scheduled';
 }
 
 export default function ({
+    accountType,
     plans,
     subscription,
+    capacityPurchase,
 }: PlanBillingPageProps) {
-    const {workspace} = usePage().props
+    const { errors, flash } = usePage().props;
+    const [selectedPlan, setSelectedPlan] = useState<
+        PlanBillingPageProps['plans'][number] | null
+    >(null);
 
     const renewalDate =
         subscription?.status === 'trialing'
@@ -84,11 +92,16 @@ export default function ({
     return (
         <>
             <Head title="Plan & Billing" />
-            <BillingShell accountType={workspace.type}>
+            <BillingShell accountType={accountType}>
                 <div className="mx-auto w-full max-w-6xl pb-10">
                     <PageHeader
                         title="Plan & Billing"
                         description={`Manage the plans and subscription attached to your account.`}
+                    />
+
+                    <PaymentStatusNotice
+                        success={flash.success}
+                        error={errors.payment ?? errors.capacity}
                     />
 
                     <Card className="mt-6">
@@ -111,11 +124,25 @@ export default function ({
                                                 {subscription.statusLabel}
                                             </span>
                                         </div>
-                                        <p className="text-sm text-muted-foreground">
-                                            {subscription.isValid
-                                                ? 'Your subscription currently provides plan access.'
-                                                : 'This subscription is not currently providing plan access.'}
-                                        </p>
+                                        <div className="text-sm flex items-center gap-2 text-muted-foreground">
+                                            <Disclose as="p" show={capacityPurchase}>
+                                                {
+                                                    `${capacityPurchase?.current_capacity} ${capacityPurchase?.unit === 'seat'
+                                                    ? 'seats'
+                                                    : 'beneficiaries'}`
+                                                } 
+                                            </Disclose>
+                                            &bull;
+
+                                            <p>
+                                                {subscription.status === 'trialing'
+                                                    ? 'Trial ends'
+                                                    : 'renews'} {formatDate(renewalDate ?? null)}
+                                            </p>
+                                            {/* {subscription.isValid
+                                                // ? 'Your subscription currently provides plan access.'
+                                                // : 'This subscription is not currently providing plan access.'} */}
+                                        </div>
                                     </div>
                                     <dl className="grid gap-1 text-sm">
                                         <dt className="text-muted-foreground">
@@ -129,7 +156,7 @@ export default function ({
                                         <dt className="text-muted-foreground">
                                             {subscription.status === 'trialing'
                                                 ? 'Trial ends'
-                                                : 'Current term ends'}
+                                                : 'renews'} {formatDate(renewalDate ?? null)}
                                         </dt>
                                         <dd className="font-medium">
                                             {formatDate(renewalDate ?? null)}
@@ -138,7 +165,9 @@ export default function ({
                                     <div className="lg:text-right">
                                         <p className="text-2xl font-semibold">
                                             {nairaFormatter.format(
-                                                Number(subscription.plan.price),
+                                                Number(
+                                                    subscription.renewalAmount,
+                                                ),
                                             )}
                                         </p>
                                         <p className="text-xs text-muted-foreground">
@@ -160,6 +189,10 @@ export default function ({
                         </CardContent>
                     </Card>
 
+                    {capacityPurchase && (
+                        <CapacityPurchaseCard summary={capacityPurchase} />
+                    )}
+
                     <section className="pt-8" aria-labelledby="plans-heading">
                         <div className="flex flex-wrap items-end justify-between gap-3 pb-4">
                             <div>
@@ -170,7 +203,8 @@ export default function ({
                                     Available plans
                                 </h2>
                                 <p className="text-sm text-muted-foreground">
-                                    Showing plans for only.
+                                    Showing plans for your {accountType}{' '}
+                                    workspace only.
                                 </p>
                             </div>
                         </div>
@@ -181,6 +215,7 @@ export default function ({
                                     <PlanCard
                                         key={plan.id}
                                         plan={plan}
+                                        onSelect={setSelectedPlan}
                                     />
                                 ))}
                             </div>
@@ -195,15 +230,16 @@ export default function ({
                     </section>
 
                     <PlanFaq />
-                    {/* <PlanSuccessDialog
-                        open={selectedPlanName !== null}
+                    <PlanCheckoutDialog
+                        accountType={accountType}
+                        plan={selectedPlan}
+                        open={selectedPlan !== null}
                         onOpenChange={(open) => {
                             if (!open) {
-                                setSelectedPlanName(null);
+                                setSelectedPlan(null);
                             }
                         }}
-                        planName={selectedPlanName}
-                    /> */}
+                    />
                 </div>
             </BillingShell>
         </>

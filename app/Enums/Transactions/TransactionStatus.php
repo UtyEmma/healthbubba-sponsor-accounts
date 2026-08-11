@@ -1,11 +1,10 @@
 <?php
+
 namespace App\Enums\Transactions;
 
-enum TransactionStatus {
-
-    case PENDING;
-    case COMPLETED;
-    case FAILED;
-    
-
+enum TransactionStatus: string
+{
+    case PENDING = 'pending';
+    case COMPLETED = 'completed';
+    case FAILED = 'failed';
 }

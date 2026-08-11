@@ -2,8 +2,7 @@
 
 namespace App\Filament\Resources\Subscriptions\Schemas;
 
-use App\Models\Organization;
-use App\Models\User;
+use App\Models\Workspace;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\MorphToSelect;
 use Filament\Forms\Components\Select;
@@ -25,9 +24,7 @@ class SubscriptionForm
                             ->schema([
                                 MorphToSelect::make('subscribable')
                                     ->types([
-                                        MorphToSelect\Type::make(User::class)
-                                            ->titleAttribute('name'),
-                                        MorphToSelect\Type::make(Organization::class)
+                                        MorphToSelect\Type::make(Workspace::class)
                                             ->titleAttribute('name'),
                                     ])
                                     ->searchable()

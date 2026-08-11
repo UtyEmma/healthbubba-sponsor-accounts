@@ -11,27 +11,26 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('workspaces', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+        if (! Schema::hasTable('workspaces')) {
+            Schema::create('workspaces', function (Blueprint $table): void {
+                $table->id();
+                $table->string('name');
+                $table->text('description')->nullable();
+                $table->string('logo')->nullable();
+                $table->string('type');
+                $table->timestamps();
+            });
+        }
 
-        Schema::create('workspaces', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->string('logo')->nullable();
-            $table->string('type');
-            $table->timestamps();
-        });
-
-        Schema::create('workspace_user', function(Blueprint $table) {
-            $table->string('user_id');
-            $table->string('workspace_id');
-            $table->string('role');
-            $table->string('status');
-            $table->timestamps();
-        });
+        if (! Schema::hasTable('user_workspace')) {
+            Schema::create('user_workspace', function (Blueprint $table): void {
+                $table->foreignId('user_id');
+                $table->foreignId('workspace_id');
+                $table->string('role');
+                $table->string('status');
+                $table->timestamps();
+            });
+        }
     }
 
     /**
@@ -39,6 +38,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('workspaces');
+        // These tables may have predated this repaired migration, so rollback
+        // intentionally leaves them for a forward migration or `migrate:fresh`.
     }
 };

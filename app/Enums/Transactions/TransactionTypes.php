@@ -1,10 +1,10 @@
 <?php
+
 namespace App\Enums\Transactions;
 
-enum TransactionTypes {
-
-    case TOPUP;
-    case SUBSCRIPTION;
-    
-
+enum TransactionTypes: string
+{
+    case TOPUP = 'topup';
+    case SUBSCRIPTION = 'subscription';
+    case CAPACITY_PURCHASE = 'capacity_purchase';
 }

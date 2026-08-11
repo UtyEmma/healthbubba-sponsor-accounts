@@ -22,3 +22,11 @@ enrollment-codes
 
 --- consultations (hb db (appointments))
 
+implement plan upgrade or downgrade. plan upgrade should be charged at a prorated rate while downgrade should be charged and effected in the next billing cycle
+
+impelemt beneficiaries for indidicual sponsor accounts and employees for business sponsors.
+
+The basic idea is the same. but the beneficiary count and employee count is limited by the Included Beneficiaries and employee seat features taking into account extra seat for each account
+
+
+

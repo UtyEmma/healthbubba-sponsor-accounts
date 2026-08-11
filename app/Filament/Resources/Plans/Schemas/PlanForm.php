@@ -9,6 +9,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Revoltify\Subscriptionify\Enums\Interval;
 
@@ -40,6 +42,12 @@ class PlanForm
                                                     $type->value => $type->label(),
                                                 ])
                                                 ->all())
+                                            ->live()
+                                            ->afterStateUpdated(function (?string $state, Set $set): void {
+                                                if ($state === AccountTypes::INSTITUTION->value) {
+                                                    $set('allows_capacity_purchases', false);
+                                                }
+                                            })
                                             ->required(),
                                         Textarea::make('description')
                                             ->rows(5)
@@ -82,21 +90,45 @@ class PlanForm
                                             ->default(0)
                                             ->required(),
                                     ]),
+                                Section::make('Additional Seat pricing')
+                                    ->description('Configure the seats included in the base price and the recurring price for each additional seat.')
+                                    ->visible(fn (Get $get): bool => in_array($get('account_type'), [AccountTypes::BUSINESS->value, AccountTypes::INDIVIDUAL->value]))
+                                    ->columns(2)
+                                    ->schema([
+                                        TextInput::make('included_seats')
+                                            ->numeric()
+                                            ->integer()
+                                            ->minValue(0)
+                                            ->nullable(),
+                                        TextInput::make('additional_seat_price')
+                                            ->numeric()
+                                            ->minValue(0)
+                                            ->prefix('₦')
+                                            ->nullable(),
+                                    ]),
                             ]),
-                            Section::make('Availability')
-                                ->description('Control visibility and ordering across account-specific plan lists.')
-                                ->schema([
-                                    Toggle::make('is_active')
-                                        ->default(true),
-                                    Toggle::make('is_free')
-                                        ->default(false),
-                                    TextInput::make('sort_order')
-                                        ->numeric()
-                                        ->integer()
-                                        ->minValue(0)
-                                        ->default(0)
-                                        ->required(),
-                                ]),
+                        Section::make('Availability')
+                            ->description('Control visibility and ordering across account-specific plan lists.')
+                            ->schema([
+                                Toggle::make('is_active')
+                                    ->default(true),
+                                Toggle::make('is_free')
+                                    ->default(false),
+                                Toggle::make('allows_capacity_purchases')
+                                    ->label('Allow additional capacity purchases')
+                                    ->helperText('Lets subscribers buy additional beneficiaries or seats. Disabling this does not remove capacity already purchased.')
+                                    ->default(false)
+                                    ->visible(fn (Get $get): bool => in_array($get('account_type'), [
+                                        AccountTypes::INDIVIDUAL->value,
+                                        AccountTypes::BUSINESS->value,
+                                    ], true)),
+                                TextInput::make('sort_order')
+                                    ->numeric()
+                                    ->integer()
+                                    ->minValue(0)
+                                    ->default(0)
+                                    ->required(),
+                            ]),
                     ]),
             ]);
     }

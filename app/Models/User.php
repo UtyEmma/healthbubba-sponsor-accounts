@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -38,7 +39,6 @@ class User extends Authenticatable implements FilamentUser
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasRole, HasStatus, Notifiable;
 
-    
     protected $attributes = [
         'role' => Roles::USER,
     ];
@@ -48,7 +48,8 @@ class User extends Authenticatable implements FilamentUser
      *
      * @return array<string, string>
      */
-    protected function casts(): array {
+    protected function casts(): array
+    {
         return [
             'role' => Roles::class,
             'email_verified_at' => 'datetime',
@@ -58,19 +59,29 @@ class User extends Authenticatable implements FilamentUser
 
     protected $appends = ['workspace'];
 
-    public function canAccessPanel(Panel $panel): bool {
+    public function canAccessPanel(Panel $panel): bool
+    {
         return $panel->getId() === 'admin' && $this->isAdmin();
     }
 
     /** @return BelongsToMany<Workspace, $this> */
-    public function workspaces(): BelongsToMany {
+    public function workspaces(): BelongsToMany
+    {
         return $this->belongsToMany(Workspace::class)
             ->withPivot('role', 'status')
             ->withTimestamps();
     }
 
-    public function getWorkspaceAttribute(): ?Workspace {
-        return $this->workspaces()->latest()->first();
+    /** @return HasMany<Payment, $this> */
+    public function initiatedPayments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
     }
 
+    public function getWorkspaceAttribute(): ?Workspace
+    {
+        return $this->workspaces()
+            ->latest((new Workspace)->qualifyColumn('created_at'))
+            ->first();
+    }
 }

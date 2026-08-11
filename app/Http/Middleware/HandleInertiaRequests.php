@@ -38,12 +38,17 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $workspace = Workspace::current();
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
-            'workspace' => Workspace::current() ? new WorkspaceResource(Workspace::current()) : null,
+            'workspace' => $workspace === null ? null : new WorkspaceResource($workspace),
             'auth' => [
-                'user' => $request->user() ? new UserResource($request->user()) : null, 
+                'user' => $request->user() ? new UserResource($request->user()) : null,
+            ],
+            'flash' => [
+                'success' => fn (): ?string => $request->session()->get('success'),
             ],
         ];
     }

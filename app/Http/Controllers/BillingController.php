@@ -2,9 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\Payments\CheckoutUnavailable;
+use App\Http\Resources\CapacityPurchaseSummaryResource;
 use App\Http\Resources\PlanResource;
+use App\Http\Resources\SubscriptionResource;
 use App\Mappers\WorkspacePlanMapper;
+use App\Models\Subscription;
 use App\Models\Workspace;
+use App\Services\Payments\CapacityPricingService;
+use App\Services\Payments\PlanPricingService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -13,6 +19,8 @@ final class BillingController extends Controller
 {
     public function __construct(
         private readonly WorkspacePlanMapper $workspacePlans,
+        private readonly CapacityPricingService $capacityPricing,
+        private readonly PlanPricingService $planPricing,
     ) {}
 
     public function __invoke(Request $request): Response
@@ -21,10 +29,49 @@ final class BillingController extends Controller
 
         abort_if($workspace === null, 404);
 
+        $subscription = Subscription::query()
+            ->with('plan.features')
+            ->where('subscribable_type', $workspace->getMorphClass())
+            ->where('subscribable_id', $workspace->getKey())
+            ->latest('id')
+            ->first();
+
+
         return Inertia::render('billing/index', [
+            'accountType' => $workspace->type->value,
+            'accountTypeLabel' => $workspace->type->label(),
             'plans' => PlanResource::collection(
                 $this->workspacePlans->mapAvailable($workspace),
             ),
+            'subscription' => $subscription === null
+                ? null
+                : new SubscriptionResource(
+                    resource: $subscription,
+                    renewalAmount: $this->renewalAmount($subscription),
+                ),
+            'capacityPurchase' => $subscription === null
+                ? null
+                : $this->capacityPurchaseSummary($subscription, $workspace),
         ]);
+    }
+
+    private function renewalAmount(Subscription $subscription): string {
+        try {
+            return $this->planPricing->renewal($subscription)->money->toMajorAmount();
+        } catch (CheckoutUnavailable) {
+            return $subscription->plan->price;
+        }
+    }
+
+    private function capacityPurchaseSummary(
+        Subscription $subscription,
+        Workspace $workspace,
+    ): ?CapacityPurchaseSummaryResource {
+        $summary = $this->capacityPricing->summary(
+            subscription: $subscription,
+            wallet: $workspace->wallet()->first(),
+        );
+
+        return $summary === null ? null : new CapacityPurchaseSummaryResource($summary);
     }
 }

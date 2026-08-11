@@ -142,6 +142,7 @@ export function BusinessPortalShell({
                     navigationLabel={navigationLabel}
                 />
             </aside>
+            
             <div className="lg:pl-64">
                 <header className="sticky top-0 z-30 flex h-12 items-center justify-between border-b border-border bg-background px-4 lg:justify-end">
                     <Sheet>

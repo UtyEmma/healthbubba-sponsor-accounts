@@ -10,11 +10,13 @@ import {
 import { cn } from '@/lib/utils';
 import type { Plan } from '@/types';
 
-const nairaFormatter = new Intl.NumberFormat('en-NG', {
-    style: 'currency',
-    currency: 'NGN',
-    maximumFractionDigits: 0,
-});
+function formatPrice(price: string, currency: string): string {
+    return new Intl.NumberFormat('en-NG', {
+        style: 'currency',
+        currency,
+        maximumFractionDigits: 2,
+    }).format(Number(price));
+}
 
 export function PlanCard({
     plan,
@@ -23,11 +25,14 @@ export function PlanCard({
     plan: Plan;
     onSelect?: (plan: Plan) => void;
 }) {
+    const selectionDisabled = plan.is_current || !plan.checkout_available;
+    const reasonId = `plan-${plan.id}-unavailable-reason`;
+
     return (
         <Card
             className={cn(
                 'flex h-full flex-col',
-                plan.is_current && 'border-success ring-1 ring-success/20',
+                plan.is_current && 'border-secondary border-2',
             )}
         >
             <CardHeader className="gap-1 px-4 pt-6 pb-3">
@@ -43,8 +48,9 @@ export function PlanCard({
                     {plan.description}
                 </p>
                 <p className="pt-3 text-3xl leading-9 font-semibold tracking-tight">
-                    {nairaFormatter.format(Number(plan.price))}
+                    {formatPrice(plan.price, plan.currency)}
                 </p>
+                <p className="text-xs text-muted-foreground">{plan.cadence}</p>
             </CardHeader>
 
             <CardContent className="flex flex-1 flex-col gap-4 px-4 pt-3">
@@ -98,16 +104,33 @@ export function PlanCard({
                 </ul>
             </CardContent>
 
-            <CardFooter className="px-4 pt-5 pb-6">
+            <CardFooter className="grid gap-2 px-4 pt-5 pb-6">
                 <Button
                     type="button"
                     className="w-full"
-                    disabled={plan.is_current}
+                    disabled={selectionDisabled}
                     variant={plan.is_current ? 'muted' : 'primary'}
                     onClick={() => onSelect?.(plan)}
+                    aria-describedby={
+                        plan.unavailable_reason && !plan.is_current
+                            ? reasonId
+                            : undefined
+                    }
                 >
-                    {plan.is_current ? 'Current plan' : 'Select plan'}
+                    {plan.is_current
+                        ? 'Current plan'
+                        : plan.checkout_available
+                          ? 'Choose plan'
+                          : 'Checkout unavailable'}
                 </Button>
+                {plan.unavailable_reason && !plan.is_current && (
+                    <p
+                        id={reasonId}
+                        className="text-center text-xs leading-5 text-muted-foreground"
+                    >
+                        {plan.unavailable_reason}
+                    </p>
+                )}
             </CardFooter>
         </Card>
     );

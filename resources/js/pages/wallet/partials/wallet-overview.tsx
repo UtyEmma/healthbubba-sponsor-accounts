@@ -15,44 +15,61 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import type { WalletSummary as WalletSummaryData } from '@/types';
+import type { WalletTransaction } from '@/types';
 
-export type WalletTransaction = {
-    id: number;
-    direction: 'in' | 'out';
-    description: string;
-    type: string;
-    date: string;
-    amount: number;
-};
-
-const currency = new Intl.NumberFormat('en-NG', {
-    style: 'currency',
-    currency: 'NGN',
-    maximumFractionDigits: 0,
+const dateFormatter = new Intl.DateTimeFormat('en-NG', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
 });
 
-export function WalletSummary({
-    balance,
-    totalIn,
-    totalOut,
-}: {
-    balance: number;
-    totalIn: number;
-    totalOut: number;
-}) {
+function formatMoney(amount: string, currency: string): string {
+    return new Intl.NumberFormat('en-NG', {
+        style: 'currency',
+        currency,
+        maximumFractionDigits: 2,
+    }).format(Number(amount));
+}
+
+function formatDate(value: string | null): string {
+    return value ? dateFormatter.format(new Date(value)) : 'Pending';
+}
+
+export function WalletSummary({ wallet }: { wallet: WalletSummaryData }) {
     return (
         <section
             className="grid gap-5 pt-6 md:grid-cols-3"
             aria-label="Wallet summary"
         >
-            <SummaryCard label="Available balance" value={balance} />
-            <SummaryCard label="Total in (90d)" value={totalIn} />
-            <SummaryCard label="Total out (90d)" value={totalOut} />
+            <SummaryCard
+                label="Available balance"
+                value={wallet.balance}
+                currency={wallet.currency}
+            />
+            <SummaryCard
+                label="Total in (90d)"
+                value={wallet.total_in}
+                currency={wallet.currency}
+            />
+            <SummaryCard
+                label="Total out (90d)"
+                value={wallet.total_out}
+                currency={wallet.currency}
+            />
         </section>
     );
 }
 
-function SummaryCard({ label, value }: { label: string; value: number }) {
+function SummaryCard({
+    label,
+    value,
+    currency,
+}: {
+    label: string;
+    value: string;
+    currency: string;
+}) {
     return (
         <Card className="min-h-[94px]">
             <CardContent className="px-5 py-5">
@@ -60,7 +77,7 @@ function SummaryCard({ label, value }: { label: string; value: number }) {
                     {label}
                 </p>
                 <p className="text-2xl leading-8 font-semibold tracking-[-0.4px]">
-                    {currency.format(value)}
+                    {formatMoney(value, currency)}
                 </p>
             </CardContent>
         </Card>
@@ -80,8 +97,8 @@ export function TransactionsCard({
                         Transactions
                     </CardTitle>
                     <CardDescription className="leading-5">
-                        Sponsors can fund and transfer out; clinical payments
-                        are made by beneficiaries from their own wallets.
+                        Verified wallet funding and subscription ledger
+                        activity.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="overflow-x-auto p-0">
@@ -97,39 +114,55 @@ export function TransactionsCard({
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {transactions.map((transaction) => (
-                                <TableRow key={transaction.id}>
-                                    <TableCell className="h-[61px] pl-8 font-medium">
-                                        <span className="flex items-center gap-3">
-                                            <span
-                                                className={
-                                                    transaction.direction ===
-                                                    'in'
-                                                        ? 'flex size-8 items-center justify-center rounded-full text-success'
-                                                        : 'flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground'
-                                                }
-                                            >
-                                                {transaction.direction ===
-                                                'in' ? (
-                                                    <ArrowDownLeftIcon className="size-4" />
-                                                ) : (
-                                                    <ArrowUpRightIcon className="size-4" />
-                                                )}
+                            {transactions.length > 0 ? (
+                                transactions.map((transaction) => (
+                                    <TableRow key={transaction.id}>
+                                        <TableCell className="h-[61px] pl-8 font-medium">
+                                            <span className="flex items-center gap-3">
+                                                <span
+                                                    className={
+                                                        transaction.flow ===
+                                                        'credit'
+                                                            ? 'flex size-8 items-center justify-center rounded-full text-success'
+                                                            : 'flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground'
+                                                    }
+                                                >
+                                                    {transaction.flow ===
+                                                    'credit' ? (
+                                                        <ArrowDownLeftIcon className="size-4" />
+                                                    ) : (
+                                                        <ArrowUpRightIcon className="size-4" />
+                                                    )}
+                                                </span>
+                                                {transaction.description}
                                             </span>
-                                            {transaction.description}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell className="h-[61px] text-muted-foreground">
-                                        {transaction.type}
-                                    </TableCell>
-                                    <TableCell className="h-[61px] text-muted-foreground">
-                                        {transaction.date}
-                                    </TableCell>
-                                    <TableCell className="h-[61px] pr-8 whitespace-nowrap text-muted-foreground">
-                                        {currency.format(transaction.amount)}
+                                        </TableCell>
+                                        <TableCell className="h-[61px] text-muted-foreground">
+                                            {transaction.type}
+                                        </TableCell>
+                                        <TableCell className="h-[61px] text-muted-foreground">
+                                            {formatDate(
+                                                transaction.occurred_at,
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="h-[61px] pr-8 whitespace-nowrap text-muted-foreground">
+                                            {formatMoney(
+                                                transaction.amount,
+                                                transaction.currency,
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={4}
+                                        className="h-24 text-center text-muted-foreground"
+                                    >
+                                        No wallet transactions yet.
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            )}
                         </TableBody>
                     </Table>
                 </CardContent>

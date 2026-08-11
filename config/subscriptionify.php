@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use App\Models\Plan;
+use App\Models\Subscription;
 use Revoltify\Subscriptionify\Models\Feature;
-use Revoltify\Subscriptionify\Models\Subscription;
 
 return [
 

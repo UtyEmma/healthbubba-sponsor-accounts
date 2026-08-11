@@ -3,14 +3,24 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
-class Wallet extends Model
+/**
+ * @property int $id
+ * @property numeric-string $balance
+ * @property string $currency
+ * @property-read Model $owner
+ */
+final class Wallet extends Model
 {
-    protected $fillable = ['balance'];
+    /** @var list<string> */
+    protected $fillable = ['balance', 'currency'];
 
+    /** @var array<string, mixed> */
     protected $attributes = [
-        'balance' => 0.00,
+        'balance' => '0.00',
+        'currency' => 'NGN',
     ];
 
     protected function casts(): array
@@ -24,5 +34,11 @@ class Wallet extends Model
     public function owner(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /** @return MorphMany<Payment, $this> */
+    public function payments(): MorphMany
+    {
+        return $this->morphMany(Payment::class, 'payable');
     }
 }

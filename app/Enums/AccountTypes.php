@@ -31,11 +31,12 @@ enum AccountTypes: string
         ];
     }
 
-    function provider(){
-        return match($this) {
+    public function provider(): string
+    {
+        return match ($this) {
             self::INDIVIDUAL => IndividualAccountProvider::class,
             self::BUSINESS => BusinessAccountProvider::class,
-            self::INSTITUTION => InstitutionalAccountProvider::class
+            self::INSTITUTION => InstitutionalAccountProvider::class,
         };
     }
 }

@@ -2,10 +2,12 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Workspace;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class WorkspaceResource extends JsonResource
+/** @mixin Workspace */
+final class WorkspaceResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -14,6 +16,12 @@ class WorkspaceResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'id' => (int) $this->getKey(),
+            'name' => $this->name,
+            'logo' => $this->logo,
+            'description' => $this->description,
+            'type' => $this->type->value,
+        ];
     }
 }
