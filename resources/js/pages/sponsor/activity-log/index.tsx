@@ -76,36 +76,34 @@ function ActivityRow({ activity }: { activity: WorkspaceActivity }) {
     return (
         <article
             className={cn(
-                'relative flex gap-3 px-4 py-4 sm:gap-4 sm:px-5',
-                activity.isUnread && 'bg-information/[0.035]',
+                'relative flex min-h-13 items-center gap-3 px-4 py-3 sm:px-5',
+                // activity.isUnread && 'bg-information/[0.035]',
             )}
         >
-            <WorkspaceActivityIcon icon={activity.icon} tone={activity.tone} />
+            <WorkspaceActivityIcon
+                icon={activity.icon}
+                tone={activity.tone}
+                className="size-7"
+            />
 
             <div className="min-w-0 flex-1">
                 <div className="flex items-start gap-3">
-                    <h2 className="flex-1 text-sm leading-5 font-medium text-foreground">
+                    <h2 className="flex-1 text-[13px] leading-4 font-medium text-foreground">
                         {activity.title}
                     </h2>
                     {activity.isUnread && (
                         <span
-                            className="mt-1.5 size-2 shrink-0 rounded-full bg-information"
+                            className="mt-1.5 size-2 shrink-0 rounded-full bg-secondary"
                             aria-label="Unread activity"
                         />
                     )}
                 </div>
 
-                {activity.description && (
-                    <p className="mt-1 text-sm leading-5 text-muted-foreground">
-                        {activity.description}
-                    </p>
-                )}
-
-                <p className="mt-1 text-xs leading-4 text-muted-foreground">
+                <p className="mt-0.5 text-[11px] leading-4 text-muted-foreground">
                     <span className="font-medium text-foreground/80">
                         {activity.actor.name}
                     </span>{' '}
-                    · {dateFormatter.format(new Date(activity.occurredAt))}
+                    &bull; {dateFormatter.format(new Date(activity.occurredAt))}
                 </p>
             </div>
         </article>

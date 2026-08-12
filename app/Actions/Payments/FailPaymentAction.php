@@ -54,15 +54,22 @@ final readonly class FailPaymentAction
         $actor = $payment->initiator instanceof User
             ? WorkspaceActivityActor::user($payment->initiator)
             : WorkspaceActivityActor::system();
+        $amount = ($payment->currency === 'NGN' ? '₦' : "{$payment->currency} ")
+            .number_format($payment->amount_minor / 100, 2);
+        $purpose = match ($payment->purpose) {
+            PaymentPurpose::WALLET_TOP_UP => 'Wallet funding',
+            PaymentPurpose::SUBSCRIPTION => 'Subscription payment',
+            PaymentPurpose::CAPACITY_PURCHASE => 'Capacity purchase',
+            PaymentPurpose::PLAN_UPGRADE => 'Plan upgrade payment',
+        };
 
         $this->activities->record($payment->workspace, new WorkspaceActivityData(
             type: WorkspaceActivityType::PaymentFailed,
-            title: 'Payment could not be completed',
+            title: "{$purpose} of {$amount} failed",
             actor: $actor,
             subjectType: 'payment',
             subjectId: $payment->getKey(),
             subjectName: $payment->purpose->value,
-            description: 'The payment was not completed. No sensitive provider details were recorded.',
             context: [
                 'purpose' => $payment->purpose->value,
                 'amount_minor' => $payment->amount_minor,

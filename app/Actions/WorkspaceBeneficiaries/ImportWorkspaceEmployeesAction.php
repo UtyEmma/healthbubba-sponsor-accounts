@@ -102,9 +102,11 @@ final readonly class ImportWorkspaceEmployeesAction
 
             if ($invitations !== []) {
                 $count = count($invitations);
+                $errorCount = count($parsed->errors) + count($errors);
                 $this->activities->record($workspace, new WorkspaceActivityData(
                     type: WorkspaceActivityType::EmployeeImportCompleted,
-                    title: "Imported {$count} employee invitation".($count === 1 ? '' : 's'),
+                    title: "Bulk uploaded {$count} employee".($count === 1 ? '' : 's').
+                        " ({$count} committed, {$errorCount} errors)",
                     actor: WorkspaceActivityActor::user($inviter),
                     subjectType: 'employee_import',
                     subjectId: null,

@@ -31,7 +31,8 @@ final readonly class RecordCompletedPaymentActivity
         $actor = $payment->initiator instanceof User
             ? WorkspaceActivityActor::user($payment->initiator)
             : WorkspaceActivityActor::system();
-        [$type, $title, $subjectType, $subjectId, $subjectName] = $this->presentation($payment);
+        $amount = $this->formattedAmount($payment);
+        [$type, $title, $subjectType, $subjectId, $subjectName] = $this->presentation($payment, $amount);
 
         $this->activities->record($payment->workspace, new WorkspaceActivityData(
             type: $type,
@@ -40,7 +41,6 @@ final readonly class RecordCompletedPaymentActivity
             subjectType: $subjectType,
             subjectId: $subjectId,
             subjectName: $subjectName,
-            description: sprintf('%s %s', $payment->currency, number_format($payment->amount_minor / 100, 2)),
             context: [
                 'amount_minor' => $payment->amount_minor,
                 'currency' => $payment->currency,
@@ -49,24 +49,24 @@ final readonly class RecordCompletedPaymentActivity
     }
 
     /** @return array{WorkspaceActivityType, string, string, int|string|null, string} */
-    private function presentation(Payment $payment): array
+    private function presentation(Payment $payment, string $amount): array
     {
         return match ($payment->purpose) {
             PaymentPurpose::WALLET_TOP_UP => [
                 WorkspaceActivityType::WalletTopUpCompleted,
-                'Wallet funded successfully',
+                "Funded wallet with {$amount}",
                 'wallet',
                 $payment->payable_id,
                 'Workspace wallet',
             ],
-            PaymentPurpose::CAPACITY_PURCHASE => $this->capacityPurchase($payment),
-            PaymentPurpose::PLAN_UPGRADE => $this->planUpgrade($payment),
-            PaymentPurpose::SUBSCRIPTION => $this->subscriptionPayment($payment),
+            PaymentPurpose::CAPACITY_PURCHASE => $this->capacityPurchase($payment, $amount),
+            PaymentPurpose::PLAN_UPGRADE => $this->planUpgrade($payment, $amount),
+            PaymentPurpose::SUBSCRIPTION => $this->subscriptionPayment($payment, $amount),
         };
     }
 
     /** @return array{WorkspaceActivityType, string, string, int|string|null, string} */
-    private function capacityPurchase(Payment $payment): array
+    private function capacityPurchase(Payment $payment, string $amount): array
     {
         $purchase = $payment->payable;
         $quantity = $purchase instanceof CapacityPurchase ? $purchase->quantity : 0;
@@ -75,7 +75,7 @@ final readonly class RecordCompletedPaymentActivity
 
         return [
             WorkspaceActivityType::CapacityPurchased,
-            "Purchased {$quantity} additional {$subjectName}",
+            "Purchased {$quantity} additional {$subjectName} for {$amount}",
             'capacity_purchase',
             $payment->payable_id,
             $subjectName,
@@ -83,7 +83,7 @@ final readonly class RecordCompletedPaymentActivity
     }
 
     /** @return array{WorkspaceActivityType, string, string, int|string|null, string} */
-    private function planUpgrade(Payment $payment): array
+    private function planUpgrade(Payment $payment, string $amount): array
     {
         $targetPlanId = $payment->metadata['to_plan_id'] ?? null;
         $planName = is_int($targetPlanId) || (is_string($targetPlanId) && ctype_digit($targetPlanId))
@@ -93,7 +93,7 @@ final readonly class RecordCompletedPaymentActivity
 
         return [
             WorkspaceActivityType::PlanUpgradeCompleted,
-            "Upgraded subscription to {$name}",
+            "Upgraded subscription to {$name} for {$amount}",
             'subscription',
             $payment->payable_id,
             $name,
@@ -101,12 +101,12 @@ final readonly class RecordCompletedPaymentActivity
     }
 
     /** @return array{WorkspaceActivityType, string, string, int|string|null, string} */
-    private function subscriptionPayment(Payment $payment): array
+    private function subscriptionPayment(Payment $payment, string $amount): array
     {
         if ($payment->payable instanceof Plan) {
             return [
                 WorkspaceActivityType::SubscriptionActivated,
-                "Activated {$payment->payable->name} subscription",
+                "Activated {$payment->payable->name} subscription for {$amount}",
                 'subscription',
                 $payment->payable_id,
                 $payment->payable->name,
@@ -123,17 +123,24 @@ final readonly class RecordCompletedPaymentActivity
         return $downgradeApplied
             ? [
                 WorkspaceActivityType::PlanDowngradeApplied,
-                "Downgraded subscription to {$planName} at renewal",
+                "Downgraded subscription to {$planName} at renewal for {$amount}",
                 'subscription',
                 $payment->payable_id,
                 $planName,
             ]
             : [
                 WorkspaceActivityType::SubscriptionRenewed,
-                "Renewed {$planName} subscription",
+                "Renewed {$planName} subscription for {$amount}",
                 'subscription',
                 $payment->payable_id,
                 $planName,
             ];
+    }
+
+    private function formattedAmount(Payment $payment): string
+    {
+        $currency = $payment->currency === 'NGN' ? '₦' : "{$payment->currency} ";
+
+        return $currency.number_format($payment->amount_minor / 100, 2);
     }
 }

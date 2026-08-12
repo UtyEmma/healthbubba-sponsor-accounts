@@ -98,12 +98,13 @@ final readonly class StartCapacityPurchaseAction
             $subjectName = $purchase->quantity === 1 ? $unit : "{$unit}s";
             $this->activities->record($data->workspace, new WorkspaceActivityData(
                 type: WorkspaceActivityType::CapacityPurchased,
-                title: "Purchased {$purchase->quantity} additional {$subjectName}",
+                title: "Purchased {$purchase->quantity} additional {$subjectName} for ".
+                    ($purchase->currency === 'NGN' ? '₦' : "{$purchase->currency} ").
+                    number_format($purchase->amount_minor / 100, 2),
                 actor: WorkspaceActivityActor::user($data->user),
                 subjectType: 'capacity_purchase',
                 subjectId: $purchase->getKey(),
                 subjectName: $subjectName,
-                description: sprintf('%s %s', $purchase->currency, number_format($purchase->amount_minor / 100, 2)),
                 context: [
                     'quantity' => $purchase->quantity,
                     'amount_minor' => $purchase->amount_minor,
