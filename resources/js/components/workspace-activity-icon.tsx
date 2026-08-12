@@ -60,12 +60,12 @@ export function WorkspaceActivityIcon({
     return (
         <span
             className={cn(
-                '',
-                // toneClasses[tone],
-                // className,
+                'flex size-9 shrink-0 items-center justify-center rounded-full',
+                toneClasses[tone],
+                className,
             )}
         >
-            <Icon className="size-6" aria-hidden="true" />
+            <Icon className="size-4" aria-hidden="true" />
         </span>
     );
 }
