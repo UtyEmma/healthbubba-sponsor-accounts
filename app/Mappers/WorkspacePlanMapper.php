@@ -4,13 +4,18 @@ namespace App\Mappers;
 
 use App\DTOs\WorkspacePlan;
 use App\Enums\AccountTypes;
+use App\Enums\Subscriptions\PlanChangeDirection;
+use App\Exceptions\Payments\CheckoutUnavailable;
 use App\Models\Plan;
+use App\Models\Subscription;
 use App\Models\Workspace;
 use App\Services\Payments\CapacityPricingService;
+use App\Services\Payments\PlanChangePricingService;
 use App\Support\Billing\QuotaDescriptionFormatter;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
+use Revoltify\Subscriptionify\Enums\SubscriptionStatus;
 use Revoltify\Subscriptionify\Models\Feature;
 use Revoltify\Subscriptionify\Models\FeaturePlan;
 
@@ -19,10 +24,14 @@ final readonly class WorkspacePlanMapper
     public function __construct(
         private QuotaDescriptionFormatter $quotaDescriptions,
         private CapacityPricingService $capacityPricing,
+        private PlanChangePricingService $planChangePricing,
     ) {}
 
-    public function map(Workspace $workspace, Plan $plan): WorkspacePlan
-    {
+    public function map(
+        Workspace $workspace,
+        Plan $plan,
+        ?Subscription $subscription = null,
+    ): WorkspacePlan {
         if ($plan->account_type !== $workspace->type) {
             throw new InvalidArgumentException(
                 "Plan [{$plan->getKey()}] does not belong to the workspace account type.",
@@ -43,12 +52,15 @@ final readonly class WorkspacePlanMapper
             workspace: $workspace,
             plan: $availablePlan,
             featureCatalog: $this->featureCatalog($availablePlans),
+            subscription: $subscription,
         );
     }
 
     /** @return Collection<int, WorkspacePlan> */
-    public function mapAvailable(Workspace $workspace): Collection
-    {
+    public function mapAvailable(
+        Workspace $workspace,
+        ?Subscription $subscription = null,
+    ): Collection {
         $availablePlans = $this->availablePlans($workspace);
         $featureCatalog = $this->featureCatalog($availablePlans);
 
@@ -57,6 +69,7 @@ final readonly class WorkspacePlanMapper
                 workspace: $workspace,
                 plan: $plan,
                 featureCatalog: $featureCatalog,
+                subscription: $subscription,
             ),
         );
     }
@@ -78,11 +91,15 @@ final readonly class WorkspacePlanMapper
         Workspace $workspace,
         Plan $plan,
         Collection $featureCatalog,
+        ?Subscription $subscription,
     ): WorkspacePlan {
         $mappedFeatures = $this->mapFeatureCatalog($plan, $featureCatalog);
-        $isCurrent = $workspace->onPlan($plan);
-        $checkout = $this->checkoutState($workspace, $plan, $isCurrent);
+        $isCurrent = $subscription instanceof Subscription
+            ? (int) $subscription->plan_id === (int) $plan->getKey()
+            : $workspace->onPlan($plan);
+        $checkout = $this->checkoutState($workspace, $plan, $isCurrent, $subscription);
         $capacity = $this->capacityPricing->configuration($plan);
+        $planChange = $this->planChangeState($subscription, $plan, $isCurrent);
 
         return new WorkspacePlan(
             id: (int) $plan->getKey(),
@@ -110,7 +127,8 @@ final readonly class WorkspacePlanMapper
                 'purchases_enabled' => $capacity->purchasesEnabled,
                 'unavailable_reason' => $capacity->unavailableReason,
             ],
-            unavailableReason: $checkout['reason'],
+            planChange: $planChange,
+            unavailableReason: $planChange['unavailable_reason'] ?? $checkout['reason'],
             features: $mappedFeatures['features'],
             quotas: $mappedFeatures['quotas'],
         );
@@ -126,8 +144,12 @@ final readonly class WorkspacePlanMapper
     }
 
     /** @return array{available: bool, reason: string|null} */
-    private function checkoutState(Workspace $workspace, Plan $plan, bool $isCurrent): array
-    {
+    private function checkoutState(
+        Workspace $workspace,
+        Plan $plan,
+        bool $isCurrent,
+        ?Subscription $subscription,
+    ): array {
         if ($isCurrent) {
             return [
                 'available' => false,
@@ -135,7 +157,7 @@ final readonly class WorkspacePlanMapper
             ];
         }
 
-        if ($workspace->subscribed()) {
+        if ($subscription instanceof Subscription && $subscription->valid()) {
             return [
                 'available' => false,
                 'reason' => 'An active subscription is already attached to this workspace.',
@@ -194,6 +216,67 @@ final readonly class WorkspacePlanMapper
         return [
             'available' => true,
             'reason' => null,
+        ];
+    }
+
+    /**
+     * @return array{
+     *     available: bool,
+     *     direction: string|null,
+     *     amount_due_now: string,
+     *     renewal_amount: string,
+     *     effective_at: string,
+     *     scheduled: bool,
+     *     unavailable_reason: string|null
+     * }|null
+     */
+    private function planChangeState(
+        ?Subscription $subscription,
+        Plan $plan,
+        bool $isCurrent,
+    ): ?array {
+        if (! $subscription instanceof Subscription
+            || $subscription->status !== SubscriptionStatus::Active
+            || $isCurrent) {
+            return null;
+        }
+
+        try {
+            $quote = $this->planChangePricing->quote($subscription, $plan);
+        } catch (CheckoutUnavailable $exception) {
+            return [
+                'available' => false,
+                'direction' => null,
+                'amount_due_now' => '0.00',
+                'renewal_amount' => $plan->price,
+                'effective_at' => $subscription->ends_at?->toISOString() ?? '',
+                'scheduled' => false,
+                'unavailable_reason' => $exception->getMessage(),
+            ];
+        }
+
+        $isScheduled = (int) $subscription->scheduled_plan_id === (int) $plan->getKey();
+        $unavailableReason = null;
+        $available = ! $isScheduled;
+
+        if ($isScheduled) {
+            $unavailableReason = 'This downgrade is already scheduled.';
+        } elseif ($quote->direction === PlanChangeDirection::DOWNGRADE
+            && (! $subscription->auto_renew
+                || $subscription->payment_method_id === null
+                || $subscription->gateway === null)) {
+            $available = false;
+            $unavailableReason = 'Automatic renewal must be active before scheduling a downgrade.';
+        }
+
+        return [
+            'available' => $available,
+            'direction' => $quote->direction->value,
+            'amount_due_now' => $quote->amountDueNow->toMajorAmount(),
+            'renewal_amount' => $quote->targetRenewal->toMajorAmount(),
+            'effective_at' => $quote->effectiveAt->toISOString(),
+            'scheduled' => $isScheduled,
+            'unavailable_reason' => $unavailableReason,
         ];
     }
 

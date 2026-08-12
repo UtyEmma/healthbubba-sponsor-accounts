@@ -1,71 +1,18 @@
-import { Head } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, usePage } from '@inertiajs/react';
 
 import { PageHeader } from '@/components/page-header';
 import { PortalShell } from '@/components/portal-shell';
+import type { MedicalAccessPageProps } from '@/types';
 
-import { AccessRecordsDialog } from './partials/access-records-dialog';
 import { AccessRequestsTable } from './partials/access-requests-table';
-import type { AccessRequest } from './partials/access-requests-table';
 import { RequestAccessDialog } from './partials/request-access-dialog';
-import type { MedicalAccessFormData } from './partials/request-access-dialog';
 
-const initialRequests: AccessRequest[] = [
-    {
-        id: 1,
-        beneficiary: 'Ngozi Okafor',
-        dataType: 'Clinical diagnosis & case notes',
-        requested: '18 Jun, 2026',
-        expires: '18 Jul, 2026',
-        status: 'Active',
-    },
-    {
-        id: 2,
-        beneficiary: 'Chidi Okafor',
-        dataType: 'Prescription records',
-        requested: '18 Jun, 2026',
-        expires: '18 Jul, 2026',
-        status: 'Pending',
-    },
-    {
-        id: 3,
-        beneficiary: 'Jane Okafor',
-        dataType: 'Prescription records',
-        requested: '18 Jun, 2026',
-        expires: '18 Jul, 2026',
-        status: 'Expired',
-    },
-    {
-        id: 4,
-        beneficiary: 'Ngozi Okafor',
-        dataType: 'Prescription records',
-        requested: '18 Jun, 2026',
-        expires: '18 Jul, 2026',
-        status: 'Active',
-    },
-];
-
-export default function MedicalAccessIndex() {
-    const [requests, setRequests] = useState(initialRequests);
-    const [selectedRequest, setSelectedRequest] =
-        useState<AccessRequest | null>(null);
-    const [announcement, setAnnouncement] = useState('');
-
-    function addRequest(data: MedicalAccessFormData) {
-        const nextId = Math.max(...requests.map(({ id }) => id)) + 1;
-        setRequests((current) => [
-            ...current,
-            {
-                id: nextId,
-                beneficiary: data.beneficiary,
-                dataType: data.dataType,
-                requested: '21 Jul, 2026',
-                expires: '20 Aug, 2026',
-                status: 'Pending',
-            },
-        ]);
-        setAnnouncement(`Medical access requested from ${data.beneficiary}.`);
-    }
+export default function MedicalAccessIndex({
+    requests,
+    beneficiaries,
+    dataTypes,
+}: MedicalAccessPageProps) {
+    const { flash } = usePage().props;
 
     return (
         <>
@@ -75,30 +22,36 @@ export default function MedicalAccessIndex() {
                     <PageHeader
                         title="Medical Access"
                         description="Request consent-gated access to beneficiary clinical data."
-                        action={<RequestAccessDialog onSubmit={addRequest} />}
+                        action={
+                            <RequestAccessDialog
+                                beneficiaries={beneficiaries}
+                                dataTypes={dataTypes}
+                            />
+                        }
                     />
+
+                    {flash.success && (
+                        <p
+                            className="mt-5 rounded-xl border border-success/20 bg-success-muted px-4 py-3 text-sm text-success"
+                            role="status"
+                        >
+                            {flash.success}
+                        </p>
+                    )}
+
+                    {beneficiaries.length === 0 && (
+                        <p className="mt-5 rounded-xl border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+                            Medical access requests require an active
+                            beneficiary linked to a HealthBubba account.
+                        </p>
+                    )}
 
                     <section
                         className="pt-6"
                         aria-label="Medical access requests"
                     >
-                        <AccessRequestsTable
-                            requests={requests}
-                            onView={setSelectedRequest}
-                        />
+                        <AccessRequestsTable requests={requests} />
                     </section>
-
-                    <AccessRecordsDialog
-                        request={selectedRequest}
-                        onOpenChange={(open) => {
-                            if (!open) {
-                                setSelectedRequest(null);
-                            }
-                        }}
-                    />
-                    <p className="sr-only" role="status" aria-live="polite">
-                        {announcement}
-                    </p>
                 </div>
             </PortalShell>
         </>

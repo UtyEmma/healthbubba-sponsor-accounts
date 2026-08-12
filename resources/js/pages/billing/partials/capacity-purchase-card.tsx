@@ -74,7 +74,7 @@ export function CapacityPurchaseCard({
                     </p>
                 </CardHeader>
                 <CardContent className="grid gap-5 px-6 pt-3 pb-6">
-                    <dl className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                    {/* <dl className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
                         <CapacityValue
                             label={`Current ${summary.unit_plural}`}
                             value={String(summary.current_capacity)}
@@ -95,10 +95,10 @@ export function CapacityPurchaseCard({
                                     : String(summary.maximum_capacity)
                             }
                         />
-                    </dl>
-
+                    </dl> */}
+                    {/* border-t pt-5 */}
                     {summary.available && maximumQuantity > 0 && (
-                        <div className="flex flex-wrap items-end gap-6 border-t pt-5">
+                        <div className="flex flex-wrap items-end gap-6">
                             <div className="grid gap-2">
                                 <span className="text-sm font-medium">
                                     {summary.unit === 'seat'

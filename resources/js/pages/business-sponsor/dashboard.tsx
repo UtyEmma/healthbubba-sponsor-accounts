@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import {
     ArrowRightIcon,
     CalendarClockIcon,
@@ -17,17 +17,20 @@ import business from '@/routes/business';
 
 import { BusinessMetricCard } from './partials/business-metric-card';
 import { DepartmentUtilizationChart } from './partials/department-utilization-chart';
+import { DashboardLayout } from '@/layouts/dashboard';
 
 export default function BusinessDashboard() {
     const [announcement, setAnnouncement] = useState('');
 
+    const { workspace } = usePage().props
+
     return (
         <>
-            <Head title="Swift Logistics Ltd" />
-            <BusinessPortalShell>
+            <Head title={workspace.name} />
+            <DashboardLayout>
                 <div className="mx-auto w-full max-w-6xl">
                     <PageHeader
-                        title="Swift Logistics Ltd"
+                        title={workspace.name}
                         description="Workforce healthcare coverage at a glance."
                         action={
                             <Link
@@ -127,7 +130,7 @@ export default function BusinessDashboard() {
                         {announcement}
                     </p>
                 </div>
-            </BusinessPortalShell>
+            </DashboardLayout>
         </>
     );
 }

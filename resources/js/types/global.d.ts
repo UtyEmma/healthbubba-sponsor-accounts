@@ -1,4 +1,5 @@
 import type { Auth } from '@/types/auth';
+import type { WorkspaceActivitySummary } from './activity';
 import type { Workspace } from './workspace';
 
 declare module 'react' {
@@ -14,6 +15,7 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             workspace: Workspace;
+            activityNotifications: WorkspaceActivitySummary | null;
             flash: {
                 success: string | null;
             };

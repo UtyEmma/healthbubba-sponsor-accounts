@@ -14,6 +14,8 @@ use Revoltify\Subscriptionify\Models\Subscription as SubscriptionifySubscription
  * @property string $subscribable_type
  * @property int $subscribable_id
  * @property int $plan_id
+ * @property int|null $scheduled_plan_id
+ * @property Carbon|null $scheduled_plan_change_at
  * @property int|null $payment_method_id
  * @property PaymentGatewayName|null $gateway
  * @property int $capacity_count
@@ -29,6 +31,7 @@ use Revoltify\Subscriptionify\Models\Subscription as SubscriptionifySubscription
  * @property Carbon|null $cancelled_at
  * @property Carbon|null $renewed_at
  * @property-read Plan $plan
+ * @property-read Plan|null $scheduledPlan
  * @property-read PaymentMethod|null $paymentMethod
  */
 final class Subscription extends SubscriptionifySubscription
@@ -38,6 +41,8 @@ final class Subscription extends SubscriptionifySubscription
         'subscribable_type',
         'subscribable_id',
         'plan_id',
+        'scheduled_plan_id',
+        'scheduled_plan_change_at',
         'payment_method_id',
         'gateway',
         'capacity_count',
@@ -67,6 +72,12 @@ final class Subscription extends SubscriptionifySubscription
         return $this->belongsTo(PaymentMethod::class);
     }
 
+    /** @return BelongsTo<Plan, $this> */
+    public function scheduledPlan(): BelongsTo
+    {
+        return $this->belongsTo(Plan::class, 'scheduled_plan_id');
+    }
+
     /** @return MorphMany<Payment, $this> */
     public function payments(): MorphMany
     {
@@ -79,6 +90,7 @@ final class Subscription extends SubscriptionifySubscription
         return [
             ...parent::casts(),
             'gateway' => PaymentGatewayName::class,
+            'scheduled_plan_change_at' => 'datetime',
             'capacity_count' => 'integer',
             'auto_renew' => 'boolean',
             'next_charge_at' => 'datetime',

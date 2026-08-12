@@ -13,6 +13,7 @@ final class PaymentReferenceGenerator
             PaymentPurpose::WALLET_TOP_UP => 'WAL',
             PaymentPurpose::SUBSCRIPTION => 'SUB',
             PaymentPurpose::CAPACITY_PURCHASE => 'CAP',
+            PaymentPurpose::PLAN_UPGRADE => 'UPG',
         };
 
         return $prefix.'-'.Str::upper((string) Str::ulid());

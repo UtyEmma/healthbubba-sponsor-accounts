@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Plan;
 use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -43,13 +44,26 @@ final class SubscriptionResource extends JsonResource
             'capacityCount' => $this->capacity_count,
             'renewalAttempts' => $this->renewal_attempts,
             'renewalAmount' => $this->renewalAmount,
+            'scheduledPlan' => $this->whenLoaded('scheduledPlan', fn (): ?array => $this->scheduledPlan === null
+                ? null
+                : [
+                    'id' => (int) $this->scheduledPlan->getKey(),
+                    'name' => $this->scheduledPlan->name,
+                    'billingLabel' => $this->billingLabelFor($this->scheduledPlan),
+                ]),
+            'scheduledPlanChangeAt' => $this->scheduled_plan_change_at?->toISOString(),
         ];
     }
 
     private function billingLabel(): string
     {
-        $period = $this->plan->billing_period;
-        $interval = $this->plan->billing_interval->value;
+        return $this->billingLabelFor($this->plan);
+    }
+
+    private function billingLabelFor(Plan $plan): string
+    {
+        $period = $plan->billing_period;
+        $interval = $plan->billing_interval->value;
 
         return $period === 1
             ? "per {$interval}"

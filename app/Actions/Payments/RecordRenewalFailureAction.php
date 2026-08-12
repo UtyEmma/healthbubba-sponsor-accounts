@@ -2,13 +2,18 @@
 
 namespace App\Actions\Payments;
 
+use App\DTOs\Activity\WorkspaceActivityActor;
+use App\DTOs\Activity\WorkspaceActivityData;
+use App\Enums\Activity\WorkspaceActivityType;
 use App\Enums\Payments\PaymentStatus;
 use App\Models\Payment;
 use App\Models\Subscription;
+use App\Models\Workspace;
+use App\Services\Activity\WorkspaceActivityLogger;
 use Illuminate\Support\Facades\DB;
 use Revoltify\Subscriptionify\Enums\SubscriptionStatus;
 
-final class RecordRenewalFailureAction
+final readonly class RecordRenewalFailureAction
 {
     /** @var array<int, int> */
     private const RETRY_HOURS = [
@@ -16,6 +21,8 @@ final class RecordRenewalFailureAction
         2 => 72,
         3 => 120,
     ];
+
+    public function __construct(private WorkspaceActivityLogger $activities) {}
 
     public function execute(Subscription $subscription, ?Payment $payment = null): void
     {
@@ -61,6 +68,22 @@ final class RecordRenewalFailureAction
                     'renewal_attempts' => $attempts,
                     'renewal_retry_at' => null,
                 ]);
+
+                $workspace = Workspace::query()->find($lockedSubscription->subscribable_id);
+
+                if ($workspace instanceof Workspace) {
+                    $planName = $lockedSubscription->plan()->value('name') ?? 'subscription';
+                    $this->activities->record($workspace, new WorkspaceActivityData(
+                        type: WorkspaceActivityType::SubscriptionPastDue,
+                        title: 'Subscription moved to past due',
+                        actor: WorkspaceActivityActor::system(),
+                        subjectType: 'subscription',
+                        subjectId: $lockedSubscription->getKey(),
+                        subjectName: $planName,
+                        description: 'Renewal attempts were exhausted.',
+                        context: ['plan_name' => $planName],
+                    ));
+                }
 
                 return;
             }

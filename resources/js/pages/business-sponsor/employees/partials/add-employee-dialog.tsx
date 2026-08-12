@@ -1,8 +1,11 @@
+import { Form } from '@inertiajs/react';
 import { UploadCloudIcon, UserRoundPlusIcon } from 'lucide-react';
 import { useId, useState } from 'react';
-import type { ChangeEvent, ComponentProps, FormEvent } from 'react';
+import type { ComponentProps } from 'react';
 
-import { Button, buttonVariants } from '@/components/ui/button';
+import ImportWorkspaceEmployeesController from '@/actions/App/Http/Controllers/WorkspaceBeneficiaries/ImportWorkspaceEmployeesController';
+import StoreWorkspaceBeneficiaryController from '@/actions/App/Http/Controllers/WorkspaceBeneficiaries/StoreWorkspaceBeneficiaryController';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogClose,
@@ -14,36 +17,25 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
+import { Progress } from '@/components/ui/progress';
+import type { WorkspaceCapacity } from '@/types';
 
-type ProvisioningMethod = 'manual' | 'csv';
-type DialogStep = 'method' | ProvisioningMethod;
+type DialogStep = 'method' | 'manual' | 'upload';
 
 export function AddEmployeeDialog({
-    onContinue,
+    capacity,
 }: {
-    onContinue: (method: ProvisioningMethod) => void;
+    capacity: WorkspaceCapacity;
 }) {
     const [open, setOpen] = useState(false);
     const [step, setStep] = useState<DialogStep>('method');
-    const [method, setMethod] = useState<ProvisioningMethod>('csv');
 
-    function changeOpen(nextOpen: boolean) {
-        setOpen(nextOpen);
+    function changeOpen(next: boolean) {
+        setOpen(next);
 
-        if (!nextOpen) {
+        if (!next) {
             setStep('method');
         }
-    }
-
-    function chooseMethod(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
-        setStep(method);
-    }
-
-    function completeFlow(selectedMethod: ProvisioningMethod) {
-        onContinue(selectedMethod);
-        changeOpen(false);
     }
 
     return (
@@ -52,31 +44,26 @@ export function AddEmployeeDialog({
                 render={
                     <Button
                         size="compact"
+                        disabled={!capacity.canInvite}
                         className="self-start sm:self-auto"
                     />
                 }
             >
-                <UserRoundPlusIcon className="size-4" />
-                Add Employee
+                <UserRoundPlusIcon className="size-4" /> Add employee
             </DialogTrigger>
-
             <DialogContent showCloseButton={false}>
-                {step === 'method' && (
-                    <MethodStep
-                        method={method}
-                        onMethodChange={setMethod}
-                        onSubmit={chooseMethod}
-                    />
-                )}
+                {step === 'method' && <MethodStep onSelect={setStep} />}
                 {step === 'manual' && (
-                    <ManualEmployeeStep
-                        onComplete={() => completeFlow('manual')}
+                    <ManualStep
+                        capacity={capacity}
+                        onBack={() => setStep('method')}
+                        onSuccess={() => changeOpen(false)}
                     />
                 )}
-                {step === 'csv' && (
-                    <BulkUploadStep
+                {step === 'upload' && (
+                    <UploadStep
                         onBack={() => setStep('method')}
-                        onComplete={() => completeFlow('csv')}
+                        onSuccess={() => changeOpen(false)}
                     />
                 )}
             </DialogContent>
@@ -85,300 +72,281 @@ export function AddEmployeeDialog({
 }
 
 function MethodStep({
-    method,
-    onMethodChange,
-    onSubmit,
+    onSelect,
 }: {
-    method: ProvisioningMethod;
-    onMethodChange: (value: ProvisioningMethod) => void;
-    onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+    onSelect: (step: 'manual' | 'upload') => void;
 }) {
     return (
         <>
             <DialogHeader className="border-b px-6 py-5">
-                <DialogTitle className="text-base leading-6 font-semibold">
-                    Add Employee
-                </DialogTitle>
-                <DialogDescription className="sr-only">
-                    Choose whether to add an employee manually or upload a CSV.
+                <DialogTitle className="text-base">Add employees</DialogTitle>
+                <DialogDescription>
+                    Choose a manual invitation or a CSV/XLSX bulk import.
                 </DialogDescription>
             </DialogHeader>
-
-            <form onSubmit={onSubmit}>
-                <fieldset className="grid gap-3 px-6 py-4">
-                    <legend className="sr-only">
-                        Choose how to add employees
-                    </legend>
-                    <ProvisioningChoice
-                        value="manual"
-                        selected={method === 'manual'}
-                        title="Add employees manually"
-                        description="Provide users name and email address and other details"
-                        onChange={onMethodChange}
-                    />
-                    <ProvisioningChoice
-                        value="csv"
-                        selected={method === 'csv'}
-                        title="Upload CSV"
-                        description="Batch upload employees to your database"
-                        onChange={onMethodChange}
-                    />
-                </fieldset>
-
-                <DialogFooter className="flex-row justify-end border-t px-6 py-4">
-                    <DialogClose
-                        render={
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="compact"
-                            />
-                        }
-                    >
-                        Cancel
-                    </DialogClose>
-                    <Button type="submit" size="compact">
-                        Next
-                    </Button>
-                </DialogFooter>
-            </form>
+            <div className="grid gap-3 px-6 py-5 sm:grid-cols-2">
+                <Button
+                    type="button"
+                    variant="outline"
+                    className="h-auto justify-start p-4"
+                    onClick={() => onSelect('manual')}
+                >
+                    <UserRoundPlusIcon className="size-5" /> Manual invitation
+                </Button>
+                <Button
+                    type="button"
+                    variant="outline"
+                    className="h-auto justify-start p-4"
+                    onClick={() => onSelect('upload')}
+                >
+                    <UploadCloudIcon className="size-5" /> CSV or XLSX
+                </Button>
+            </div>
+            <DialogFooter className="border-t px-6 py-4">
+                <DialogClose
+                    render={<Button variant="outline" size="compact" />}
+                >
+                    Cancel
+                </DialogClose>
+            </DialogFooter>
         </>
     );
 }
 
-function ManualEmployeeStep({ onComplete }: { onComplete: () => void }) {
-    function submit(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
-        onComplete();
-    }
-
+function ManualStep({
+    capacity,
+    onBack,
+    onSuccess,
+}: {
+    capacity: WorkspaceCapacity;
+    onBack: () => void;
+    onSuccess: () => void;
+}) {
     return (
         <>
             <DialogHeader className="border-b px-6 py-5">
-                <DialogTitle className="text-base leading-6 font-semibold">
-                    Add an employee
+                <DialogTitle className="text-base">
+                    Invite an employee
                 </DialogTitle>
-                <DialogDescription className="leading-5">
-                    A seat is reserved immediately. The employee activates
-                    coverage via the Patient app.
+                <DialogDescription>
+                    One of {capacity.remaining} remaining seats is reserved for
+                    24 hours.
                 </DialogDescription>
             </DialogHeader>
-
-            <form onSubmit={submit}>
-                <div className="grid gap-4 px-6 py-4">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <FormField
-                            id="employee-first-name"
-                            label="First name"
-                            placeholder="Enter first name"
-                            autoComplete="given-name"
-                        />
-                        <FormField
-                            id="employee-last-name"
-                            label="Last name"
-                            placeholder="Enter last name"
-                            autoComplete="family-name"
-                        />
-                    </div>
-                    <FormField
-                        id="employee-department"
-                        label="Department"
-                        placeholder="Enter department"
-                        autoComplete="organization-title"
-                    />
-                    <FormField
-                        id="employee-email"
-                        label="Email Address"
-                        placeholder="Enter email address"
-                        type="email"
-                        autoComplete="email"
-                    />
-                    <FormField
-                        id="employee-phone"
-                        label="Phone number"
-                        placeholder="Enter phone number"
-                        type="tel"
-                        autoComplete="tel"
-                    />
-                </div>
-
-                <DialogFooter className="flex-row justify-end border-t px-6 py-4">
-                    <DialogClose
-                        render={
+            <Form
+                {...StoreWorkspaceBeneficiaryController.form()}
+                resetOnSuccess
+                onSuccess={onSuccess}
+            >
+                {({ errors, processing }) => (
+                    <>
+                        <div className="grid gap-4 px-6 py-4">
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <Field
+                                    label="First name"
+                                    name="first_name"
+                                    error={errors.first_name}
+                                    disabled={processing}
+                                />
+                                <Field
+                                    label="Last name"
+                                    name="last_name"
+                                    error={errors.last_name}
+                                    disabled={processing}
+                                />
+                            </div>
+                            <Field
+                                label="Department"
+                                name="department"
+                                error={errors.department}
+                                disabled={processing}
+                            />
+                            <Field
+                                label="Employee ID (optional)"
+                                name="employee_id"
+                                error={errors.employee_id}
+                                disabled={processing}
+                                placeholder="Auto-generated when empty"
+                                required={false}
+                            />
+                            <Field
+                                label="Email address"
+                                name="email"
+                                type="email"
+                                error={errors.email}
+                                disabled={processing}
+                            />
+                            <Field
+                                label="Phone number"
+                                name="phone"
+                                type="tel"
+                                error={errors.phone}
+                                disabled={processing}
+                            />
+                            {(errors.capacity || errors.subscription) && (
+                                <p className="text-sm text-destructive">
+                                    {errors.capacity ?? errors.subscription}
+                                </p>
+                            )}
+                        </div>
+                        <DialogFooter className="flex-row justify-end gap-2 border-t px-6 py-4">
                             <Button
                                 type="button"
                                 variant="outline"
                                 size="compact"
-                            />
-                        }
-                    >
-                        Cancel
-                    </DialogClose>
-                    <Button type="submit" size="compact">
-                        Reserve seat &amp; invite
-                    </Button>
-                </DialogFooter>
-            </form>
+                                onClick={onBack}
+                                disabled={processing}
+                            >
+                                Back
+                            </Button>
+                            <Button
+                                type="submit"
+                                size="compact"
+                                disabled={processing}
+                            >
+                                {processing
+                                    ? 'Inviting…'
+                                    : 'Reserve seat & invite'}
+                            </Button>
+                        </DialogFooter>
+                    </>
+                )}
+            </Form>
         </>
     );
 }
 
-function FormField({
-    id,
-    label,
-    ...props
-}: {
-    id: string;
-    label: string;
-} & ComponentProps<typeof Input>) {
-    return (
-        <div className="grid gap-2">
-            <label htmlFor={id} className="text-[13px] font-medium">
-                {label}
-            </label>
-            <Input id={id} name={id} required {...props} />
-        </div>
-    );
-}
-
-function BulkUploadStep({
+function UploadStep({
     onBack,
-    onComplete,
+    onSuccess,
 }: {
     onBack: () => void;
-    onComplete: () => void;
+    onSuccess: () => void;
 }) {
-    const inputId = useId();
-    const [file, setFile] = useState<File | null>(null);
-
-    function selectFile(event: ChangeEvent<HTMLInputElement>) {
-        setFile(event.target.files?.[0] ?? null);
-    }
-
-    function submit(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
-        onComplete();
-    }
+    const id = useId();
+    const [fileName, setFileName] = useState<string | null>(null);
 
     return (
         <>
             <DialogHeader className="border-b px-6 py-5">
-                <DialogTitle className="text-base leading-6 font-semibold">
+                <DialogTitle className="text-base">
                     Bulk upload employees
                 </DialogTitle>
-                <DialogDescription className="leading-5">
-                    Upload a .csv or .xlsx file (or paste rows). Valid rows are
-                    committed immediately; invalid rows are skipped and listed
-                    below
+                <DialogDescription>
+                    Use the required first_name, last_name, email, phone, and
+                    department columns. employee_id is optional.
                 </DialogDescription>
             </DialogHeader>
-
-            <form onSubmit={submit}>
-                <div className="grid gap-2 px-6 py-5">
-                    <label
-                        htmlFor={inputId}
-                        className="text-[13px] text-muted-foreground"
-                    >
-                        Upload your document for parsing
-                    </label>
-                    <div className="flex min-h-[74px] items-center gap-3 rounded-2xl border bg-card px-4 shadow-control">
-                        <span className="flex size-10 shrink-0 items-center justify-center rounded-full border">
-                            <UploadCloudIcon className="size-5 text-muted-foreground" />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                            <span className="block truncate font-medium">
-                                {file?.name ?? '[Name of file]'}
-                            </span>
-                            <span className="block pt-0.5 text-[13px] text-muted-foreground">
-                                200mb max.
-                            </span>
-                        </span>
-                        <label
-                            htmlFor={inputId}
-                            className={cn(
-                                buttonVariants({
-                                    variant: 'outline',
-                                    size: 'compact',
-                                }),
-                                'cursor-pointer',
+            <Form
+                {...ImportWorkspaceEmployeesController.form()}
+                onSuccess={onSuccess}
+            >
+                {({ errors, processing, progress }) => (
+                    <>
+                        <div className="grid gap-3 px-6 py-5">
+                            <label
+                                htmlFor={id}
+                                className="flex min-h-24 cursor-pointer items-center gap-3 rounded-2xl border bg-card px-4 shadow-control"
+                            >
+                                <span className="flex size-10 items-center justify-center rounded-full border">
+                                    <UploadCloudIcon className="size-5" />
+                                </span>
+                                <span className="min-w-0 flex-1">
+                                    <span className="block truncate font-medium">
+                                        {fileName ??
+                                            'Choose a CSV or XLSX file'}
+                                    </span>
+                                    <span className="block text-xs text-muted-foreground">
+                                        10 MB maximum · first worksheet only
+                                    </span>
+                                </span>
+                                <span className="text-sm font-medium text-primary">
+                                    Browse
+                                </span>
+                            </label>
+                            <input
+                                id={id}
+                                name="file"
+                                type="file"
+                                accept=".csv,.xlsx"
+                                required
+                                className="sr-only"
+                                onChange={(event) =>
+                                    setFileName(
+                                        event.target.files?.[0]?.name ?? null,
+                                    )
+                                }
+                            />
+                            {progress && (
+                                <div>
+                                    <Progress
+                                        value={progress.percentage ?? 0}
+                                    />
+                                    <p className="pt-1 text-xs text-muted-foreground">
+                                        Uploading {progress.percentage ?? 0}%
+                                    </p>
+                                </div>
                             )}
-                        >
-                            Upload
-                        </label>
-                        <input
-                            id={inputId}
-                            type="file"
-                            accept=".csv,.xlsx"
-                            className="sr-only"
-                            onChange={selectFile}
-                        />
-                    </div>
-                </div>
-
-                <DialogFooter className="flex-row justify-between border-t px-6 py-4">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="compact"
-                        onClick={onBack}
-                        className="mr-auto"
-                    >
-                        Back
-                    </Button>
-                    <DialogClose
-                        render={
+                            {errors.file && (
+                                <p
+                                    className="text-sm text-destructive"
+                                    role="alert"
+                                >
+                                    {errors.file}
+                                </p>
+                            )}
+                        </div>
+                        <DialogFooter className="flex-row justify-end gap-2 border-t px-6 py-4">
                             <Button
                                 type="button"
                                 variant="outline"
                                 size="compact"
-                            />
-                        }
-                    >
-                        Cancel
-                    </DialogClose>
-                    <Button type="submit" size="compact" disabled={!file}>
-                        Confirm
-                    </Button>
-                </DialogFooter>
-            </form>
+                                onClick={onBack}
+                                disabled={processing}
+                            >
+                                Back
+                            </Button>
+                            <Button
+                                type="submit"
+                                size="compact"
+                                disabled={processing || !fileName}
+                            >
+                                {processing ? 'Importing…' : 'Import employees'}
+                            </Button>
+                        </DialogFooter>
+                    </>
+                )}
+            </Form>
         </>
     );
 }
 
-function ProvisioningChoice({
-    value,
-    selected,
-    title,
-    description,
-    onChange,
+function Field({
+    label,
+    name,
+    error,
+    required = true,
+    ...props
 }: {
-    value: ProvisioningMethod;
-    selected: boolean;
-    title: string;
-    description: string;
-    onChange: (value: ProvisioningMethod) => void;
-}) {
+    label: string;
+    name: string;
+    error?: string;
+    required?: boolean;
+} & ComponentProps<typeof Input>) {
     return (
-        <label
-            className={cn(
-                'flex min-h-[64px] cursor-pointer items-start gap-3 rounded-2xl border bg-card px-3 py-3 shadow-control transition-colors',
-                selected && 'border-information ring-1 ring-information/10',
-            )}
-        >
-            <input
-                type="radio"
-                name="provisioningMethod"
-                value={value}
-                checked={selected}
-                onChange={() => onChange(value)}
-                className="mt-0.5 size-4 accent-primary"
+        <label className="grid gap-1.5 text-[13px] font-medium">
+            {label}
+            <Input
+                name={name}
+                required={required}
+                aria-invalid={Boolean(error)}
+                {...props}
             />
-            <span>
-                <span className="block text-sm font-medium">{title}</span>
-                <span className="block pt-0.5 text-[13px] leading-[18px] text-muted-foreground">
-                    {description}
+            {error && (
+                <span className="text-sm font-normal text-destructive">
+                    {error}
                 </span>
-            </span>
+            )}
         </label>
     );
 }

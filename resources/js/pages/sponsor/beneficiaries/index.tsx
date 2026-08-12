@@ -1,96 +1,18 @@
-import { Head } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, usePage } from '@inertiajs/react';
 
 import { PageHeader } from '@/components/page-header';
 import { PortalShell } from '@/components/portal-shell';
 import { Card, CardContent } from '@/components/ui/card';
+import type { WorkspaceBeneficiaryPageProps } from '@/types';
 import { AddBeneficiaryDialog } from './partials/add-beneficiary-dialog';
-import type { BeneficiaryFormData } from './partials/add-beneficiary-dialog';
 import { BeneficiariesTable } from './partials/beneficiaries-table';
-import type { Beneficiary } from './partials/beneficiaries-table';
 
-const initialBeneficiaries: Beneficiary[] = [
-    {
-        id: 1,
-        name: 'David Smith',
-        email: 'chidi@example.com',
-        phone: '+234 803 444 5566',
-        status: 'Active',
-        joined: '10/25/2025',
-        allocations: '2 GP, 3 Specialist',
-        avatar: '/images/sponsor/beneficiary-david.png',
-    },
-    {
-        id: 2,
-        name: 'Alexander Ogunyemi',
-        email: 'alex@example.com',
-        phone: '+234 803 444 5566',
-        status: 'Active',
-        joined: '10/25/2025',
-        allocations: '1 GP, 0 Specialist',
-        avatar: '/images/sponsor/beneficiary-alexander.png',
-    },
-    {
-        id: 3,
-        name: 'Dominic Barrow',
-        email: 'dominic@example.com',
-        phone: '+234 803 444 5566',
-        status: 'Active',
-        joined: '10/25/2025',
-        allocations: '0 GP, 0 Specialist',
-        avatar: '/images/sponsor/beneficiary-dominic.png',
-    },
-    {
-        id: 4,
-        name: 'David Smith',
-        email: 'david@example.com',
-        phone: '+234 803 444 5566',
-        status: 'Pending',
-        joined: '10/25/2025',
-        allocations: '--',
-        avatar: '/images/sponsor/beneficiary-david.png',
-    },
-    {
-        id: 5,
-        name: 'David Smith',
-        email: 'smith@example.com',
-        phone: '+234 803 444 5566',
-        status: 'Inactive',
-        joined: '10/25/2025',
-        allocations: '--',
-        avatar: '/images/sponsor/beneficiary-david.png',
-    },
-];
-
-export default function BeneficiariesIndex() {
-    const [beneficiaries, setBeneficiaries] = useState(initialBeneficiaries);
-    const [announcement, setAnnouncement] = useState('');
-
-    function addBeneficiary(data: BeneficiaryFormData) {
-        setBeneficiaries((current) => [
-            ...current,
-            {
-                id: Math.max(...current.map(({ id }) => id)) + 1,
-                name: `${data.firstName} ${data.lastName}`,
-                email: data.email,
-                phone: data.phone,
-                status: 'Pending',
-                joined: new Intl.DateTimeFormat('en-US').format(new Date()),
-                allocations: '--',
-                avatar: '/images/sponsor/beneficiary-david.png',
-            },
-        ]);
-        setAnnouncement(
-            `Invitation prepared for ${data.firstName} ${data.lastName}`,
-        );
-    }
-
-    const activeCount = beneficiaries.filter(
-        ({ status }) => status === 'Active',
-    ).length;
-    const pendingCount = beneficiaries.filter(
-        ({ status }) => status === 'Pending',
-    ).length;
+export default function BeneficiariesIndex({
+    invitations,
+    capacity,
+    counts,
+}: WorkspaceBeneficiaryPageProps) {
+    const { flash } = usePage().props;
 
     return (
         <>
@@ -100,8 +22,14 @@ export default function BeneficiariesIndex() {
                     <PageHeader
                         title="Beneficiaries"
                         description="Invite and manage the people covered by your sponsorship."
-                        action={<AddBeneficiaryDialog onAdd={addBeneficiary} />}
+                        action={<AddBeneficiaryDialog capacity={capacity} />}
                     />
+
+                    {flash.success && (
+                        <p className="mt-5 rounded-xl border border-success/20 bg-success-muted px-4 py-3 text-sm text-success">
+                            {flash.success}
+                        </p>
+                    )}
 
                     <section
                         className="grid gap-5 pt-6 sm:grid-cols-3"
@@ -109,30 +37,27 @@ export default function BeneficiariesIndex() {
                     >
                         <SummaryCard
                             label="Active"
-                            value={String(activeCount)}
+                            value={String(counts.active)}
                         />
                         <SummaryCard
                             label="Pending invites"
-                            value={String(pendingCount)}
+                            value={String(counts.pending)}
                         />
                         <SummaryCard
                             label="Capacity"
-                            value={`${activeCount + pendingCount}/12`}
+                            value={`${capacity.used}/${capacity.total}`}
                         />
                     </section>
 
-                    <section
-                        className="pt-[18px]"
-                        aria-label="Beneficiary list"
-                    >
-                        <BeneficiariesTable
-                            beneficiaries={beneficiaries}
-                            onAction={setAnnouncement}
-                        />
+                    {capacity.unavailableReason && (
+                        <p className="pt-4 text-sm text-muted-foreground">
+                            {capacity.unavailableReason}
+                        </p>
+                    )}
+
+                    <section className="pt-5" aria-label="Beneficiary list">
+                        <BeneficiariesTable invitations={invitations} />
                     </section>
-                    <p className="sr-only" role="status" aria-live="polite">
-                        {announcement}
-                    </p>
                 </div>
             </PortalShell>
         </>

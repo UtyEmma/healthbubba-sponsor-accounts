@@ -2,11 +2,15 @@
 
 namespace App\Actions\Payments;
 
+use App\DTOs\Activity\WorkspaceActivityActor;
+use App\DTOs\Activity\WorkspaceActivityData;
 use App\DTOs\CapacityPurchases\CapacityPurchaseQuote;
 use App\DTOs\CapacityPurchases\CapacityPurchaseResult;
 use App\DTOs\CapacityPurchases\StartCapacityPurchaseData;
 use App\DTOs\Payments\CheckoutSession;
 use App\DTOs\Payments\InitializePaymentData;
+use App\Enums\AccountTypes;
+use App\Enums\Activity\WorkspaceActivityType;
 use App\Enums\CapacityPurchases\CapacityPaymentSource;
 use App\Enums\CapacityPurchases\CapacityPurchaseStatus;
 use App\Enums\Payments\PaymentPurpose;
@@ -22,6 +26,7 @@ use App\Models\Subscription;
 use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Payments\PaymentService;
+use App\Services\Activity\WorkspaceActivityLogger;
 use App\Services\Payments\CapacityPricingService;
 use App\Support\Payments\PaymentReferenceGenerator;
 use App\ValueObjects\Money;
@@ -36,6 +41,7 @@ final readonly class StartCapacityPurchaseAction
         private PaymentService $payments,
         private PaymentReferenceGenerator $references,
         private FailPaymentAction $failPayment,
+        private WorkspaceActivityLogger $activities,
     ) {}
 
     public function execute(StartCapacityPurchaseData $data): CapacityPurchaseResult
@@ -87,6 +93,23 @@ final readonly class StartCapacityPurchaseAction
                     'payment_source' => CapacityPaymentSource::WALLET->value,
                 ],
             ]);
+
+            $unit = $data->workspace->type === AccountTypes::BUSINESS ? 'employee seat' : 'beneficiary slot';
+            $subjectName = $purchase->quantity === 1 ? $unit : "{$unit}s";
+            $this->activities->record($data->workspace, new WorkspaceActivityData(
+                type: WorkspaceActivityType::CapacityPurchased,
+                title: "Purchased {$purchase->quantity} additional {$subjectName}",
+                actor: WorkspaceActivityActor::user($data->user),
+                subjectType: 'capacity_purchase',
+                subjectId: $purchase->getKey(),
+                subjectName: $subjectName,
+                description: sprintf('%s %s', $purchase->currency, number_format($purchase->amount_minor / 100, 2)),
+                context: [
+                    'quantity' => $purchase->quantity,
+                    'amount_minor' => $purchase->amount_minor,
+                    'currency' => $purchase->currency,
+                ],
+            ));
 
             return new CapacityPurchaseResult($purchase, null);
         }, 3);

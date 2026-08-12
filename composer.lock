@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d79913e3e4ea77ef03b28016a9d8f061",
+    "content-hash": "09d66695206757831a17ee12c1027e41",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -5654,6 +5654,73 @@
                 "source": "https://github.com/ramsey/uuid/tree/4.9.3"
             },
             "time": "2026-06-18T03:57:49+00:00"
+        },
+        {
+            "name": "revoltify/subscriptionify",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/revoltify/subscriptionify.git",
+                "reference": "7571781a34515e0992e508745b75c11fe2dd76fc"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/revoltify/subscriptionify/zipball/7571781a34515e0992e508745b75c11fe2dd76fc",
+                "reference": "7571781a34515e0992e508745b75c11fe2dd76fc",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/support": "^11.0||^12.0||^13",
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "driftingly/rector-laravel": "^2.2",
+                "larastan/larastan": "^3.9.3",
+                "laravel/pint": "^1.29",
+                "orchestra/testbench": "^10.11",
+                "pestphp/pest": "^3.8.6",
+                "pestphp/pest-plugin-laravel": "^3.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Revoltify\\Subscriptionify\\SubscriptionifyServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Revoltify\\Subscriptionify\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Revoltify",
+                    "email": "support@revoltify.net"
+                }
+            ],
+            "description": "Feature-based subscription management for Laravel",
+            "homepage": "https://github.com/revoltify/subscriptionify",
+            "keywords": [
+                "billing",
+                "features",
+                "laravel",
+                "metered",
+                "plans",
+                "saas",
+                "subscription",
+                "usage"
+            ],
+            "support": {
+                "issues": "https://github.com/revoltify/subscriptionify/issues",
+                "source": "https://github.com/revoltify/subscriptionify"
+            },
+            "time": "2026-04-05T08:05:12+00:00"
         },
         {
             "name": "ryangjchandler/blade-capture-directive",

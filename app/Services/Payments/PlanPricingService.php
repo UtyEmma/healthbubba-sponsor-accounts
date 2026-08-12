@@ -58,9 +58,16 @@ final readonly class PlanPricingService
 
     public function renewal(Subscription $subscription): PlanCharge
     {
-        $plan = $subscription->plan;
+        return $this->renewalForPlan($subscription, $subscription->plan);
+    }
 
+    public function renewalForPlan(Subscription $subscription, Plan $plan): PlanCharge
+    {
         $this->ensurePlanIsBillable($plan);
+
+        if ($plan->account_type !== $subscription->plan->account_type) {
+            throw new CheckoutUnavailable('The selected plan is not available for this subscription.');
+        }
 
         $configuration = $this->capacityPricing->configuration($plan);
 
@@ -72,7 +79,18 @@ final readonly class PlanPricingService
             );
         }
 
-        $capacityCount = $this->capacityPricing->currentCapacity($subscription);
+        $capacityCount = max(
+            $subscription->capacity_count,
+            max(1, $configuration->includedCapacity),
+        );
+
+        if ($configuration->maximumCapacity !== null
+            && $capacityCount > $configuration->maximumCapacity) {
+            throw new CheckoutUnavailable(
+                "The subscription capacity exceeds the {$plan->name} plan maximum.",
+            );
+        }
+
         $additionalCapacity = $configuration->additionalCapacity($capacityCount);
         $money = Money::fromMajor($plan->price, $this->currency());
 

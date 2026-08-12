@@ -11,6 +11,7 @@ use App\Exceptions\Payments\PaymentException;
 use App\Exceptions\Payments\PaymentVerificationFailed;
 use App\Models\Payment;
 use App\Models\PaymentMethod;
+use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\Workspace;
 use App\Payments\PaymentService;
@@ -34,7 +35,7 @@ final readonly class ChargeSubscriptionRenewalAction
     public function execute(int $subscriptionId): void
     {
         $subscription = Subscription::query()
-            ->with(['plan', 'paymentMethod'])
+            ->with(['plan.features', 'scheduledPlan.features', 'paymentMethod'])
             ->findOrFail($subscriptionId);
 
         if (! $this->isDue($subscription)) {
@@ -136,12 +137,16 @@ final readonly class ChargeSubscriptionRenewalAction
     {
         return DB::transaction(function () use ($subscription): ?Payment {
             $lockedSubscription = Subscription::query()
-                ->with(['plan', 'paymentMethod'])
+                ->with(['plan.features', 'scheduledPlan.features', 'paymentMethod'])
                 ->whereKey($subscription->getKey())
                 ->lockForUpdate()
                 ->firstOrFail();
 
             if (! $this->isDue($lockedSubscription)) {
+                return null;
+            }
+
+            if ($this->pendingUpgradePayment($lockedSubscription) instanceof Payment) {
                 return null;
             }
 
@@ -151,7 +156,8 @@ final readonly class ChargeSubscriptionRenewalAction
                 return $existingPayment;
             }
 
-            $quote = $this->pricing->renewal($lockedSubscription);
+            $renewalPlan = $this->renewalPlan($lockedSubscription);
+            $quote = $this->pricing->renewalForPlan($lockedSubscription, $renewalPlan);
             $paymentMethod = $lockedSubscription->paymentMethod;
             $email = $paymentMethod?->email;
 
@@ -180,7 +186,10 @@ final readonly class ChargeSubscriptionRenewalAction
                     'workspace_id' => $lockedSubscription->subscribable_id,
                     'purpose' => PaymentPurpose::SUBSCRIPTION->value,
                     'subscription_id' => $lockedSubscription->getKey(),
-                    'plan_id' => $lockedSubscription->plan_id,
+                    'plan_id' => $renewalPlan->getKey(),
+                    'previous_plan_id' => $lockedSubscription->plan_id,
+                    'scheduled_plan_change' => (int) $renewalPlan->getKey()
+                        !== (int) $lockedSubscription->plan_id,
                     'capacity_count' => $quote->capacityCount,
                     'additional_capacity' => $quote->additionalCapacity,
                     'renewal_attempt' => $lockedSubscription->renewal_attempts + 1,
@@ -229,6 +238,16 @@ final readonly class ChargeSubscriptionRenewalAction
         }
     }
 
+    private function renewalPlan(Subscription $subscription): Plan
+    {
+        if ($subscription->scheduledPlan instanceof Plan
+            && $subscription->scheduled_plan_change_at?->isPast() === true) {
+            return $subscription->scheduledPlan;
+        }
+
+        return $subscription->plan;
+    }
+
     private function quarantineUnknownOutcomeIfStale(Payment $payment): void
     {
         if ($payment->created_at?->lt(now()->subDay()) !== true) {
@@ -251,6 +270,21 @@ final readonly class ChargeSubscriptionRenewalAction
             ->where('payable_type', $subscription->getMorphClass())
             ->where('payable_id', $subscription->getKey())
             ->where('purpose', PaymentPurpose::SUBSCRIPTION)
+            ->whereIn('status', [
+                PaymentStatus::PENDING,
+                PaymentStatus::PROCESSING,
+                PaymentStatus::REQUIRES_REVIEW,
+            ])
+            ->latest('id')
+            ->first();
+    }
+
+    private function pendingUpgradePayment(Subscription $subscription): ?Payment
+    {
+        return Payment::query()
+            ->where('payable_type', $subscription->getMorphClass())
+            ->where('payable_id', $subscription->getKey())
+            ->where('purpose', PaymentPurpose::PLAN_UPGRADE)
             ->whereIn('status', [
                 PaymentStatus::PENDING,
                 PaymentStatus::PROCESSING,

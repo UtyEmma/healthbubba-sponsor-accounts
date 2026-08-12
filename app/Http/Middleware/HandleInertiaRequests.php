@@ -3,13 +3,22 @@
 namespace App\Http\Middleware;
 
 use App\Http\Resources\UserResource;
+use App\Http\Resources\WorkspaceActivityResource;
 use App\Http\Resources\WorkspaceResource;
+use App\Models\User;
 use App\Models\Workspace;
+use App\Services\Activity\WorkspaceActivityAuthorizationService;
+use App\Services\Activity\WorkspaceActivityQuery;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
+    public function __construct(
+        private readonly WorkspaceActivityAuthorizationService $activityAuthorization,
+        private readonly WorkspaceActivityQuery $activities,
+    ) {}
+
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -39,14 +48,28 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $workspace = Workspace::current();
+        $user = $request->user();
+        $activityNotifications = null;
+
+        if ($workspace instanceof Workspace
+            && $user instanceof User
+            && $this->activityAuthorization->canView($user, $workspace)) {
+            $activityNotifications = [
+                'recent' => WorkspaceActivityResource::collection(
+                    $this->activities->recent($workspace, $user),
+                )->resolve($request),
+                'unreadCount' => $this->activities->unreadCount($workspace, $user),
+            ];
+        }
 
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'workspace' => $workspace === null ? null : new WorkspaceResource($workspace),
             'auth' => [
-                'user' => $request->user() ? new UserResource($request->user()) : null,
+                'user' => $user instanceof User ? new UserResource($user) : null,
             ],
+            'activityNotifications' => $activityNotifications,
             'flash' => [
                 'success' => fn (): ?string => $request->session()->get('success'),
             ],

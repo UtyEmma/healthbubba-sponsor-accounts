@@ -12,3 +12,13 @@ Schedule::command('subscriptions:dispatch-renewals')
     ->everyFifteenMinutes()
     ->withoutOverlapping(14)
     ->onOneServer();
+
+Schedule::command('workspace-beneficiaries:expire-invitations')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->onOneServer();
+
+Schedule::command('medical-access:expire')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->onOneServer();

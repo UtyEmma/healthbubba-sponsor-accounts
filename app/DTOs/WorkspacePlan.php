@@ -34,6 +34,15 @@ final readonly class WorkspacePlan implements Arrayable
      *     purchases_enabled: bool,
      *     unavailable_reason: string|null
      * }|null  $capacity
+     * @param  array{
+     *     available: bool,
+     *     direction: string|null,
+     *     amount_due_now: string,
+     *     renewal_amount: string,
+     *     effective_at: string,
+     *     scheduled: bool,
+     *     unavailable_reason: string|null
+     * }|null  $planChange
      */
     public function __construct(
         public int $id,
@@ -49,6 +58,7 @@ final readonly class WorkspacePlan implements Arrayable
         public ?string $additionalSeatPrice,
         public bool $allowsCapacityPurchases,
         public ?array $capacity,
+        public ?array $planChange,
         public ?string $unavailableReason,
         public array $features,
         public array $quotas,
@@ -75,6 +85,15 @@ final readonly class WorkspacePlan implements Arrayable
      *         maximum: int|null,
      *         additional_unit_price: string|null,
      *         purchases_enabled: bool,
+     *         unavailable_reason: string|null
+     *     }|null,
+     *     plan_change: array{
+     *         available: bool,
+     *         direction: string|null,
+     *         amount_due_now: string,
+     *         renewal_amount: string,
+     *         effective_at: string,
+     *         scheduled: bool,
      *         unavailable_reason: string|null
      *     }|null,
      *     unavailable_reason: string|null,
@@ -113,6 +132,7 @@ final readonly class WorkspacePlan implements Arrayable
             'additional_seat_price' => $this->additionalSeatPrice,
             'allows_capacity_purchases' => $this->allowsCapacityPurchases,
             'capacity' => $this->capacity,
+            'plan_change' => $this->planChange,
             'unavailable_reason' => $this->unavailableReason,
         ];
     }

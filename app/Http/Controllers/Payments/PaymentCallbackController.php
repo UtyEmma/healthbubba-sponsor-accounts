@@ -47,6 +47,7 @@ final class PaymentCallbackController extends Controller
                 PaymentPurpose::WALLET_TOP_UP => 'Your wallet has been funded.',
                 PaymentPurpose::SUBSCRIPTION => 'Your subscription is now active.',
                 PaymentPurpose::CAPACITY_PURCHASE => 'Your additional capacity is now available.',
+                PaymentPurpose::PLAN_UPGRADE => 'Your plan upgrade is now active.',
             },
         );
     }

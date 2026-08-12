@@ -30,18 +30,17 @@ final class BillingController extends Controller
         abort_if($workspace === null, 404);
 
         $subscription = Subscription::query()
-            ->with('plan.features')
+            ->with(['plan.features', 'scheduledPlan.features'])
             ->where('subscribable_type', $workspace->getMorphClass())
             ->where('subscribable_id', $workspace->getKey())
             ->latest('id')
             ->first();
 
-
         return Inertia::render('billing/index', [
             'accountType' => $workspace->type->value,
             'accountTypeLabel' => $workspace->type->label(),
             'plans' => PlanResource::collection(
-                $this->workspacePlans->mapAvailable($workspace),
+                $this->workspacePlans->mapAvailable($workspace, $subscription),
             ),
             'subscription' => $subscription === null
                 ? null
@@ -55,9 +54,15 @@ final class BillingController extends Controller
         ]);
     }
 
-    private function renewalAmount(Subscription $subscription): string {
+    private function renewalAmount(Subscription $subscription): string
+    {
         try {
-            return $this->planPricing->renewal($subscription)->money->toMajorAmount();
+            $renewalPlan = $subscription->scheduledPlan ?? $subscription->plan;
+
+            return $this->planPricing
+                ->renewalForPlan($subscription, $renewalPlan)
+                ->money
+                ->toMajorAmount();
         } catch (CheckoutUnavailable) {
             return $subscription->plan->price;
         }

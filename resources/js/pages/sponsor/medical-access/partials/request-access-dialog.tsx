@@ -1,7 +1,8 @@
+import { Form } from '@inertiajs/react';
 import { PlusIcon } from 'lucide-react';
 import { useState } from 'react';
-import type { FormEvent } from 'react';
 
+import StoreMedicalAccessRequestController from '@/actions/App/Http/Controllers/MedicalAccessRequests/StoreMedicalAccessRequestController';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -21,54 +22,46 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-
-export type MedicalAccessFormData = {
-    beneficiary: string;
-    dataType: string;
-    reason: string;
-};
-
-const beneficiaries = ['Ngozi Okafor', 'Chidi Okafor', 'Jane Okafor'];
-const dataTypes = [
-    'Clinical diagnosis & case notes',
-    'Prescription records',
-    'Laboratory results',
-];
+import type {
+    MedicalAccessBeneficiary,
+    MedicalAccessDataTypeOption,
+} from '@/types';
 
 export function RequestAccessDialog({
-    onSubmit,
+    beneficiaries,
+    dataTypes,
 }: {
-    onSubmit: (data: MedicalAccessFormData) => void;
+    beneficiaries: MedicalAccessBeneficiary[];
+    dataTypes: MedicalAccessDataTypeOption[];
 }) {
     const [open, setOpen] = useState(false);
     const [beneficiary, setBeneficiary] = useState<string | null>(null);
     const [dataType, setDataType] = useState<string | null>(null);
 
-    function submit(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
-
-        if (!beneficiary || !dataType) {
-            return;
-        }
-
-        const form = new FormData(event.currentTarget);
-        onSubmit({
-            beneficiary,
-            dataType,
-            reason: String(form.get('reason')),
-        });
+    function close(): void {
+        setOpen(false);
         setBeneficiary(null);
         setDataType(null);
-        setOpen(false);
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog
+            open={open}
+            onOpenChange={(nextOpen) => {
+                setOpen(nextOpen);
+
+                if (!nextOpen) {
+                    setBeneficiary(null);
+                    setDataType(null);
+                }
+            }}
+        >
             <DialogTrigger
                 render={
                     <Button
                         size="compact"
                         className="self-start sm:self-auto"
+                        disabled={beneficiaries.length === 0}
                     />
                 }
             >
@@ -82,55 +75,102 @@ export function RequestAccessDialog({
                         Request medical access
                     </DialogTitle>
                     <DialogDescription className="max-w-[390px] leading-5">
-                        A consent request is sent to the beneficiary&apos;s
-                        Patient app. They decide whether to approve.
+                        The beneficiary will receive an email with a secure link
+                        to allow or deny this request within 24 hours.
                     </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={submit}>
-                    <div className="grid gap-4 px-6 py-4">
-                        <SelectField
-                            label="Beneficiary"
-                            placeholder="Select beneficiary"
-                            value={beneficiary}
-                            onValueChange={setBeneficiary}
-                            options={beneficiaries}
-                        />
-                        <SelectField
-                            label="Data Type"
-                            placeholder="Select data type"
-                            value={dataType}
-                            onValueChange={setDataType}
-                            options={dataTypes}
-                        />
-                        <label className="grid gap-1.5 text-[13px] leading-[18px] font-medium">
-                            Reason (shared with beneficiary)
-                            <Textarea
-                                name="reason"
-                                required
-                                placeholder="e.g. coordinating pharmacy refill"
-                                className="min-h-[116px]"
-                            />
-                        </label>
-                    </div>
-
-                    <DialogFooter className="flex-row justify-end border-t px-6 py-4">
-                        <DialogClose
-                            render={
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="compact"
+                <Form
+                    {...StoreMedicalAccessRequestController.form()}
+                    resetOnSuccess
+                    onSuccess={close}
+                >
+                    {({ errors, processing }) => (
+                        <>
+                            <div className="grid gap-4 px-6 py-4">
+                                <input
+                                    type="hidden"
+                                    name="beneficiary_public_id"
+                                    value={beneficiary ?? ''}
                                 />
-                            }
-                        >
-                            Cancel
-                        </DialogClose>
-                        <Button type="submit" size="compact">
-                            Send Request
-                        </Button>
-                    </DialogFooter>
-                </form>
+                                <input
+                                    type="hidden"
+                                    name="data_type"
+                                    value={dataType ?? ''}
+                                />
+                                <SelectField
+                                    label="Beneficiary"
+                                    placeholder="Select beneficiary"
+                                    value={beneficiary}
+                                    onValueChange={setBeneficiary}
+                                    options={beneficiaries.map((item) => ({
+                                        value: item.publicId,
+                                        label: `${item.name} (${item.email})`,
+                                    }))}
+                                    error={errors.beneficiary_public_id}
+                                    disabled={processing}
+                                />
+                                <SelectField
+                                    label="Data type"
+                                    placeholder="Select data type"
+                                    value={dataType}
+                                    onValueChange={setDataType}
+                                    options={dataTypes}
+                                    error={errors.data_type}
+                                    disabled={processing}
+                                />
+                                <label className="grid gap-1.5 text-[13px] leading-[18px] font-medium">
+                                    Reason (optional, shared with beneficiary)
+                                    <Textarea
+                                        name="reason"
+                                        maxLength={1000}
+                                        placeholder="e.g. Coordinating a pharmacy refill"
+                                        className="min-h-[116px]"
+                                        aria-invalid={Boolean(errors.reason)}
+                                        aria-describedby={
+                                            errors.reason
+                                                ? 'medical-access-reason-error'
+                                                : undefined
+                                        }
+                                        disabled={processing}
+                                    />
+                                    {errors.reason && (
+                                        <span
+                                            id="medical-access-reason-error"
+                                            className="text-sm font-normal text-destructive"
+                                        >
+                                            {errors.reason}
+                                        </span>
+                                    )}
+                                </label>
+                            </div>
+
+                            <DialogFooter className="flex-row justify-end border-t px-6 py-4">
+                                <DialogClose
+                                    render={
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="compact"
+                                            disabled={processing}
+                                        />
+                                    }
+                                >
+                                    Cancel
+                                </DialogClose>
+                                <Button
+                                    type="submit"
+                                    size="compact"
+                                    disabled={
+                                        processing || !beneficiary || !dataType
+                                    }
+                                >
+                                    {processing ? 'Sending…' : 'Send Request'}
+                                </Button>
+                            </DialogFooter>
+                        </>
+                    )}
+                </Form>
             </DialogContent>
         </Dialog>
     );
@@ -142,28 +182,50 @@ function SelectField({
     value,
     onValueChange,
     options,
+    error,
+    disabled,
 }: {
     label: string;
     placeholder: string;
     value: string | null;
     onValueChange: (value: string | null) => void;
-    options: string[];
+    options: Array<{ value: string; label: string }>;
+    error?: string;
+    disabled: boolean;
 }) {
+    const errorId = `${label.toLowerCase().replaceAll(' ', '-')}-error`;
+
     return (
         <label className="grid gap-1.5 text-[13px] leading-[18px] font-medium">
             {label}
-            <Select value={value} onValueChange={onValueChange} required>
-                <SelectTrigger className="h-10 w-full">
+            <Select
+                value={value}
+                onValueChange={onValueChange}
+                disabled={disabled}
+            >
+                <SelectTrigger
+                    className="h-10 w-full"
+                    aria-invalid={Boolean(error)}
+                    aria-describedby={error ? errorId : undefined}
+                >
                     <SelectValue placeholder={placeholder} />
                 </SelectTrigger>
                 <SelectContent>
                     {options.map((option) => (
-                        <SelectItem key={option} value={option}>
-                            {option}
+                        <SelectItem key={option.value} value={option.value}>
+                            {option.label}
                         </SelectItem>
                     ))}
                 </SelectContent>
             </Select>
+            {error && (
+                <span
+                    id={errorId}
+                    className="text-sm font-normal text-destructive"
+                >
+                    {error}
+                </span>
+            )}
         </label>
     );
 }

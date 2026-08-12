@@ -80,6 +80,7 @@ final readonly class CapacityPricingService
             throw new CheckoutUnavailable('The subscription billing term is invalid.');
         }
 
+        // dd($configuration, $configuration->unitPrice);
         $proratedUnitPrice = $this->prorate(
             money: $configuration->unitPrice,
             termStartsAt: $termStartsAt,

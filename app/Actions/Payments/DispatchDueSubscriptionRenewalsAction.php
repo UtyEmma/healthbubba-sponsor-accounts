@@ -2,13 +2,20 @@
 
 namespace App\Actions\Payments;
 
+use App\DTOs\Activity\WorkspaceActivityActor;
+use App\DTOs\Activity\WorkspaceActivityData;
+use App\Enums\Activity\WorkspaceActivityType;
 use App\Jobs\Payments\ChargeSubscriptionRenewal;
 use App\Models\Subscription;
 use App\Models\Workspace;
+use App\Services\Activity\WorkspaceActivityLogger;
+use Illuminate\Support\Facades\DB;
 use Revoltify\Subscriptionify\Enums\SubscriptionStatus;
 
-final class DispatchDueSubscriptionRenewalsAction
+final readonly class DispatchDueSubscriptionRenewalsAction
 {
+    public function __construct(private WorkspaceActivityLogger $activities) {}
+
     public function execute(): void
     {
         $workspaceType = (new Workspace)->getMorphClass();
@@ -19,7 +26,39 @@ final class DispatchDueSubscriptionRenewalsAction
             ->where('auto_renew', false)
             ->whereNotNull('ends_at')
             ->where('ends_at', '<=', now())
-            ->update(['status' => SubscriptionStatus::Expired]);
+            ->select('id')
+            ->chunkById(100, function ($subscriptions): void {
+                foreach ($subscriptions as $subscription) {
+                    DB::transaction(function () use ($subscription): void {
+                        $locked = Subscription::query()
+                            ->whereKey($subscription->getKey())
+                            ->lockForUpdate()
+                            ->firstOrFail();
+
+                        if ($locked->status !== SubscriptionStatus::Active
+                            || $locked->auto_renew
+                            || $locked->ends_at?->isFuture() !== false) {
+                            return;
+                        }
+
+                        $locked->update(['status' => SubscriptionStatus::Expired]);
+                        $workspace = Workspace::query()->find($locked->subscribable_id);
+
+                        if ($workspace instanceof Workspace) {
+                            $planName = $locked->plan()->value('name') ?? 'subscription';
+                            $this->activities->record($workspace, new WorkspaceActivityData(
+                                type: WorkspaceActivityType::SubscriptionExpired,
+                                title: 'Subscription expired',
+                                actor: WorkspaceActivityActor::system(),
+                                subjectType: 'subscription',
+                                subjectId: $locked->getKey(),
+                                subjectName: $planName,
+                                context: ['plan_name' => $planName],
+                            ));
+                        }
+                    }, 3);
+                }
+            });
 
         Subscription::query()
             ->where('subscribable_type', $workspaceType)

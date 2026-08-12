@@ -4,10 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Beneficiary extends Model {
-    
+final class Beneficiary extends Model
+{
     protected $table = 'users';
-    protected $connection = 'mainsql';
 
-    
+    protected $connection = 'main_sql';
+
+    protected $guarded = ['*'];
+
+    public $timestamps = false;
 }

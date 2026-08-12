@@ -26,9 +26,20 @@ export type Plan = {
     additional_seat_price: string | null;
     allows_capacity_purchases: boolean;
     capacity: PlanCapacity | null;
+    plan_change: PlanChange | null;
     unavailable_reason: string | null;
     features: PlanFeature[];
     quotas: PlanQuota[];
+};
+
+export type PlanChange = {
+    available: boolean;
+    direction: 'upgrade' | 'downgrade' | null;
+    amount_due_now: string;
+    renewal_amount: string;
+    effective_at: string;
+    scheduled: boolean;
+    unavailable_reason: string | null;
 };
 
 export type PlanCapacity = {
@@ -69,6 +80,12 @@ export type SubscriptionSummary = {
     capacityCount: number;
     renewalAttempts: number;
     renewalAmount: string;
+    scheduledPlan: {
+        id: number;
+        name: string;
+        billingLabel: string;
+    } | null;
+    scheduledPlanChangeAt: string | null;
 };
 
 export type CapacityPurchaseSummary = {

@@ -78,6 +78,12 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(Payment::class);
     }
 
+    /** @return HasMany<MedicalAccessRequest, $this> */
+    public function requestedMedicalAccess(): HasMany
+    {
+        return $this->hasMany(MedicalAccessRequest::class, 'requested_by_user_id');
+    }
+
     public function getWorkspaceAttribute(): ?Workspace
     {
         return $this->workspaces()

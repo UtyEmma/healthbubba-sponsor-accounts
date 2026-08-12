@@ -25,14 +25,21 @@ export function PlanCard({
     plan: Plan;
     onSelect?: (plan: Plan) => void;
 }) {
-    const selectionDisabled = plan.is_current || !plan.checkout_available;
+    const planChange = plan.plan_change;
+    const selectionDisabled = plan.is_current
+        ? true
+        : planChange
+          ? !planChange.available
+          : !plan.checkout_available;
+    const unavailableReason =
+        planChange?.unavailable_reason ?? plan.unavailable_reason;
     const reasonId = `plan-${plan.id}-unavailable-reason`;
 
     return (
         <Card
             className={cn(
                 'flex h-full flex-col',
-                plan.is_current && 'border-secondary border-2',
+                plan.is_current && 'border-2 border-secondary',
             )}
         >
             <CardHeader className="gap-1 px-4 pt-6 pb-3">
@@ -109,28 +116,40 @@ export function PlanCard({
                     type="button"
                     className="w-full"
                     disabled={selectionDisabled}
-                    variant={plan.is_current ? 'muted' : 'primary'}
+                    variant={
+                        plan.is_current
+                            ? 'muted'
+                            : planChange?.direction === 'downgrade'
+                              ? 'outline'
+                              : 'primary'
+                    }
                     onClick={() => onSelect?.(plan)}
                     aria-describedby={
-                        plan.unavailable_reason && !plan.is_current
+                        unavailableReason && !plan.is_current
                             ? reasonId
                             : undefined
                     }
                 >
                     {plan.is_current
                         ? 'Current plan'
-                        : plan.checkout_available
-                          ? 'Choose plan'
-                          : 'Checkout unavailable'}
+                        : planChange?.scheduled
+                          ? 'Downgrade scheduled'
+                          : planChange?.direction === 'upgrade'
+                            ? 'Upgrade now'
+                            : planChange?.direction === 'downgrade'
+                              ? 'Schedule downgrade'
+                              : plan.checkout_available
+                                ? 'Choose plan'
+                                : 'Unavailable'}
                 </Button>
-                {plan.unavailable_reason && !plan.is_current && (
+                {/* {unavailableReason && !plan.is_current && (
                     <p
                         id={reasonId}
                         className="text-center text-xs leading-5 text-muted-foreground"
                     >
-                        {plan.unavailable_reason}
+                        {unavailableReason}
                     </p>
-                )}
+                )} */}
             </CardFooter>
         </Card>
     );

@@ -23,6 +23,7 @@ use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Models\Workspace;
 use App\Payments\PaymentService;
+use App\Services\Payments\PlanPricingService;
 use App\ValueObjects\Money;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -39,6 +40,7 @@ final readonly class CompletePaymentAction
         private PaymentService $payments,
         private FailPaymentAction $failPayment,
         private CompleteCapacityPurchaseAction $completeCapacityPurchase,
+        private PlanPricingService $planPricing,
     ) {}
 
     public function execute(
@@ -125,6 +127,10 @@ final readonly class CompletePaymentAction
                         paymentMethod: $paymentMethod,
                     ),
                     PaymentPurpose::CAPACITY_PURCHASE => $this->completeCapacityPurchasePayment(
+                        payment: $lockedPayment,
+                        workspace: $workspace,
+                    ),
+                    PaymentPurpose::PLAN_UPGRADE => $this->completePlanUpgradePayment(
                         payment: $lockedPayment,
                         workspace: $workspace,
                     ),
@@ -217,6 +223,7 @@ final readonly class CompletePaymentAction
                 true,
             ) ? $payment->payable_type : null,
             PaymentPurpose::CAPACITY_PURCHASE => (new CapacityPurchase)->getMorphClass(),
+            PaymentPurpose::PLAN_UPGRADE => (new Subscription)->getMorphClass(),
         };
 
         if ($expectedType === null || $payment->payable_type !== $expectedType) {
@@ -258,6 +265,81 @@ final readonly class CompletePaymentAction
             ->firstOrFail();
 
         return $this->completeCapacityPurchase->execute($purchase);
+    }
+
+    private function completePlanUpgradePayment(
+        Payment $payment,
+        Workspace $workspace,
+    ): Subscription {
+        $fromPlanId = $this->positiveMetadataInteger($payment, 'from_plan_id', 'plan upgrade');
+        $toPlanId = $this->positiveMetadataInteger($payment, 'to_plan_id', 'plan upgrade');
+        $termEndsAt = $payment->metadata['term_ends_at'] ?? null;
+
+        if (! is_string($termEndsAt)) {
+            throw new PaymentVerificationFailed('The plan upgrade term is invalid.');
+        }
+
+        $subscription = Subscription::query()
+            ->with('plan.features')
+            ->whereKey($payment->payable_id)
+            ->where('subscribable_type', $workspace->getMorphClass())
+            ->where('subscribable_id', $workspace->getKey())
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        if ((int) $subscription->plan_id !== $fromPlanId
+            || $subscription->status !== SubscriptionStatus::Active
+            || $subscription->ends_at->toISOString() !== $termEndsAt
+            || ! $subscription->ends_at->isFuture()) {
+            throw new PaymentVerificationFailed('The subscription changed before the upgrade payment completed.');
+        }
+
+        $targetPlan = Plan::query()
+            ->with('features')
+            ->whereKey($toPlanId)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        if ($targetPlan->account_type !== $subscription->plan->account_type
+            || ! $targetPlan->is_active
+            || $targetPlan->is_free
+            || $targetPlan->trial_days > 0) {
+            throw new PaymentVerificationFailed('The upgrade target plan is no longer available.');
+        }
+
+        $targetCharge = $this->planPricing->renewalForPlan($subscription, $targetPlan);
+        $currentCharge = $this->planPricing->renewal($subscription);
+        $currentRenewalMinor = $this->positiveMetadataInteger(
+            $payment,
+            'current_renewal_minor',
+            'plan upgrade',
+        );
+        $targetRenewalMinor = $this->positiveMetadataInteger(
+            $payment,
+            'target_renewal_minor',
+            'plan upgrade',
+        );
+        $capacityCount = $this->positiveMetadataInteger(
+            $payment,
+            'capacity_count',
+            'plan upgrade',
+        );
+
+        if ($currentRenewalMinor !== $currentCharge->money->amountInMinorUnits
+            || $targetRenewalMinor !== $targetCharge->money->amountInMinorUnits
+            || $targetRenewalMinor <= $currentRenewalMinor
+            || $capacityCount !== $targetCharge->capacityCount) {
+            throw new PaymentVerificationFailed('The plan pricing changed before the upgrade payment completed.');
+        }
+
+        $subscription->update([
+            'plan_id' => $targetPlan->getKey(),
+            'capacity_count' => $capacityCount,
+            'scheduled_plan_id' => null,
+            'scheduled_plan_change_at' => null,
+        ]);
+
+        return $subscription->refresh();
     }
 
     private function completeSubscriptionPayment(
@@ -343,20 +425,54 @@ final readonly class CompletePaymentAction
         ?PaymentMethod $paymentMethod,
     ): Subscription {
         $subscription = Subscription::query()
-            ->with('plan')
+            ->with(['plan.features', 'scheduledPlan.features'])
             ->whereKey($payment->payable_id)
             ->where('subscribable_type', $workspace->getMorphClass())
             ->where('subscribable_id', $workspace->getKey())
             ->lockForUpdate()
             ->firstOrFail();
 
+        $renewalPlanId = $this->positiveMetadataInteger($payment, 'plan_id', 'subscription renewal');
+        $renewalPlan = $subscription->plan;
+
+        if ($renewalPlanId !== (int) $subscription->plan_id) {
+            if (! $subscription->scheduledPlan instanceof Plan
+                || (int) $subscription->scheduled_plan_id !== $renewalPlanId
+                || $subscription->scheduled_plan_change_at === null
+                || $subscription->scheduled_plan_change_at->isAfter(now())) {
+                throw new PaymentVerificationFailed('The scheduled plan no longer matches this renewal payment.');
+            }
+
+            $renewalPlan = $subscription->scheduledPlan;
+        }
+
+        if (! $renewalPlan->is_active || $renewalPlan->is_free || $renewalPlan->trial_days > 0) {
+            throw new PaymentVerificationFailed('The renewal plan is no longer available.');
+        }
+
+        $renewalCharge = $this->planPricing->renewalForPlan($subscription, $renewalPlan);
+        $capacityCount = $this->positiveMetadataInteger(
+            $payment,
+            'capacity_count',
+            'subscription renewal',
+        );
+
+        if ($payment->amount_minor !== $renewalCharge->money->amountInMinorUnits
+            || $payment->currency !== $renewalCharge->money->currency
+            || $capacityCount !== $renewalCharge->capacityCount) {
+            throw new PaymentVerificationFailed('The renewal pricing changed before payment completed.');
+        }
         $now = now();
         $renewalBase = $subscription->ends_at?->isFuture() === true
             ? $subscription->ends_at
             : $now;
-        $endsAt = $subscription->plan->calculateEndsAt($renewalBase);
+        $endsAt = $renewalPlan->calculateEndsAt($renewalBase);
 
         $subscription->update([
+            'plan_id' => $renewalPlan->getKey(),
+            'scheduled_plan_id' => null,
+            'scheduled_plan_change_at' => null,
+            'capacity_count' => $capacityCount,
             'status' => SubscriptionStatus::Active,
             'starts_at' => $now,
             'ends_at' => $endsAt,
@@ -386,6 +502,21 @@ final readonly class CompletePaymentAction
         return $payment->payable_type === (new Plan)->getMorphClass()
             && is_string($consentedAt)
             && trim($consentedAt) !== '';
+    }
+
+    private function positiveMetadataInteger(Payment $payment, string $key, string $context): int
+    {
+        $value = $payment->metadata[$key] ?? null;
+
+        if (is_string($value) && ctype_digit($value)) {
+            $value = (int) $value;
+        }
+
+        if (! is_int($value) || $value < 1) {
+            throw new PaymentVerificationFailed("The {$context} {$key} is invalid.");
+        }
+
+        return $value;
     }
 
     private function quarantineFulfillmentFailure(
@@ -486,6 +617,7 @@ final readonly class CompletePaymentAction
                 PaymentPurpose::WALLET_TOP_UP => TransactionTypes::TOPUP,
                 PaymentPurpose::SUBSCRIPTION => TransactionTypes::SUBSCRIPTION,
                 PaymentPurpose::CAPACITY_PURCHASE => TransactionTypes::CAPACITY_PURCHASE,
+                PaymentPurpose::PLAN_UPGRADE => TransactionTypes::PLAN_CHANGE,
             },
             'status' => TransactionStatus::COMPLETED,
             'flow' => $payment->purpose === PaymentPurpose::WALLET_TOP_UP
@@ -496,6 +628,7 @@ final readonly class CompletePaymentAction
                     PaymentPurpose::WALLET_TOP_UP => 'Wallet top-up',
                     PaymentPurpose::SUBSCRIPTION => 'Plan subscription payment',
                     PaymentPurpose::CAPACITY_PURCHASE => 'Additional capacity purchase',
+                    PaymentPurpose::PLAN_UPGRADE => 'Prorated plan upgrade',
                 },
                 'gateway' => $payment->gateway->value,
             ],

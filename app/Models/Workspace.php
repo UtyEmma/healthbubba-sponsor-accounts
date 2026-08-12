@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Revoltify\Subscriptionify\Concerns\InteractsWithSubscriptions;
@@ -24,7 +25,7 @@ use Revoltify\Subscriptionify\Models\Feature;
  */
 class Workspace extends Model implements Subscribable
 {
-    use HasWallet, InteractsWithSubscriptions;
+    use HasWallet, InteractsWithSubscriptions, Notifiable;
 
     protected $fillable = ['name', 'type', 'logo', 'description'];
 
@@ -44,6 +45,18 @@ class Workspace extends Model implements Subscribable
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /** @return HasMany<WorkspaceBeneficiary, $this> */
+    public function workspaceBeneficiaries(): HasMany
+    {
+        return $this->hasMany(WorkspaceBeneficiary::class);
+    }
+
+    /** @return HasMany<MedicalAccessRequest, $this> */
+    public function medicalAccessRequests(): HasMany
+    {
+        return $this->hasMany(MedicalAccessRequest::class);
     }
 
     /** @return HasMany<PaymentMethod, $this> */

@@ -1,4 +1,5 @@
 import { Head, usePage } from '@inertiajs/react';
+import { format } from 'date-fns';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 
@@ -6,6 +7,7 @@ import { BusinessPortalShell } from '@/components/business-portal-shell';
 import { PageHeader } from '@/components/page-header';
 import { PaymentStatusNotice } from '@/components/payment-status-notice';
 import { PortalShell } from '@/components/portal-shell';
+import { Disclose } from '@/components/toggle/disclose';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { AccountType, PlanBillingPageProps } from '@/types';
@@ -13,20 +15,14 @@ import type { AccountType, PlanBillingPageProps } from '@/types';
 import { institutionalNavigation } from '../institutional-sponsor/partials/institutional-navigation';
 import { CapacityPurchaseCard } from './partials/capacity-purchase-card';
 import { PlanCard } from './partials/plan-cards';
+import { PlanChangeDialog } from './partials/plan-change-dialog';
 import { PlanCheckoutDialog } from './partials/plan-checkout-dialog';
 import { PlanFaq } from './partials/plan-faq';
-import { Disclose } from '@/components/toggle/disclose';
-import {format} from 'date-fns'
 
 const nairaFormatter = new Intl.NumberFormat('en-NG', {
     style: 'currency',
     currency: 'NGN',
     maximumFractionDigits: 0,
-});
-
-const dateFormatter = new Intl.DateTimeFormat('en-NG', {
-    day: '2-digit',
-    month: 'short',
 });
 
 const statusTone: Record<
@@ -101,7 +97,11 @@ export default function ({
 
                     <PaymentStatusNotice
                         success={flash.success}
-                        error={errors.payment ?? errors.capacity}
+                        error={
+                            errors.payment ??
+                            errors.capacity ??
+                            errors.plan_change
+                        }
                     />
 
                     <Card className="mt-6">
@@ -124,24 +124,23 @@ export default function ({
                                                 {subscription.statusLabel}
                                             </span>
                                         </div>
-                                        <div className="text-sm flex items-center gap-2 text-muted-foreground">
-                                            <Disclose as="p" show={capacityPurchase}>
-                                                {
-                                                    `${capacityPurchase?.current_capacity} ${capacityPurchase?.unit === 'seat'
-                                                    ? 'seats'
-                                                    : 'beneficiaries'}`
-                                                } 
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <Disclose
+                                                as="p"
+                                                show={capacityPurchase}
+                                            >
+                                                {`${capacityPurchase?.current_capacity} ${capacityPurchase?.unit === 'seat' ? 'seats' : 'beneficiaries'}`}
                                             </Disclose>
                                             &bull;
-
                                             <p>
-                                                {subscription.status === 'trialing'
+                                                {subscription.status ===
+                                                'trialing'
                                                     ? 'Trial ends'
-                                                    : 'renews'} {formatDate(renewalDate ?? null)}
+                                                    : 'Renews'}{' '}
+                                                {formatDate(
+                                                    renewalDate ?? null,
+                                                )}
                                             </p>
-                                            {/* {subscription.isValid
-                                                // ? 'Your subscription currently provides plan access.'
-                                                // : 'This subscription is not currently providing plan access.'} */}
                                         </div>
                                     </div>
                                     <dl className="grid gap-1 text-sm">
@@ -156,7 +155,7 @@ export default function ({
                                         <dt className="text-muted-foreground">
                                             {subscription.status === 'trialing'
                                                 ? 'Trial ends'
-                                                : 'renews'} {formatDate(renewalDate ?? null)}
+                                                : 'Renews'}
                                         </dt>
                                         <dd className="font-medium">
                                             {formatDate(renewalDate ?? null)}
@@ -171,9 +170,36 @@ export default function ({
                                             )}
                                         </p>
                                         <p className="text-xs text-muted-foreground">
-                                            {subscription.plan.billingLabel}
+                                            {subscription.scheduledPlan
+                                                ?.billingLabel ??
+                                                subscription.plan.billingLabel}
                                         </p>
                                     </div>
+                                    {subscription.scheduledPlan && (
+                                        <div className="grid gap-1 border-t pt-4 lg:col-span-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+                                            <div>
+                                                <p className="text-sm font-medium">
+                                                    Downgrade scheduled to{' '}
+                                                    {
+                                                        subscription
+                                                            .scheduledPlan.name
+                                                    }
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    The new price will be
+                                                    charged when the plan
+                                                    changes on{' '}
+                                                    {formatDate(
+                                                        subscription.scheduledPlanChangeAt,
+                                                    )}
+                                                    .
+                                                </p>
+                                            </div>
+                                            <span className="w-fit rounded-full bg-warning/10 px-2.5 py-1 text-xs font-medium text-warning">
+                                                Scheduled
+                                            </span>
+                                        </div>
+                                    )}
                                 </>
                             ) : (
                                 <div className="grid gap-1 lg:col-span-4">
@@ -233,13 +259,29 @@ export default function ({
                     <PlanCheckoutDialog
                         accountType={accountType}
                         plan={selectedPlan}
-                        open={selectedPlan !== null}
+                        open={
+                            selectedPlan !== null &&
+                            selectedPlan.plan_change === null &&
+                            !selectedPlan.is_current
+                        }
                         onOpenChange={(open) => {
                             if (!open) {
                                 setSelectedPlan(null);
                             }
                         }}
                     />
+                    {subscription && (
+                        <PlanChangeDialog
+                            subscriptionId={subscription.id}
+                            plan={selectedPlan}
+                            open={selectedPlan?.plan_change?.available === true}
+                            onOpenChange={(open) => {
+                                if (!open) {
+                                    setSelectedPlan(null);
+                                }
+                            }}
+                        />
+                    )}
                 </div>
             </BillingShell>
         </>

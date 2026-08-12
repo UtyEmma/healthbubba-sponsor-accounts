@@ -1,0 +1,158 @@
+import { Link, usePage } from '@inertiajs/react';
+import { BarChart3Icon, UsersRoundIcon } from 'lucide-react';
+import { useMemo } from 'react';
+import type { ComponentType, SVGProps } from 'react';
+
+import { BrandMark } from '@/components/brand-mark';
+import { home } from '@/routes';
+import activity_log from '@/routes/activity_log';
+import beneficiaries from '@/routes/beneficiaries';
+import business from '@/routes/business';
+import consultations from '@/routes/consultations';
+import medical_access from '@/routes/medical_access';
+import plans from '@/routes/plans';
+import wallet from '@/routes/wallet';
+
+type NavigationItem = {
+    label: string;
+    icon: string | ComponentType<SVGProps<SVGSVGElement>>;
+    href?: ReturnType<typeof home>;
+};
+
+function Navigation() {
+    const currentPath = usePage().url.split('?')[0];
+
+    const { workspace } = usePage().props;
+
+    const navigation = useMemo(() => {
+        const navigation: NavigationItem[] = [
+            { label: 'Dashboard', icon: 'nav-dashboard.svg', href: home() },
+        ];
+
+        if (workspace.type == 'individual' || workspace.type == 'institution') {
+            navigation.push(
+                {
+                    label: 'Beneficiaries',
+                    icon: 'nav-beneficiaries.svg',
+                    href: beneficiaries.index(),
+                },
+                {
+                    label: 'Consultations',
+                    icon: 'nav-consultations.svg',
+                    href: consultations.index(),
+                },
+            );
+        }
+
+        if (workspace.type == 'individual') {
+            navigation.push({
+                label: 'Medical Access',
+                icon: 'nav-medical.svg',
+                href: medical_access.index(),
+            });
+        }
+
+        if (workspace.type == 'business') {
+            navigation.push(
+                {
+                    label: 'Employees',
+                    icon: UsersRoundIcon,
+                    href: business.employees(),
+                },
+                {
+                    label: 'Reports',
+                    icon: BarChart3Icon,
+                    href: business.reports(),
+                },
+            );
+        }
+
+        if (workspace.type == 'individual' || workspace.type == 'business') {
+            navigation.push(
+                {
+                    label: 'Wallet',
+                    icon: 'nav-wallet.svg',
+                    href: wallet.index(),
+                },
+                {
+                    label: 'Plan & Billing',
+                    icon: 'nav-plan.svg',
+                    href: plans.index(),
+                },
+            );
+        }
+
+        if (workspace.type == 'individual' || workspace.type == 'business') {
+            navigation.push({
+                label: 'Activity Log',
+                icon: 'nav-activity.svg',
+                href: activity_log.index(),
+            });
+        }
+
+        return navigation;
+    }, [workspace]);
+
+    return (
+        <nav aria-label="Primary" className="p-3">
+            <ul className="flex flex-col gap-1">
+                {navigation.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = item.href?.url === currentPath;
+
+                    return (
+                        <li key={item.label}>
+                            {item.href ? (
+                                <Link
+                                    href={item.href}
+                                    aria-current={isActive ? 'page' : undefined}
+                                    className={
+                                        isActive
+                                            ? 'flex min-h-8 items-center gap-3 rounded-md bg-accent px-2 text-sm font-medium text-secondary-foreground'
+                                            : 'flex min-h-10 items-center gap-3 rounded-md px-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground'
+                                    }
+                                >
+                                    {typeof item.icon == 'string' ? (
+                                        <img
+                                            src={`/images/sponsor/${item.icon}`}
+                                            alt=""
+                                            className="size-[18px]"
+                                        />
+                                    ) : (
+                                        <Icon className="size-[18px]" />
+                                    )}
+                                    {item.label}
+                                </Link>
+                            ) : (
+                                <button
+                                    type="button"
+                                    disabled
+                                    aria-label={`${item.label} (coming soon)`}
+                                    className="flex min-h-10 w-full items-center gap-3 rounded-md px-2 text-sm font-medium text-muted-foreground opacity-80"
+                                >
+                                    <img
+                                        src={`/images/sponsor/${item.icon}`}
+                                        alt=""
+                                        className="size-[18px]"
+                                    />
+                                    {item.label}
+                                </button>
+                            )}
+                        </li>
+                    );
+                })}
+            </ul>
+        </nav>
+    );
+}
+
+export function Sidebar() {
+    return (
+        <>
+            <div className="flex h-16 items-center border-b border-border px-5">
+                <BrandMark showName />
+            </div>
+            <Navigation />
+        </>
+    );
+}

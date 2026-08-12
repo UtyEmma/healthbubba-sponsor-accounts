@@ -12,6 +12,7 @@ import {
 } from '@/pages/sponsor/partials/dashboard-cards';
 import type { DashboardStatistic } from '@/pages/sponsor/partials/dashboard-cards';
 import { home } from '@/routes';
+import { DashboardLayout } from '@/layouts/dashboard';
 
 const statistics: DashboardStatistic[] = [
     {
@@ -40,14 +41,14 @@ const statistics: DashboardStatistic[] = [
     },
 ];
 
-export default function Dashboard() {
+export default function () {
 
     const {auth: {user}} = usePage().props
 
     return (
         <>
             <Head title="Dashboard" />
-            <PortalShell>
+            <DashboardLayout>
                 <div className="mx-auto w-full max-w-6xl">
                     <PageHeader
                         title={`Welcome back, ${user.name}`}
@@ -89,7 +90,7 @@ export default function Dashboard() {
                         <RecentActivityCard />
                     </section>
                 </div>
-            </PortalShell>
+            </DashboardLayout>
         </>
     );
 }

@@ -1,15 +1,7 @@
-import { EllipsisIcon } from 'lucide-react';
-
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { RosterPagination } from '@/components/roster-pagination';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
     Table,
     TableBody,
@@ -18,156 +10,126 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { WorkspaceInvitationActions } from '@/components/workspace-invitation-actions';
+import type {
+    PaginatedWorkspaceBeneficiaries,
+    WorkspaceBeneficiary,
+    WorkspaceBeneficiaryStatus,
+} from '@/types';
 
-export type EmployeeStatus = 'Active' | 'Pending' | 'Suspended';
-
-export type Employee = {
-    id: number;
-    name: string;
-    role: string;
-    employeeId: string;
-    department: string;
-    status: EmployeeStatus;
-    seatUsage: string;
-    avatar: string;
+const statusVariants: Record<
+    WorkspaceBeneficiaryStatus,
+    'success' | 'warning' | 'destructive' | 'secondary'
+> = {
+    active: 'success',
+    suspended: 'warning',
+    revoked: 'destructive',
+    pending: 'warning',
+    declined: 'destructive',
+    cancelled: 'secondary',
+    expired: 'secondary',
 };
 
-const statusVariants = {
-    Active: 'success',
-    Pending: 'warning',
-    Suspended: 'destructive',
-} as const;
-
 export function EmployeesTable({
-    employees,
-    onAction,
+    invitations,
 }: {
-    employees: Employee[];
-    onAction: (message: string) => void;
+    invitations: PaginatedWorkspaceBeneficiaries;
 }) {
     return (
-        <Card className="mt-4 overflow-hidden">
+        <Card className="mt-5 overflow-hidden">
             <CardHeader className="h-14 justify-center border-b px-6 py-0">
-                <CardTitle className="text-base leading-6 font-semibold">
-                    All Employees ({employees.length})
+                <CardTitle className="text-base">
+                    All employees ({invitations.meta.total})
                 </CardTitle>
             </CardHeader>
             <CardContent className="overflow-x-auto p-0">
                 <Table className="min-w-[900px]">
                     <TableHeader>
                         <TableRow className="hover:bg-muted/40">
-                            <TableHead className="w-[18%] pl-8">
-                                Beneficiary
-                            </TableHead>
-                            <TableHead className="w-[20%]">ID</TableHead>
-                            <TableHead className="w-[24%]">
-                                Department
-                            </TableHead>
-                            <TableHead className="w-[13%]">Status</TableHead>
-                            <TableHead className="w-[20%]">
-                                Seat usage
-                            </TableHead>
+                            <TableHead className="pl-8">Employee</TableHead>
+                            <TableHead>ID</TableHead>
+                            <TableHead>Department</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Invitation</TableHead>
                             <TableHead className="pr-8 text-right">
-                                Action
+                                Actions
                             </TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {employees.map((employee) => (
-                            <TableRow key={employee.id}>
-                                <TableCell className="h-[69px] pl-8">
-                                    <div className="flex items-center gap-2">
-                                        <Avatar size="lg">
-                                            <AvatarImage
-                                                src={employee.avatar}
-                                                alt=""
-                                            />
-                                            <AvatarFallback>DS</AvatarFallback>
-                                        </Avatar>
-                                        <div className="grid leading-5">
-                                            <span className="font-medium text-foreground">
-                                                {employee.name}
-                                            </span>
-                                            <span className="text-muted-foreground">
-                                                {employee.role}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </TableCell>
-                                <TableCell className="h-[69px] text-muted-foreground">
-                                    {employee.employeeId}
-                                </TableCell>
-                                <TableCell className="h-[69px] text-muted-foreground">
-                                    {employee.department}
-                                </TableCell>
-                                <TableCell className="h-[69px]">
-                                    <Badge
-                                        variant={
-                                            statusVariants[employee.status]
-                                        }
-                                    >
-                                        {employee.status}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell className="h-[69px] text-muted-foreground">
-                                    {employee.seatUsage}
-                                </TableCell>
-                                <TableCell className="h-[69px] pr-8 text-right">
-                                    <EmployeeActions
-                                        employee={employee}
-                                        onAction={onAction}
-                                    />
+                        {invitations.data.length === 0 ? (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={6}
+                                    className="h-28 text-center text-muted-foreground"
+                                >
+                                    No employees have been invited yet.
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        ) : (
+                            invitations.data.map((employee) => (
+                                <TableRow key={employee.id}>
+                                    <TableCell className="h-[69px] pl-8">
+                                        <div className="flex items-center gap-2">
+                                            <Avatar size="lg">
+                                                <AvatarFallback>
+                                                    {initials(employee)}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <div className="grid leading-5">
+                                                <span className="font-medium">
+                                                    {employee.name}
+                                                </span>
+                                                <span className="text-muted-foreground">
+                                                    {employee.email}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground">
+                                        {employee.employeeId ?? '—'}
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground">
+                                        {employee.department ?? '—'}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge
+                                            variant={
+                                                statusVariants[employee.status]
+                                            }
+                                            className="capitalize"
+                                        >
+                                            {employee.status}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground">
+                                        {employee.status === 'pending'
+                                            ? `Expires ${formatDate(employee.expiresAt)}`
+                                            : formatDate(employee.invitedAt)}
+                                    </TableCell>
+                                    <TableCell className="pr-8 text-right">
+                                        <WorkspaceInvitationActions
+                                            invitation={employee}
+                                        />
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
                     </TableBody>
                 </Table>
             </CardContent>
+            <RosterPagination pagination={invitations} />
         </Card>
     );
 }
 
-function EmployeeActions({
-    employee,
-    onAction,
-}: {
-    employee: Employee;
-    onAction: (message: string) => void;
-}) {
-    const isSuspended = employee.status === 'Suspended';
+function initials(employee: WorkspaceBeneficiary): string {
+    return `${employee.firstName.charAt(0)}${employee.lastName.charAt(0)}`.toUpperCase();
+}
 
-    return (
-        <DropdownMenu>
-            <DropdownMenuTrigger
-                render={
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        aria-label={`Actions for ${employee.name}`}
-                    />
-                }
-            >
-                <EllipsisIcon className="size-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-40">
-                <DropdownMenuItem
-                    onClick={() => onAction(`Viewing ${employee.name}`)}
-                >
-                    View employee
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                    variant={isSuspended ? 'default' : 'destructive'}
-                    onClick={() =>
-                        onAction(
-                            `${employee.name} selected to ${
-                                isSuspended ? 'reactivate' : 'suspend'
-                            }`,
-                        )
-                    }
-                >
-                    {isSuspended ? 'Reactivate employee' : 'Suspend employee'}
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
-    );
+function formatDate(value: string): string {
+    return new Intl.DateTimeFormat('en-NG', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    }).format(new Date(value));
 }
