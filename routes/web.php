@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Activity\MarkWorkspaceActivitiesReadController;
 use App\Http\Controllers\Activity\WorkspaceActivityIndexController;
+use App\Http\Controllers\Appointments\ConsultationController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MedicalAccessRequests\DecideMedicalAccessRequestController;
@@ -83,7 +84,7 @@ Route::middleware('auth')->group(function () {
             ->name('access.update');
     });
 
-    Route::inertia('/consultations', 'sponsor/consultations/index')->name('consultations.index');
+    Route::get('/consultations', [ConsultationController::class, 'index'])->name('consultations.index');
     Route::get('/medical-access', MedicalAccessIndexController::class)->name('medical_access.index');
     Route::post('/medical-access-requests', StoreMedicalAccessRequestController::class)
         ->middleware('throttle:20,1')

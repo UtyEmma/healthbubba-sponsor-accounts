@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Concerns\HasWallet;
 use App\Enums\AccountTypes;
+use App\Models\Consultations\Appointment;
+use App\Relations\WorkspacePatients;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -22,6 +24,7 @@ use Revoltify\Subscriptionify\Models\Feature;
  * @property string|null $description
  * @property string|null $logo
  * @property AccountTypes $type
+ * @property-read EloquentCollection<int, Beneficiary> $patients
  */
 class Workspace extends Model implements Subscribable
 {
@@ -69,6 +72,14 @@ class Workspace extends Model implements Subscribable
     public function transactions(): MorphMany
     {
         return $this->morphMany(Transaction::class, 'owner');
+    }
+
+    public function patients(): WorkspacePatients {
+        return new WorkspacePatients(Beneficiary::query()->isPatient(), $this);
+    }
+
+    public function appointments(){
+        return $this->hasMany(Appointment::class, 'sponsor_id');
     }
 
     public static function current(): ?self

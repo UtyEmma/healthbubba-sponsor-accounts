@@ -12,12 +12,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { AccountType, PlanBillingPageProps } from '@/types';
 
-import { institutionalNavigation } from '../institutional-sponsor/partials/institutional-navigation';
+// import { institutionalNavigation } from '../institutional-sponsor/partials/institutional-navigation';
 import { CapacityPurchaseCard } from './partials/capacity-purchase-card';
 import { PlanCard } from './partials/plan-cards';
 import { PlanChangeDialog } from './partials/plan-change-dialog';
 import { PlanCheckoutDialog } from './partials/plan-checkout-dialog';
 import { PlanFaq } from './partials/plan-faq';
+import { DashboardLayout } from '@/layouts/dashboard';
 
 const nairaFormatter = new Intl.NumberFormat('en-NG', {
     style: 'currency',
@@ -36,34 +37,34 @@ const statusTone: Record<
     expired: 'bg-muted text-muted-foreground',
 };
 
-function BillingShell({
-    accountType,
-    children,
-}: {
-    accountType: AccountType;
-    children: ReactNode;
-}) {
-    if (accountType === 'individual') {
-        return <PortalShell>{children}</PortalShell>;
-    }
+// function BillingShell({
+//     accountType,
+//     children,
+// }: {
+//     accountType: AccountType;
+//     children: ReactNode;
+// }) {
+//     if (accountType === 'individual') {
+//         return <PortalShell>{children}</PortalShell>;
+//     }
 
-    return (
-        <BusinessPortalShell
-            navigation={
-                accountType === 'institution'
-                    ? institutionalNavigation
-                    : undefined
-            }
-            navigationLabel={
-                accountType === 'institution'
-                    ? 'Institutional sponsor navigation'
-                    : undefined
-            }
-        >
-            {children}
-        </BusinessPortalShell>
-    );
-}
+//     return (
+//         <BusinessPortalShell
+//             navigation={
+//                 accountType === 'institution'
+//                     ? institutionalNavigation
+//                     : undefined
+//             }
+//             navigationLabel={
+//                 accountType === 'institution'
+//                     ? 'Institutional sponsor navigation'
+//                     : undefined
+//             }
+//         >
+//             {children}
+//         </BusinessPortalShell>
+//     );
+// }
 
 function formatDate(value: string | null): string {
     return value ? format(new Date(value), 'do MMM') : 'Not scheduled';
@@ -88,7 +89,7 @@ export default function ({
     return (
         <>
             <Head title="Plan & Billing" />
-            <BillingShell accountType={accountType}>
+            <DashboardLayout>
                 <div className="mx-auto w-full max-w-6xl pb-10">
                     <PageHeader
                         title="Plan & Billing"
@@ -283,7 +284,7 @@ export default function ({
                         />
                     )}
                 </div>
-            </BillingShell>
+            </DashboardLayout>
         </>
     );
 }

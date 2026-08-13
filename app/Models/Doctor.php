@@ -6,20 +6,21 @@ use App\Enums\BeneficiaryRoles;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
-final class Beneficiary extends Model
+final class Doctor extends Model
 {
     protected $table = 'users';
 
     protected $connection = 'main_sql';
 
-    protected $guarded = ['*'];
-
     public $timestamps = false;
+
+    protected $fillable = ['provider_type'];
 
     protected static function booted(): void
     {
-        static::addGlobalScope('isPatient', function (Builder $builder) {
-            $builder->where('type', BeneficiaryRoles::PATIENT);
+        static::addGlobalScope('isDoctor', function (Builder $builder) {
+            $builder->where('type', BeneficiaryRoles::DOCTOR);
         });
     }
+
 }

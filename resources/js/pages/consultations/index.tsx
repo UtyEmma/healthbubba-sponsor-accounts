@@ -7,10 +7,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import beneficiaries from '@/routes/beneficiaries';
 import { ConsultationHistory } from './partials/consultation-history';
-import {
-    AllocationFallbackCard,
-    ConsultationOverview,
-} from './partials/consultation-overview';
+import { AllocationFallbackCard, ConsultationOverview } from './partials/consultation-overview';
 
 export default function ConsultationsIndex() {
     return (

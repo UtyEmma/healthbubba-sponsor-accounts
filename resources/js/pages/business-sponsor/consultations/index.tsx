@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 import { BusinessMetricCard } from '../partials/business-metric-card';
 import { WorkforceStatusChart } from './partials/workforce-status-chart';
+import { DashboardLayout } from '@/layouts/dashboard';
 
 const reportCsv = encodeURIComponent(
     'Status,Employees\nActive,3\nInactive,1\nPending,1\nSuspended,1',
@@ -24,7 +25,7 @@ export default function BusinessConsultations() {
     return (
         <>
             <Head title="Reports" />
-            <BusinessPortalShell>
+            <DashboardLayout>
                 <div className="mx-auto w-full max-w-6xl">
                     <PageHeader
                         title="Reports"
@@ -104,7 +105,7 @@ export default function BusinessConsultations() {
                         </Card>
                     </section>
                 </div>
-            </BusinessPortalShell>
+            </DashboardLayout>
         </>
     );
 }

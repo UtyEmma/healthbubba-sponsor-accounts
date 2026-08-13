@@ -27,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { institutionalNavigation } from '../partials/institutional-navigation';
 import { CommunityChart } from './partials/community-chart';
+import { DashboardLayout } from '@/layouts/dashboard';
 
 const reportCards = [
     ['Beneficiary Report', 'Roster, statuses, communities', UsersRoundIcon],
@@ -46,10 +47,7 @@ export default function InstitutionalReportsPage() {
     return (
         <>
             <Head title="Reports" />
-            <BusinessPortalShell
-                navigation={institutionalNavigation}
-                navigationLabel="Institutional sponsor navigation"
-            >
+            <DashboardLayout >
                 <div className="mx-auto w-full max-w-6xl">
                     <PageHeader
                         title="Reports"
@@ -223,7 +221,7 @@ export default function InstitutionalReportsPage() {
                         {announcement}
                     </p>
                 </div>
-            </BusinessPortalShell>
+            </DashboardLayout>
         </>
     );
 }

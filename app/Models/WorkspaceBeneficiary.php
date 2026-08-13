@@ -33,9 +33,12 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $suspended_at
  * @property Carbon|null $revoked_at
  * @property-read Workspace $workspace
+ * @property-read Beneficiary|null $beneficiary
  */
 final class WorkspaceBeneficiary extends Model
 {
+    protected $connection = 'mysql';
+
     /** @var list<string> */
     protected $fillable = [
         'workspace_id',
@@ -82,7 +85,7 @@ final class WorkspaceBeneficiary extends Model
     /** @return BelongsTo<Beneficiary, $this> */
     public function beneficiary(): BelongsTo
     {
-        return $this->belongsTo(Beneficiary::class);
+        return $this->belongsTo(Beneficiary::class, 'beneficiary_id');
     }
 
     /** @return HasMany<MedicalAccessRequest, $this> */
