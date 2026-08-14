@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Concerns\HasWallet;
 use App\Enums\AccountTypes;
+use App\Enums\Consultations\AllocationFallback;
 use App\Models\Consultations\Appointment;
 use App\Models\Consultations\Consultation;
 use App\Relations\WorkspacePatients;
@@ -25,16 +26,18 @@ use Revoltify\Subscriptionify\Models\Feature;
  * @property string|null $description
  * @property string|null $logo
  * @property AccountTypes $type
+ * @property AllocationFallback|null $fallback_channel
  * @property-read EloquentCollection<int, Beneficiary> $patients
  */
 class Workspace extends Model implements Subscribable
 {
     use HasWallet, InteractsWithSubscriptions, Notifiable;
 
-    protected $fillable = ['name', 'type', 'logo', 'description'];
+    protected $fillable = ['name', 'type', 'logo', 'description', 'fallback_channel'];
 
     protected $casts = [
         'type' => AccountTypes::class,
+        'fallback_channel' => AllocationFallback::class,
     ];
 
     /** @return BelongsToMany<User, $this> */

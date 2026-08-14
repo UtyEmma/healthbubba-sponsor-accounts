@@ -24,13 +24,23 @@ final class ConsultationTypeResolver
     public function feature(AccountTypes $accountType, ConsultationType $type): Features
     {
         if ($accountType === AccountTypes::BUSINESS) {
-            return $type === ConsultationType::GeneralPractitioner
-                ? Features::GP_CONSULTATIONS_PER_SEAT
-                : Features::SPECIALIST_CONSULTATIONS_PER_SEAT;
+            return $this->perSeatFeature($type);
         }
 
+        return $this->baseFeature($type);
+    }
+
+    public function baseFeature(ConsultationType $type): Features
+    {
         return $type === ConsultationType::GeneralPractitioner
             ? Features::GP_CONSULTATIONS
             : Features::SPECIALIST_CONSULTATIONS;
+    }
+
+    public function perSeatFeature(ConsultationType $type): Features
+    {
+        return $type === ConsultationType::GeneralPractitioner
+            ? Features::GP_CONSULTATIONS_PER_SEAT
+            : Features::SPECIALIST_CONSULTATIONS_PER_SEAT;
     }
 }

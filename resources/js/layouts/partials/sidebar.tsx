@@ -1,9 +1,18 @@
 import { Link, usePage } from '@inertiajs/react';
 import { BarChart3Icon, UsersRoundIcon } from 'lucide-react';
 import { useMemo } from 'react';
-import type { ComponentType, SVGProps } from 'react';
 
 import { BrandMark } from '@/components/brand-mark';
+import type { SidebarIcon } from '@/components/sidebar-icons';
+import {
+    ActivityLogSidebarIcon,
+    BeneficiariesSidebarIcon,
+    ConsultationsSidebarIcon,
+    DashboardSidebarIcon,
+    MedicalAccessSidebarIcon,
+    PlanBillingSidebarIcon,
+    WalletSidebarIcon,
+} from '@/components/sidebar-icons';
 import { home } from '@/routes';
 import activity_log from '@/routes/activity_log';
 import beneficiaries from '@/routes/beneficiaries';
@@ -15,7 +24,7 @@ import wallet from '@/routes/wallet';
 
 type NavigationItem = {
     label: string;
-    icon: string | ComponentType<SVGProps<SVGSVGElement>>;
+    icon: SidebarIcon;
     href?: ReturnType<typeof home>;
 };
 
@@ -26,19 +35,19 @@ function Navigation() {
 
     const navigation = useMemo(() => {
         const navigation: NavigationItem[] = [
-            { label: 'Dashboard', icon: 'nav-dashboard.svg', href: home() },
+            { label: 'Dashboard', icon: DashboardSidebarIcon, href: home() },
         ];
 
         if (workspace.type == 'individual' || workspace.type == 'institution') {
             navigation.push(
                 {
                     label: 'Beneficiaries',
-                    icon: 'nav-beneficiaries.svg',
+                    icon: BeneficiariesSidebarIcon,
                     href: beneficiaries.index(),
                 },
                 {
                     label: 'Consultations',
-                    icon: 'nav-consultations.svg',
+                    icon: ConsultationsSidebarIcon,
                     href: consultations.index(),
                 },
             );
@@ -47,7 +56,7 @@ function Navigation() {
         if (workspace.type == 'individual') {
             navigation.push({
                 label: 'Medical Access',
-                icon: 'nav-medical.svg',
+                icon: MedicalAccessSidebarIcon,
                 href: medical_access.index(),
             });
         }
@@ -61,7 +70,7 @@ function Navigation() {
                 },
                 {
                     label: 'Consultations',
-                    icon: 'nav-consultations.svg',
+                    icon: ConsultationsSidebarIcon,
                     href: consultations.index(),
                 },
                 {
@@ -76,12 +85,12 @@ function Navigation() {
             navigation.push(
                 {
                     label: 'Wallet',
-                    icon: 'nav-wallet.svg',
+                    icon: WalletSidebarIcon,
                     href: wallet.index(),
                 },
                 {
                     label: 'Plan & Billing',
-                    icon: 'nav-plan.svg',
+                    icon: PlanBillingSidebarIcon,
                     href: plans.index(),
                 },
             );
@@ -90,7 +99,7 @@ function Navigation() {
         if (workspace.type == 'individual' || workspace.type == 'business') {
             navigation.push({
                 label: 'Activity Log',
-                icon: 'nav-activity.svg',
+                icon: ActivityLogSidebarIcon,
                 href: activity_log.index(),
             });
         }
@@ -113,19 +122,11 @@ function Navigation() {
                                     aria-current={isActive ? 'page' : undefined}
                                     className={
                                         isActive
-                                            ? 'flex min-h-8 items-center gap-3 rounded-md bg-accent px-2 text-sm font-medium text-secondary-foreground'
-                                            : 'flex min-h-10 items-center gap-3 rounded-md px-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground'
+                                            ? 'flex min-h-8 items-center gap-3 rounded-md bg-accent px-2 text-sm font-medium text-secondary'
+                                            : 'flex min-h-10 items-center gap-3 rounded-md px-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-secondary'
                                     }
                                 >
-                                    {typeof item.icon == 'string' ? (
-                                        <img
-                                            src={`/images/sponsor/${item.icon}`}
-                                            alt=""
-                                            className="size-[18px]"
-                                        />
-                                    ) : (
-                                        <Icon className="size-[18px]" />
-                                    )}
+                                    <Icon className="size-[18px] shrink-0" />
                                     {item.label}
                                 </Link>
                             ) : (
@@ -135,11 +136,7 @@ function Navigation() {
                                     aria-label={`${item.label} (coming soon)`}
                                     className="flex min-h-10 w-full items-center gap-3 rounded-md px-2 text-sm font-medium text-muted-foreground opacity-80"
                                 >
-                                    <img
-                                        src={`/images/sponsor/${item.icon}`}
-                                        alt=""
-                                        className="size-[18px]"
-                                    />
+                                    <Icon className="size-[18px] shrink-0" />
                                     {item.label}
                                 </button>
                             )}

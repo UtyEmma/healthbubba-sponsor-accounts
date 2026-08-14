@@ -72,10 +72,39 @@ export interface ConsultationAllocationSummary {
     unavailableReason: string | null;
 }
 
+export interface ConsultationQuotaBreakdown {
+    base: number | null;
+    additional: number | null;
+    total: number | null;
+}
+
+export interface ConsultationScalingStep {
+    capacity: number;
+    additionalCapacity: number;
+    gp: ConsultationQuotaBreakdown;
+    specialist: ConsultationQuotaBreakdown;
+}
+
+export interface ConsultationAllocationScaling {
+    available: boolean;
+    unavailableReason: string | null;
+    capacityLabel: string;
+    capacityUnit: string;
+    capacityUnitPlural: string;
+    includedCapacity: number | null;
+    currentCapacity: number | null;
+    maximumCapacity: number | null;
+    gpPerCapacity: number | null;
+    specialistPerCapacity: number | null;
+    description: string;
+    steps: ConsultationScalingStep[];
+}
+
 export interface ConsultationCoverage {
     planName: string | null;
     activeBeneficiaries: number;
     allocations: ConsultationAllocationSummary[];
+    scaling: ConsultationAllocationScaling;
 }
 
 export interface ConsultationPageProps {

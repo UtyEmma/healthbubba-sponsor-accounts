@@ -22,6 +22,7 @@ final class WorkspaceResource extends JsonResource
             'logo' => $this->logo,
             'description' => $this->description,
             'type' => $this->type->value,
+            'fallbackChannel' => $this->fallback_channel?->value,
         ];
     }
 }

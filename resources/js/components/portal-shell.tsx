@@ -3,6 +3,16 @@ import { BellIcon, MenuIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { BrandMark } from '@/components/brand-mark';
+import type { SidebarIcon } from '@/components/sidebar-icons';
+import {
+    ActivityLogSidebarIcon,
+    BeneficiariesSidebarIcon,
+    ConsultationsSidebarIcon,
+    DashboardSidebarIcon,
+    MedicalAccessSidebarIcon,
+    PlanBillingSidebarIcon,
+    WalletSidebarIcon,
+} from '@/components/sidebar-icons';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -32,32 +42,36 @@ import wallet from '@/routes/wallet';
 
 type NavigationItem = {
     label: string;
-    icon: string;
+    icon: SidebarIcon;
     href?: ReturnType<typeof home>;
 };
 
 const navigation: NavigationItem[] = [
-    { label: 'Dashboard', icon: 'nav-dashboard.svg', href: home() },
+    { label: 'Dashboard', icon: DashboardSidebarIcon, href: home() },
     {
         label: 'Beneficiaries',
-        icon: 'nav-beneficiaries.svg',
+        icon: BeneficiariesSidebarIcon,
         href: beneficiaries.index(),
     },
     {
         label: 'Consultations',
-        icon: 'nav-consultations.svg',
+        icon: ConsultationsSidebarIcon,
         href: consultations.index(),
     },
     {
         label: 'Medical Access',
-        icon: 'nav-medical.svg',
+        icon: MedicalAccessSidebarIcon,
         href: medicalAccess.index(),
     },
-    { label: 'Wallet', icon: 'nav-wallet.svg', href: wallet.index() },
-    { label: 'Plan & Billing', icon: 'nav-plan.svg', href: plans.index() },
+    { label: 'Wallet', icon: WalletSidebarIcon, href: wallet.index() },
+    {
+        label: 'Plan & Billing',
+        icon: PlanBillingSidebarIcon,
+        href: plans.index(),
+    },
     {
         label: 'Activity Log',
-        icon: 'nav-activity.svg',
+        icon: ActivityLogSidebarIcon,
         href: activityLog.index(),
     },
 ];
@@ -69,6 +83,7 @@ function PortalNavigation() {
         <nav aria-label="Primary" className="p-3">
             <ul className="flex flex-col gap-1">
                 {navigation.map((item) => {
+                    const Icon = item.icon;
                     const isActive = item.href?.url === currentPath;
 
                     return (
@@ -83,11 +98,7 @@ function PortalNavigation() {
                                             : 'flex min-h-10 items-center gap-3 rounded-md px-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground'
                                     }
                                 >
-                                    <img
-                                        src={`/images/sponsor/${item.icon}`}
-                                        alt=""
-                                        className="size-[18px]"
-                                    />
+                                    <Icon className="size-[18px] shrink-0" />
                                     {item.label}
                                 </Link>
                             ) : (
@@ -97,11 +108,7 @@ function PortalNavigation() {
                                     aria-label={`${item.label} (coming soon)`}
                                     className="flex min-h-10 w-full items-center gap-3 rounded-md px-2 text-sm font-medium text-muted-foreground opacity-80"
                                 >
-                                    <img
-                                        src={`/images/sponsor/${item.icon}`}
-                                        alt=""
-                                        className="size-[18px]"
-                                    />
+                                    <Icon className="size-[18px] shrink-0" />
                                     {item.label}
                                 </button>
                             )}
@@ -170,7 +177,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
                             >
                                 <BellIcon className="size-5" />
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent className='w-xs' align="start" >
+                            <DropdownMenuContent className="w-xs" align="start">
                                 <DropdownMenuGroup>
                                     <DropdownMenuLabel>
                                         Notifications

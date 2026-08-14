@@ -10,6 +10,7 @@ import business from '@/routes/business';
 import type { ConsultationPageProps } from '@/types';
 import { ConsultationHistory } from './partials/consultation-history';
 import { ConsultationOverview } from './partials/consultation-overview';
+import { AllocationFallbackCard } from './partials/allocation-fallback';
 
 export default function ConsultationsIndex({
     consultations,
@@ -53,6 +54,7 @@ export default function ConsultationsIndex({
                 />
 
                 <ConsultationOverview coverage={coverage} />
+                <AllocationFallbackCard />
                 <ConsultationHistory consultations={consultations} />
             </div>
         </DashboardLayout>

@@ -1,60 +1,115 @@
-import { StethoscopeIcon, UsersRoundIcon } from 'lucide-react';
+import { CreditCardIcon, WalletIcon } from 'lucide-react';
 
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import type {
     ConsultationAllocationSummary,
     ConsultationCoverage,
+    ConsultationQuotaBreakdown,
 } from '@/types';
-
-const dateFormatter = new Intl.DateTimeFormat('en-NG', {
-    dateStyle: 'medium',
-});
 
 export function ConsultationOverview({
     coverage,
 }: {
     coverage: ConsultationCoverage;
 }) {
-    return (
-        <section className="pt-6" aria-label="Consultation allocation overview">
-            <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                    <h2 className="text-base font-semibold">
-                        Current allocation
-                    </h2>
-                    <p className="text-sm text-muted-foreground">
-                        {coverage.planName ?? 'No active plan'}
-                    </p>
-                </div>
-                <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <UsersRoundIcon className="size-4" />
-                    {coverage.activeBeneficiaries} active{' '}
-                    {coverage.activeBeneficiaries === 1
-                        ? 'beneficiary'
-                        : 'beneficiaries'}
-                </p>
-            </div>
+    const { scaling } = coverage;
 
-            <div className="grid gap-4 md:grid-cols-2">
-                {coverage.allocations.map((allocation) => (
-                    <AllocationCard
-                        key={allocation.type}
-                        allocation={allocation}
-                    />
-                ))}
-            </div>
+    return (
+        <section
+            className="grid gap-4 pt-6 lg:grid-cols-[416px_minmax(0,1fr)]"
+            aria-label="Consultation allocation overview"
+        >
+            <Card className="min-h-[319px]">
+                <CardHeader className="px-6 pt-7 pb-3">
+                    <CardTitle className="text-base leading-5">
+                        Current pool
+                    </CardTitle>
+                    <p className="text-sm leading-5 text-muted-foreground">
+                        {currentPoolDescription(coverage)}
+                    </p>
+                </CardHeader>
+                <CardContent className="grid gap-5 px-6 pt-3 pb-6">
+                    {coverage.allocations.map((allocation) => (
+                        <PoolProgress
+                            key={allocation.type}
+                            allocation={allocation}
+                        />
+                    ))}
+                </CardContent>
+            </Card>
+
+            <Card className="min-h-[319px] overflow-hidden">
+                <CardHeader className="px-6 pt-6 pb-4">
+                    <CardTitle className="text-base leading-5">
+                        Allocation scaling
+                    </CardTitle>
+                    <p className="text-sm leading-5 text-muted-foreground">
+                        {scaling.description}
+                    </p>
+                </CardHeader>
+                <div className="overflow-x-auto">
+                    <Table className="min-w-[560px]">
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="pl-8">
+                                    {scaling.capacityLabel}
+                                </TableHead>
+                                <TableHead>GP pool</TableHead>
+                                <TableHead>Specialist pool</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {scaling.available ? (
+                                scaling.steps.map((step) => (
+                                    <TableRow key={step.capacity}>
+                                        <TableCell className="h-12 pl-8 font-medium">
+                                            {step.capacity}{' '}
+                                            {step.capacity === 1
+                                                ? scaling.capacityUnit
+                                                : scaling.capacityUnitPlural}
+                                        </TableCell>
+                                        <TableCell className="h-12 text-muted-foreground">
+                                            {formatQuotaBreakdown(
+                                                step.gp,
+                                                'GP',
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="h-12 text-muted-foreground">
+                                            {formatQuotaBreakdown(
+                                                step.specialist,
+                                                'specialist',
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={3}
+                                        className="h-12 pl-8 text-muted-foreground"
+                                    >
+                                        {scaling.unavailableReason}
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+            </Card>
         </section>
     );
 }
 
-function AllocationCard({
+function PoolProgress({
     allocation,
 }: {
     allocation: ConsultationAllocationSummary;
@@ -68,80 +123,103 @@ function AllocationCard({
               : Math.min(100, (used / allocation.limit) * 100);
     const remaining =
         allocation.remaining === null ? 'Unlimited' : allocation.remaining;
+    const limit = allocation.limit === null ? 'Unlimited' : allocation.limit;
 
     return (
-        <Card>
-            <CardHeader className="flex-row items-start justify-between gap-4 pb-4">
-                <div className="grid gap-1.5">
-                    <CardTitle className="text-base">
-                        {allocation.label}
-                    </CardTitle>
-                    <CardDescription>{allocation.scopeLabel}</CardDescription>
-                </div>
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-success-muted text-success">
-                    <StethoscopeIcon className="size-5" />
-                </span>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-                {allocation.unavailableReason ? (
-                    <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
-                        {allocation.unavailableReason}
-                    </p>
-                ) : (
-                    <>
-                        <div>
-                            <div className="flex items-center justify-between gap-4 text-sm">
-                                <span className="text-muted-foreground">
-                                    Remaining
-                                </span>
-                                <strong className="font-semibold">
-                                    {remaining}
-                                    {allocation.limit !== null && (
-                                        <span className="font-normal text-muted-foreground">
-                                            {' '}
-                                            of {allocation.limit}
-                                        </span>
-                                    )}
-                                </strong>
-                            </div>
-                            <Progress
-                                value={percentage}
-                                aria-label={`${allocation.label}: ${remaining} remaining`}
-                                className="mt-2"
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3 text-sm">
-                            <AllocationStat
-                                label="Completed"
-                                value={allocation.completed}
-                            />
-                            <AllocationStat
-                                label="Reserved"
-                                value={allocation.reserved}
-                            />
-                        </div>
-
-                        {allocation.resetAt && (
-                            <p className="text-xs text-muted-foreground">
-                                Resets{' '}
-                                {dateFormatter.format(
-                                    new Date(allocation.resetAt),
-                                )}
-                            </p>
-                        )}
-                    </>
-                )}
-            </CardContent>
-        </Card>
+        <div>
+            <div className="flex items-center justify-between gap-4 text-sm leading-5">
+                <span>{allocation.label}</span>
+                <strong className="font-semibold">
+                    {used}/{limit} used
+                </strong>
+            </div>
+            <Progress
+                value={percentage}
+                aria-label={`${allocation.label}: ${remaining}`}
+                className="mt-1.5 h-2.5"
+            />
+        </div>
     );
 }
 
-function AllocationStat({ label, value }: { label: string; value: number }) {
+function currentPoolDescription(coverage: ConsultationCoverage): string {
+    const currentCapacity = coverage.scaling.currentCapacity;
+
+    if (currentCapacity === null) {
+        return `Shared across ${coverage.activeBeneficiaries} active beneficiaries`;
+    }
+
+    const activeUnit =
+        coverage.scaling.capacityUnit === 'employee seat'
+            ? coverage.activeBeneficiaries === 1
+                ? 'employee'
+                : 'employees'
+            : coverage.activeBeneficiaries === 1
+              ? 'beneficiary'
+              : 'beneficiaries';
+    const capacityUnit =
+        currentCapacity === 1
+            ? coverage.scaling.capacityUnit
+            : coverage.scaling.capacityUnitPlural;
+
+    return `${currentCapacity} ${capacityUnit} allocated · ${coverage.activeBeneficiaries} active ${activeUnit}`;
+}
+
+function formatQuotaBreakdown(
+    breakdown: ConsultationQuotaBreakdown,
+    label: string,
+): string {
+    if (breakdown.total === null) {
+        return `Unlimited ${label}`;
+    }
+
+    return `${breakdown.total} ${label} (${breakdown.base ?? 0} base + ${breakdown.additional ?? 0} additional)`;
+}
+
+export function AllocationFallbackCard() {
+    const options = [
+        {
+            icon: WalletIcon,
+            title: 'Beneficiary wallet',
+            description: 'Paid from their own balance',
+        },
+        {
+            icon: CreditCardIcon,
+            title: 'Card payment',
+            description: 'Direct external checkout',
+        },
+    ];
+
     return (
-        <div className="rounded-lg border border-border px-3 py-2.5">
-            <p className="text-xs text-muted-foreground">{label}</p>
-            <p className="pt-0.5 font-semibold">{value}</p>
-        </div>
+        <Card className="mt-5">
+            <CardHeader className="px-6 pt-7 pb-5">
+                <CardTitle className="text-base leading-5">
+                    When allocations run out
+                </CardTitle>
+                <p className="text-sm leading-5 text-muted-foreground">
+                    Care isn’t blocked; beneficiaries unlock direct checkout
+                    via:
+                </p>
+            </CardHeader>
+
+            <CardContent className="grid gap-3 px-6 pb-6">
+                {options.map(({ icon: Icon, title, description }) => (
+                    <div
+                        key={title}
+                        className="flex items-center gap-3 rounded-xl border border-border p-4"
+                    >
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-success-muted text-success">
+                            <Icon className="size-5" />
+                        </span>
+                        <div>
+                            <h3 className="leading-5 font-medium">{title}</h3>
+                            <p className="text-sm leading-4 text-muted-foreground">
+                                {description}
+                            </p>
+                        </div>
+                    </div>
+                ))}
+            </CardContent>
+        </Card>
     );
 }

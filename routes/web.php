@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\AccountSettings\UpdateWorkspaceDetailsController;
 use App\Http\Controllers\Activity\MarkWorkspaceActivitiesReadController;
 use App\Http\Controllers\Activity\WorkspaceActivityIndexController;
 use App\Http\Controllers\Appointments\ConsultationController;
+use App\Http\Controllers\Appointments\UpdateAllocationFallbackController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MedicalAccessRequests\DecideMedicalAccessRequestController;
@@ -84,7 +86,12 @@ Route::middleware('auth')->group(function () {
             ->name('access.update');
     });
 
-    Route::get('/consultations', [ConsultationController::class, 'index'])->name('consultations.index');
+    Route::prefix('consultations')->name('consultations.')->group(function () {
+        Route::get('/', [ConsultationController::class, 'index'])->name('index');
+        Route::patch('/allocation-fallback', UpdateAllocationFallbackController::class)
+            ->middleware('throttle:30,1')
+            ->name('allocation_fallback.update');
+    });
     Route::get('/medical-access', MedicalAccessIndexController::class)->name('medical_access.index');
     Route::post('/medical-access-requests', StoreMedicalAccessRequestController::class)
         ->middleware('throttle:20,1')
@@ -103,7 +110,12 @@ Route::middleware('auth')->group(function () {
             ->withoutScopedBindings();
     });
 
-    Route::inertia('/account-settings', 'sponsor/account-settings/index')->name('account_settings.index');
+    Route::prefix('account-settings')->name('account_settings.')->group(function () {
+        Route::inertia('/', 'account-settings/index')->name('index');
+        Route::patch('/workspace', UpdateWorkspaceDetailsController::class)
+            ->middleware('throttle:20,1')
+            ->name('workspace.update');
+    });
     Route::get('/activity-log', WorkspaceActivityIndexController::class)->name('activity_log.index');
     Route::post('/activity-log/read-all', MarkWorkspaceActivitiesReadController::class)
         ->middleware('throttle:30,1')

@@ -1,18 +1,12 @@
 import { Head, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
-import type { ReactNode } from 'react';
 import { useState } from 'react';
-
-import { BusinessPortalShell } from '@/components/business-portal-shell';
 import { PageHeader } from '@/components/page-header';
 import { PaymentStatusNotice } from '@/components/payment-status-notice';
-import { PortalShell } from '@/components/portal-shell';
 import { Disclose } from '@/components/toggle/disclose';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import type { AccountType, PlanBillingPageProps } from '@/types';
-
-// import { institutionalNavigation } from '../institutional-sponsor/partials/institutional-navigation';
+import type { PlanBillingPageProps } from '@/types';
 import { CapacityPurchaseCard } from './partials/capacity-purchase-card';
 import { PlanCard } from './partials/plan-cards';
 import { PlanChangeDialog } from './partials/plan-change-dialog';
@@ -36,35 +30,6 @@ const statusTone: Record<
     cancelled: 'bg-destructive/10 text-destructive',
     expired: 'bg-muted text-muted-foreground',
 };
-
-// function BillingShell({
-//     accountType,
-//     children,
-// }: {
-//     accountType: AccountType;
-//     children: ReactNode;
-// }) {
-//     if (accountType === 'individual') {
-//         return <PortalShell>{children}</PortalShell>;
-//     }
-
-//     return (
-//         <BusinessPortalShell
-//             navigation={
-//                 accountType === 'institution'
-//                     ? institutionalNavigation
-//                     : undefined
-//             }
-//             navigationLabel={
-//                 accountType === 'institution'
-//                     ? 'Institutional sponsor navigation'
-//                     : undefined
-//             }
-//         >
-//             {children}
-//         </BusinessPortalShell>
-//     );
-// }
 
 function formatDate(value: string | null): string {
     return value ? format(new Date(value), 'do MMM') : 'Not scheduled';
