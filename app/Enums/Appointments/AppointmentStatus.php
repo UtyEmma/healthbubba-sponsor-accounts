@@ -1,28 +1,19 @@
 <?php
 
-namespace App\Enums;
+namespace App\Enums\Appointments;
 
-enum AppointmentStatus:int {
+enum AppointmentStatus: int
+{
+    case Upcoming = 0;
+    case Completed = 1;
+    case Cancelled = 2;
 
-    case UPCOMING = 0;
-    case COMPLETED = 1;
-    case CANCELLED = 2; 
-
-    function label(){
-        return match($this) {
-            self::UPCOMING => 'Upcoming',
-            self::COMPLETED => 'Completed',
-            self::CANCELLED => 'Cancelled',
-            default => 'Unknown Status'
-        };
-    }
-
-    static function fromValue(string $value): ?self {
-        return match($value) {
-            'upcoming' => self::UPCOMING,
-            'completed' => self::COMPLETED,
-            'cancelled' => self::CANCELLED,
-            default => null
+    public function label(): string
+    {
+        return match ($this) {
+            self::Upcoming => 'Upcoming',
+            self::Completed => 'Completed',
+            self::Cancelled => 'Cancelled',
         };
     }
 }

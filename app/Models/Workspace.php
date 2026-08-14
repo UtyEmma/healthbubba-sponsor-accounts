@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Concerns\HasWallet;
 use App\Enums\AccountTypes;
 use App\Models\Consultations\Appointment;
+use App\Models\Consultations\Consultation;
 use App\Relations\WorkspacePatients;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
@@ -74,12 +75,21 @@ class Workspace extends Model implements Subscribable
         return $this->morphMany(Transaction::class, 'owner');
     }
 
-    public function patients(): WorkspacePatients {
-        return new WorkspacePatients(Beneficiary::query()->isPatient(), $this);
+    public function patients(): WorkspacePatients
+    {
+        return new WorkspacePatients(Beneficiary::query(), $this);
     }
 
-    public function appointments(){
+    /** @return HasMany<Appointment, $this> */
+    public function appointments(): HasMany
+    {
         return $this->hasMany(Appointment::class, 'sponsor_id');
+    }
+
+    /** @return HasMany<Consultation, $this> */
+    public function consultations(): HasMany
+    {
+        return $this->hasMany(Consultation::class);
     }
 
     public static function current(): ?self

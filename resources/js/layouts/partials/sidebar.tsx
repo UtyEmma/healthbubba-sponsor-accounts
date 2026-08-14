@@ -60,6 +60,11 @@ function Navigation() {
                     href: business.employees(),
                 },
                 {
+                    label: 'Consultations',
+                    icon: 'nav-consultations.svg',
+                    href: consultations.index(),
+                },
+                {
                     label: 'Reports',
                     icon: BarChart3Icon,
                     href: business.reports(),

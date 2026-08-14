@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('appointments', function (Blueprint $table) {
-            $table->dropIfExists('sponsor_id');
+        Schema::connection('main_sql')->table('appointments', function (Blueprint $table) {
+            $table->dropColumn('sponsor_id');
         });
     }
 };

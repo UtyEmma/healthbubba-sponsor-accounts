@@ -1,41 +1,60 @@
-import { Head, Link } from '@inertiajs/react';
-import { UserRoundPlusIcon } from 'lucide-react';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { UserRoundPlusIcon, UsersRoundIcon } from 'lucide-react';
 
 import { PageHeader } from '@/components/page-header';
-import { PortalShell } from '@/components/portal-shell';
 import { buttonVariants } from '@/components/ui/button';
+import { DashboardLayout } from '@/layouts/dashboard';
 import { cn } from '@/lib/utils';
 import beneficiaries from '@/routes/beneficiaries';
+import business from '@/routes/business';
+import type { ConsultationPageProps } from '@/types';
 import { ConsultationHistory } from './partials/consultation-history';
-import { AllocationFallbackCard, ConsultationOverview } from './partials/consultation-overview';
+import { ConsultationOverview } from './partials/consultation-overview';
 
-export default function ConsultationsIndex() {
+export default function ConsultationsIndex({
+    consultations,
+    coverage,
+}: ConsultationPageProps) {
+    const { workspace } = usePage().props;
+    const managementAction =
+        workspace.type === 'business' ? (
+            <Link
+                href={business.employees()}
+                className={cn(
+                    buttonVariants({ size: 'compact' }),
+                    'self-start sm:self-auto',
+                )}
+            >
+                <UsersRoundIcon className="size-4" />
+                Manage employees
+            </Link>
+        ) : workspace.type === 'individual' ? (
+            <Link
+                href={beneficiaries.index()}
+                className={cn(
+                    buttonVariants({ size: 'compact' }),
+                    'self-start sm:self-auto',
+                )}
+            >
+                <UserRoundPlusIcon className="size-4" />
+                Manage beneficiaries
+            </Link>
+        ) : undefined;
+
     return (
-        <>
+        <DashboardLayout>
             <Head title="Consultations" />
-            <PortalShell>
-                <div className="mx-auto w-full max-w-6xl">
-                    <PageHeader
-                        title="Consultations"
-                        description="Your shared consultation pool and how it scales with beneficiaries."
-                        action={
-                            <Link
-                                href={beneficiaries.index()}
-                                className={cn(
-                                    buttonVariants({ size: 'compact' }),
-                                    'self-start sm:self-auto',
-                                )}
-                            >
-                                <UserRoundPlusIcon className="size-4" />
-                                Add beneficiaries
-                            </Link>
-                        }
-                    />
-                    <ConsultationOverview />
-                    <AllocationFallbackCard />
-                    <ConsultationHistory />
-                </div>
-            </PortalShell>
-        </>
+
+            <div className="mx-auto w-full max-w-6xl py-2 sm:py-4">
+                <PageHeader
+                    title="Sponsored consultations"
+                    description="Track appointments funded from your workspace's GP and Specialist consultation allocations."
+                    action={managementAction}
+                />
+
+                <ConsultationOverview coverage={coverage} />
+                <ConsultationHistory consultations={consultations} />
+            </div>
+        </DashboardLayout>
     );
 }

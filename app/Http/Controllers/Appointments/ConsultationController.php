@@ -2,18 +2,29 @@
 
 namespace App\Http\Controllers\Appointments;
 
-use App\Http\Controllers\Controller;
-use App\Models\Workspace;
-use Illuminate\Http\Request;
+use App\Http\Requests\Consultations\IndexConsultationRequest;
+use App\Http\Resources\ConsultationResource;
+use App\Queries\Consultations\WorkspaceConsultationQuery;
+use App\Services\Consultations\ConsultationCoverageService;
 use Inertia\Inertia;
+use Inertia\Response;
 
-class ConsultationController extends Controller {
-    
-    function index() {
-        $workspace = Workspace::current();
-        // dd($workspace->appointments);
-        // $beneficiaries = $workspace->patients()
+final readonly class ConsultationController
+{
+    public function __construct(
+        private WorkspaceConsultationQuery $consultations,
+        private ConsultationCoverageService $coverage,
+    ) {}
 
-        return Inertia::render('consultations/index');
+    public function index(IndexConsultationRequest $request): Response
+    {
+        $workspace = $request->workspace();
+
+        return Inertia::render('consultations/index', [
+            'consultations' => ConsultationResource::collection(
+                $this->consultations->paginate($workspace),
+            ),
+            'coverage' => $this->coverage->summary($workspace),
+        ]);
     }
 }

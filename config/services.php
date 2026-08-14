@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'healthbubba' => [
+        'service_token' => env('HEALTHBUBBA_SERVICE_TOKEN'),
+    ],
+
 ];

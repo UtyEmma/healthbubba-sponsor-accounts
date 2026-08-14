@@ -117,7 +117,7 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('institutional-sponsor')->name('institutional.')->group(function () {
         Route::inertia('/dashboard', 'institutional-sponsor/dashboard')->name('dashboard');
-        Route::inertia('/consultations', 'institutional-sponsor/consultations/index')->name('consultations');
+        Route::redirect('/consultations', '/consultations')->name('consultations');
         Route::inertia('/notifications', 'institutional-sponsor/notifications/index')->name('notifications');
         Route::inertia('/coverage', 'institutional-sponsor/coverage/index')->name('coverage');
         Route::inertia('/enrollment-codes', 'institutional-sponsor/enrollment-codes/index')->name('enrollment_codes');
