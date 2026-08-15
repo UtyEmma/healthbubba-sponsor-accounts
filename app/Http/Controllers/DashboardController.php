@@ -3,21 +3,41 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AccountTypes;
+use App\Http\Resources\WorkspaceDashboardResource;
+use App\Models\User;
 use App\Models\Workspace;
+use App\Queries\Dashboard\WorkspaceDashboardQuery;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response;
 
-class DashboardController extends Controller {
-    
-    function __invoke() {
+final readonly class DashboardController
+{
+    public function __construct(
+        private WorkspaceDashboardQuery $dashboard,
+    ) {}
+
+    public function __invoke(Request $request): Response
+    {
         $workspace = Workspace::current();
-        $page = match($workspace->type){
+        $user = $request->user();
+
+        abort_unless($user instanceof User, 404);
+
+        if (! $workspace instanceof Workspace) {
+            return Inertia::render('workspace-access');
+        }
+
+        $page = match ($workspace->type) {
             AccountTypes::INDIVIDUAL => 'sponsor/dashboard',
             AccountTypes::BUSINESS => 'business-sponsor/dashboard',
             AccountTypes::INSTITUTION => 'institutional-sponsor/dashboard',
-            default => abort(403)
         };
 
-        return Inertia::render($page);
+        return Inertia::render($page, [
+            'dashboard' => new WorkspaceDashboardResource(
+                $this->dashboard->execute($workspace, $user),
+            ),
+        ]);
     }
 }

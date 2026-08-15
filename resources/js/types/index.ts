@@ -1,8 +1,11 @@
 export type * from './auth';
 export type * from './activity';
 export type * from './billing';
+export type * from './business-consultation-report';
 export type * from './consultation';
+export type * from './dashboard';
 export type * from './medical-access';
+export type * from './team';
 export type * from './wallet';
 export type * from './workspace';
 export type * from './workspace-beneficiary';

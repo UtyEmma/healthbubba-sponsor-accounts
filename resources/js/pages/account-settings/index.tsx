@@ -19,7 +19,7 @@ const accountTypeLabels: Record<AccountType, string> = {
 };
 
 export default function AccountSettingsIndex() {
-    const { auth, workspace } = usePage().props;
+    const { auth, workspace, workspacePermissions } = usePage().props;
     const [announcement, setAnnouncement] = useState('');
     const hasOrganizationDetails = workspace.type !== 'individual';
     const entityLabel =
@@ -116,15 +116,17 @@ export default function AccountSettingsIndex() {
                                 </div>
                             </div>
 
-                            <BusinessDetailsDialog
-                                workspace={workspace}
-                                entityLabel={entityLabel}
-                                onUpdated={() =>
-                                    setAnnouncement(
-                                        `${entityLabel} details have been updated.`,
-                                    )
-                                }
-                            />
+                            {workspacePermissions.canManage && (
+                                <BusinessDetailsDialog
+                                    workspace={workspace}
+                                    entityLabel={entityLabel}
+                                    onUpdated={() =>
+                                        setAnnouncement(
+                                            `${entityLabel} details have been updated.`,
+                                        )
+                                    }
+                                />
+                            )}
                         </div>
                     </SettingsSection>
                 )}

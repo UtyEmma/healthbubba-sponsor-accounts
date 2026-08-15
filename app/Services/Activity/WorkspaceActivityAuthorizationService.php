@@ -24,7 +24,6 @@ final class WorkspaceActivityAuthorizationService
         return $user->workspaces()
             ->whereKey($workspace->getKey())
             ->wherePivot('status', Status::ACTIVE->value)
-            ->wherePivotIn('role', [Roles::ADMIN->value, Roles::SUPER_ADMIN->value])
             ->exists();
     }
 }

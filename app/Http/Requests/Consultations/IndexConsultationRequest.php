@@ -2,4 +2,6 @@
 
 namespace App\Http\Requests\Consultations;
 
-final class IndexConsultationRequest extends AuthorizedConsultationRequest {}
+use App\Http\Requests\WorkspaceMembers\AuthorizedWorkspaceViewRequest;
+
+final class IndexConsultationRequest extends AuthorizedWorkspaceViewRequest {}

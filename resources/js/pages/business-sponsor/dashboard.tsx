@@ -8,21 +8,23 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 
-import { BusinessPortalShell } from '@/components/business-portal-shell';
 import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DashboardLayout } from '@/layouts/dashboard';
 import business from '@/routes/business';
+import type { DashboardPageProps } from '@/types';
 
 import { BusinessMetricCard } from './partials/business-metric-card';
 import { DepartmentUtilizationChart } from './partials/department-utilization-chart';
-import { DashboardLayout } from '@/layouts/dashboard';
 
-export default function BusinessDashboard() {
+export default function BusinessDashboard({ dashboard }: DashboardPageProps) {
     const [announcement, setAnnouncement] = useState('');
-
-    const { workspace } = usePage().props
+    const { workspace } = usePage().props;
+    const gpAllocation = dashboard.coverage.allocations.find(
+        (allocation) => allocation.type === 'gp',
+    );
 
     return (
         <>
@@ -48,24 +50,37 @@ export default function BusinessDashboard() {
                     >
                         <BusinessMetricCard
                             label="Active Employees"
-                            value="6"
+                            value={String(dashboard.beneficiaries.active)}
                             icon={UsersRoundIcon}
                             tone="green"
                         />
                         <BusinessMetricCard
                             label="Wallet balance"
-                            value="₦63,000"
+                            value={formatMoney(
+                                dashboard.wallet.balance,
+                                dashboard.wallet.currency,
+                            )}
                             icon={WalletCardsIcon}
                         />
                         <BusinessMetricCard
                             label="GP consults left"
-                            value="0"
+                            value={
+                                gpAllocation?.remaining === null
+                                    ? '∞'
+                                    : String(gpAllocation?.remaining ?? 0)
+                            }
                             icon={StethoscopeIcon}
                             tone="blue"
                         />
                         <BusinessMetricCard
                             label="Renews in"
-                            value="3d"
+                            value={
+                                dashboard.subscription?.renewalDays === null ||
+                                dashboard.subscription?.renewalDays ===
+                                    undefined
+                                    ? '--'
+                                    : `${dashboard.subscription.renewalDays}d`
+                            }
                             icon={CalendarClockIcon}
                             tone="amber"
                         />
@@ -84,7 +99,9 @@ export default function BusinessDashboard() {
                                 </p>
                             </CardHeader>
                             <CardContent className="px-4 pt-3 pb-4">
-                                <DepartmentUtilizationChart />
+                                <DepartmentUtilizationChart
+                                    data={dashboard.departmentUtilization}
+                                />
                             </CardContent>
                         </Card>
 
@@ -93,21 +110,43 @@ export default function BusinessDashboard() {
                                 <CardTitle className="text-base font-semibold">
                                     Subscription
                                 </CardTitle>
-                                <Badge variant="destructive">Inactive</Badge>
+                                <Badge
+                                    variant={
+                                        dashboard.subscription?.active
+                                            ? 'success'
+                                            : 'destructive'
+                                    }
+                                >
+                                    {dashboard.subscription?.statusLabel ??
+                                        'Inactive'}
+                                </Badge>
                             </CardHeader>
                             <CardContent className="p-6 pt-3">
                                 <dl className="grid gap-3 border-b pb-4 text-sm">
                                     <SubscriptionRow
                                         label="Plan"
-                                        value="Basic Plan"
+                                        value={
+                                            dashboard.subscription?.planName ??
+                                            'No active plan'
+                                        }
                                     />
                                     <SubscriptionRow
-                                        label="Monthly"
-                                        value="₦20,000"
+                                        label={
+                                            dashboard.subscription
+                                                ?.billingCycleLabel ?? 'Billing'
+                                        }
+                                        value={formatMoney(
+                                            dashboard.subscription
+                                                ?.renewalAmount ?? '0',
+                                            dashboard.wallet.currency,
+                                        )}
                                     />
                                     <SubscriptionRow
-                                        label="Extra beneficiaries"
-                                        value="0"
+                                        label="Extra seats"
+                                        value={String(
+                                            dashboard.subscription
+                                                ?.additionalCapacity ?? 0,
+                                        )}
                                     />
                                 </dl>
                                 <Button
@@ -142,4 +181,13 @@ function SubscriptionRow({ label, value }: { label: string; value: string }) {
             <dd className="font-medium">{value}</dd>
         </div>
     );
+}
+
+function formatMoney(amount: string, currency: string): string {
+    return new Intl.NumberFormat('en-NG', {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+    }).format(Number(amount));
 }

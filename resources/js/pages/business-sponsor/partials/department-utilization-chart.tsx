@@ -6,21 +6,22 @@ import {
     ChartTooltipContent,
 } from '@/components/ui/chart';
 import type { ChartConfig } from '@/components/ui/chart';
-
-const utilization = [
-    { department: 'Operations', gp: 4, specialist: 6 },
-    { department: 'Finance', gp: 1, specialist: 3 },
-    { department: 'Logistics', gp: 3, specialist: 2 },
-    { department: 'HR', gp: 1, specialist: 5 },
-    { department: 'Sales', gp: 1, specialist: 1 },
-];
+import type { DashboardDepartmentUtilization } from '@/types';
 
 const chartConfig = {
     gp: { label: 'GP consultations', color: '#2f66df' },
     specialist: { label: 'Specialist consultations', color: '#2ac17e' },
 } satisfies ChartConfig;
 
-export function DepartmentUtilizationChart() {
+export function DepartmentUtilizationChart({
+    data,
+}: {
+    data: DashboardDepartmentUtilization[];
+}) {
+    const ticks = chartTicks(
+        Math.max(0, ...data.map((row) => row.gp + row.specialist)),
+    );
+
     return (
         <ChartContainer
             config={chartConfig}
@@ -29,7 +30,7 @@ export function DepartmentUtilizationChart() {
             aria-label="Consultation utilization by department"
         >
             <BarChart
-                data={utilization}
+                data={data}
                 margin={{ top: 12, right: 12, bottom: 0, left: -12 }}
             >
                 <XAxis
@@ -42,8 +43,8 @@ export function DepartmentUtilizationChart() {
                 <YAxis
                     axisLine={false}
                     tickLine={false}
-                    ticks={[0, 4, 8, 16]}
-                    domain={[0, 16]}
+                    ticks={ticks}
+                    domain={[0, ticks.at(-1) ?? 4]}
                     tickMargin={8}
                 />
                 <ChartTooltip
@@ -65,4 +66,10 @@ export function DepartmentUtilizationChart() {
             </BarChart>
         </ChartContainer>
     );
+}
+
+function chartTicks(maximum: number): number[] {
+    const ceiling = Math.max(4, Math.ceil(maximum / 4) * 4);
+
+    return [0, ceiling / 4, ceiling / 2, (ceiling * 3) / 4, ceiling];
 }

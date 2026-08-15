@@ -17,6 +17,7 @@ use App\Http\Controllers\Payments\StoreCapacityPurchaseController;
 use App\Http\Controllers\Payments\StorePlanChangeController;
 use App\Http\Controllers\Payments\StorePlanCheckoutController;
 use App\Http\Controllers\Payments\StoreWalletPaymentController;
+use App\Http\Controllers\Reports\BusinessConsultationReportController;
 use App\Http\Controllers\WalletController;
 use App\Http\Controllers\WorkspaceBeneficiaries\CancelWorkspaceBeneficiaryInvitationController;
 use App\Http\Controllers\WorkspaceBeneficiaries\DecideWorkspaceBeneficiaryInvitationController;
@@ -26,6 +27,16 @@ use App\Http\Controllers\WorkspaceBeneficiaries\ShowWorkspaceBeneficiaryInvitati
 use App\Http\Controllers\WorkspaceBeneficiaries\StoreWorkspaceBeneficiaryController;
 use App\Http\Controllers\WorkspaceBeneficiaries\UpdateWorkspaceBeneficiaryAccessController;
 use App\Http\Controllers\WorkspaceBeneficiaries\WorkspaceBeneficiaryIndexController;
+use App\Http\Controllers\WorkspaceMembers\AcceptWorkspaceMemberInvitationController;
+use App\Http\Controllers\WorkspaceMembers\CancelWorkspaceMemberInvitationController;
+use App\Http\Controllers\WorkspaceMembers\DeclineWorkspaceMemberInvitationController;
+use App\Http\Controllers\WorkspaceMembers\ResendWorkspaceMemberInvitationController;
+use App\Http\Controllers\WorkspaceMembers\SelectWorkspaceController;
+use App\Http\Controllers\WorkspaceMembers\ShowWorkspaceMemberInvitationController;
+use App\Http\Controllers\WorkspaceMembers\StoreWorkspaceMemberInvitationController;
+use App\Http\Controllers\WorkspaceMembers\UpdateWorkspaceMemberAccessController as UpdateTeamMemberAccessController;
+use App\Http\Controllers\WorkspaceMembers\UpdateWorkspaceMemberRoleController;
+use App\Http\Controllers\WorkspaceMembers\WorkspaceTeamIndexController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('payments')->name('payments.')->group(function () {
@@ -55,6 +66,18 @@ Route::prefix('medical-access-reviews')->name('medical-access-reviews.')->group(
     Route::post('/{medicalAccessRequest:public_id}/decision', DecideMedicalAccessRequestController::class)
         ->middleware(['signed', 'throttle:20,1'])
         ->name('decide');
+});
+
+Route::prefix('team-invitations')->name('team-invitations.')->group(function () {
+    Route::get('/{workspaceMember:public_id}', ShowWorkspaceMemberInvitationController::class)
+        ->middleware('throttle:60,1')
+        ->name('show');
+    Route::post('/{workspaceMember:public_id}/accept', AcceptWorkspaceMemberInvitationController::class)
+        ->middleware(['signed', 'throttle:20,1'])
+        ->name('accept');
+    Route::post('/{workspaceMember:public_id}/decline', DeclineWorkspaceMemberInvitationController::class)
+        ->middleware(['signed', 'throttle:20,1'])
+        ->name('decline');
 });
 
 Route::middleware('auth')->group(function () {
@@ -121,19 +144,37 @@ Route::middleware('auth')->group(function () {
         ->middleware('throttle:30,1')
         ->name('activity_log.read_all');
 
+    Route::get('/team', WorkspaceTeamIndexController::class)->name('team.index');
+    Route::prefix('team')->name('team.')->group(function () {
+        Route::post('/invitations', StoreWorkspaceMemberInvitationController::class)
+            ->middleware('throttle:20,1')->name('invitations.store');
+        Route::post('/invitations/{workspaceMember:public_id}/resend', ResendWorkspaceMemberInvitationController::class)
+            ->middleware('throttle:10,1')->name('invitations.resend');
+        Route::delete('/invitations/{workspaceMember:public_id}', CancelWorkspaceMemberInvitationController::class)
+            ->middleware('throttle:20,1')->name('invitations.cancel');
+        Route::patch('/members/{workspaceMember:public_id}/access', UpdateTeamMemberAccessController::class)
+            ->middleware('throttle:30,1')->name('members.access.update');
+        Route::patch('/members/{workspaceMember:public_id}/role', UpdateWorkspaceMemberRoleController::class)
+            ->middleware('throttle:30,1')->name('members.role.update');
+    });
+
+    Route::post('/workspaces/{workspace}/select', SelectWorkspaceController::class)
+        ->middleware('throttle:30,1')->name('workspaces.select');
+
     Route::name('business.')->group(function () {
-        Route::inertia('/reports', 'business-sponsor/consultations/index')->name('reports');
+        Route::get('/business/dashboard', DashboardController::class)->name('dashboard');
+        Route::get('/reports', BusinessConsultationReportController::class)->name('reports');
         Route::get('/employees', WorkspaceBeneficiaryIndexController::class)->name('employees');
         Route::get('/plan-and-seats', BillingController::class)->name('plans');
     });
 
     Route::prefix('institutional-sponsor')->name('institutional.')->group(function () {
-        Route::inertia('/dashboard', 'institutional-sponsor/dashboard')->name('dashboard');
+        Route::get('/dashboard', DashboardController::class)->name('dashboard');
         Route::redirect('/consultations', '/consultations')->name('consultations');
         Route::inertia('/notifications', 'institutional-sponsor/notifications/index')->name('notifications');
         Route::inertia('/coverage', 'institutional-sponsor/coverage/index')->name('coverage');
         Route::inertia('/enrollment-codes', 'institutional-sponsor/enrollment-codes/index')->name('enrollment_codes');
         Route::inertia('/reports', 'institutional-sponsor/reports/index')->name('reports');
-        Route::inertia('/team', 'institutional-sponsor/team/index')->name('team');
+        Route::redirect('/team', '/team')->name('team');
     });
 });

@@ -12,7 +12,7 @@ export default function BeneficiariesIndex({
     capacity,
     counts,
 }: WorkspaceBeneficiaryPageProps) {
-    const { flash } = usePage().props;
+    const { flash, workspacePermissions } = usePage().props;
 
     return (
         <>
@@ -22,7 +22,11 @@ export default function BeneficiariesIndex({
                     <PageHeader
                         title="Beneficiaries"
                         description="Invite and manage the people covered by your sponsorship."
-                        action={<AddBeneficiaryDialog capacity={capacity} />}
+                        action={
+                            workspacePermissions.canManage ? (
+                                <AddBeneficiaryDialog capacity={capacity} />
+                            ) : undefined
+                        }
                     />
 
                     {flash.success && (
@@ -56,7 +60,10 @@ export default function BeneficiariesIndex({
                     )}
 
                     <section className="pt-5" aria-label="Beneficiary list">
-                        <BeneficiariesTable invitations={invitations} />
+                        <BeneficiariesTable
+                            invitations={invitations}
+                            canManage={workspacePermissions.canManage}
+                        />
                     </section>
                 </div>
             </PortalShell>

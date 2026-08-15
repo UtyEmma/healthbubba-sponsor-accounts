@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Concerns\HasWallet;
 use App\Enums\AccountTypes;
 use App\Enums\Consultations\AllocationFallback;
+use App\Enums\WorkspaceMembers\WorkspaceMemberStatus;
 use App\Models\Consultations\Appointment;
 use App\Models\Consultations\Consultation;
 use App\Relations\WorkspacePatients;
@@ -44,8 +45,14 @@ class Workspace extends Model implements Subscribable
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class)
-            ->withPivot('role', 'status')
+            ->withPivot('id', 'public_id', 'name', 'email', 'role', 'status', 'last_selected_at')
             ->withTimestamps();
+    }
+
+    /** @return HasMany<WorkspaceMember, $this> */
+    public function members(): HasMany
+    {
+        return $this->hasMany(WorkspaceMember::class);
     }
 
     /** @return HasMany<Payment, $this> */
@@ -99,7 +106,31 @@ class Workspace extends Model implements Subscribable
     {
         $user = Auth::user();
 
-        return $user?->workspace;
+        return $user instanceof User ? self::currentFor($user) : null;
+    }
+
+    public static function currentFor(User $user): ?self
+    {
+        $selectedId = request()->hasSession()
+            ? request()->session()->get('current_workspace_id')
+            : null;
+
+        $memberships = WorkspaceMember::query()
+            ->with('workspace')
+            ->whereBelongsTo($user)
+            ->where('status', WorkspaceMemberStatus::Active)
+            ->orderByDesc('last_selected_at')
+            ->orderBy('id');
+
+        $membership = $selectedId === null
+            ? $memberships->first()
+            : (clone $memberships)->where('workspace_id', $selectedId)->first() ?? $memberships->first();
+
+        if ($membership !== null && request()->hasSession()) {
+            request()->session()->put('current_workspace_id', $membership->workspace_id);
+        }
+
+        return $membership?->workspace;
     }
 
     public static function isCurrent(Workspace $workspace): bool

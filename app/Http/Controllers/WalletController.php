@@ -7,17 +7,23 @@ use App\Enums\Transactions\TransactionStatus;
 use App\Http\Resources\TransactionResource;
 use App\Http\Resources\WalletResource;
 use App\Models\Transaction;
+use App\Models\User;
 use App\Models\Workspace;
+use App\Services\WorkspaceMembers\WorkspaceMemberAccessService;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 final class WalletController extends Controller
 {
-    public function index(): Response
+    public function __construct(private readonly WorkspaceMemberAccessService $workspaceAccess) {}
+
+    public function index(Request $request): Response
     {
         $workspace = Workspace::current();
 
         abort_if($workspace === null, 404);
+        abort_unless($request->user() instanceof User && $this->workspaceAccess->canManage($request->user(), $workspace), 403);
 
         $wallet = $workspace->wallet()->firstOrCreate([], [
             'balance' => '0.00',

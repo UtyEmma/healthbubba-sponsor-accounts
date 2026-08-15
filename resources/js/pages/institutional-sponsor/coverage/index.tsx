@@ -21,6 +21,7 @@ import {
     TopUpCoverageDialog,
     UpgradeCoverageDialog,
 } from './partials/coverage-dialogs';
+import { DashboardLayout } from '@/layouts/dashboard';
 
 export default function InstitutionalCoveragePage() {
     const [renewOpen, setRenewOpen] = useState(false);
@@ -38,24 +39,21 @@ export default function InstitutionalCoveragePage() {
     return (
         <>
             <Head title="Coverage" />
-            <BusinessPortalShell
-                navigation={institutionalNavigation}
-                navigationLabel="Institutional sponsor navigation"
-            >
+            <DashboardLayout >
                 <div className="mx-auto w-full max-w-6xl">
                     <PageHeader
                         title="Coverage"
                         description="Manage purchased coverage, rules, and the transaction ledger."
                         action={
                             <div className="flex gap-3">
-                                <Button
+                                {/* <Button
                                     variant="outline"
                                     size="compact"
                                     onClick={() => setRenewOpen(true)}
                                 >
                                     <RefreshCwIcon className="size-4" />
                                     Renew
-                                </Button>
+                                </Button> */}
                                 <Button
                                     size="compact"
                                     onClick={() => setTopUpOpen(true)}
@@ -67,15 +65,15 @@ export default function InstitutionalCoveragePage() {
                         }
                     />
 
-                    <Tabs defaultValue="overview" className="pt-10">
+                    {/* <Tabs defaultValue="overview" className="pt-10">
                         <TabsList>
                             <TabsTrigger value="overview">Overview</TabsTrigger>
                             <TabsTrigger value="rules">Rules</TabsTrigger>
                             <TabsTrigger value="ledger">Ledger (5)</TabsTrigger>
                         </TabsList>
-                    </Tabs>
+                    </Tabs> */}
 
-                    <Card className="mt-2">
+                    <Card className="mt-10">
                         <CardContent className="flex min-h-[96px] flex-col justify-between gap-4 px-6 py-5 sm:flex-row sm:items-center">
                             <div>
                                 <div className="flex flex-wrap items-center gap-2">
@@ -90,21 +88,7 @@ export default function InstitutionalCoveragePage() {
                                 </p>
                             </div>
                             <div className="flex gap-2">
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setUpgradeOpen(true)}
-                                >
-                                    <ArrowUpCircleIcon className="size-4" />
-                                    Upgrade
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    onClick={() =>
-                                        setAnnouncement(
-                                            'Coverage report selected.',
-                                        )
-                                    }
-                                >
+                                <Button variant="outline">
                                     <DownloadIcon className="size-4" />
                                     Report
                                 </Button>
@@ -183,7 +167,7 @@ export default function InstitutionalCoveragePage() {
                         {announcement}
                     </p>
                 </div>
-            </BusinessPortalShell>
+            </DashboardLayout>
         </>
     );
 }

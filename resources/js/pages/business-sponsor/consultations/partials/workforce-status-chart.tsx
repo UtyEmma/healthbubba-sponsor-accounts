@@ -6,34 +6,46 @@ import {
     ChartTooltipContent,
 } from '@/components/ui/chart';
 import type { ChartConfig } from '@/components/ui/chart';
+import type { WorkforceStatus, WorkforceStatusSummary } from '@/types';
 
-const workforce = [
-    { status: 'Active', value: 50, amount: '$36,638,465.14', color: '#18b7a6' },
-    {
-        status: 'Inactive',
-        value: 16.67,
-        amount: '$8,141,881.2',
-        color: '#ff120b',
-    },
-    {
-        status: 'Pending',
-        value: 16.67,
-        amount: '$4,070,940.6',
-        color: '#ff9d00',
-    },
-    {
-        status: 'Suspended',
-        value: 16.66,
-        amount: '$12,212,821.83',
-        color: '#f30065',
-    },
-];
+const colors: Record<WorkforceStatus, string> = {
+    active: '#18b7a6',
+    inactive: '#ff120b',
+    pending: '#ff9d00',
+    suspended: '#f30065',
+};
+const emptyColor = '#d1d5db';
 
-const chartConfig = Object.fromEntries(
-    workforce.map(({ status, color }) => [status, { label: status, color }]),
-) satisfies ChartConfig;
+const chartConfig = {
+    active: { label: 'Active', color: colors.active },
+    inactive: { label: 'Inactive', color: colors.inactive },
+    pending: { label: 'Pending', color: colors.pending },
+    suspended: { label: 'Suspended', color: colors.suspended },
+    empty: { label: 'No employees', color: emptyColor },
+} satisfies ChartConfig;
 
-export function WorkforceStatusChart() {
+export function WorkforceStatusChart({
+    workforce,
+}: {
+    workforce: WorkforceStatusSummary[];
+}) {
+    const chartData = workforce.map((entry) => ({
+        ...entry,
+        color: colors[entry.status],
+    }));
+    const hasWorkforce = chartData.some(({ count }) => count > 0);
+    const pieData = hasWorkforce
+        ? chartData
+        : [
+              {
+                  status: 'empty',
+                  label: 'No employees',
+                  count: 1,
+                  percentage: 100,
+                  color: emptyColor,
+              },
+          ];
+
     return (
         <div className="flex flex-col items-center gap-5 sm:flex-row sm:justify-center lg:justify-start">
             <ChartContainer
@@ -43,21 +55,26 @@ export function WorkforceStatusChart() {
                 aria-label="Employee lifecycle breakdown"
             >
                 <PieChart>
-                    <ChartTooltip
-                        cursor={false}
-                        content={
-                            <ChartTooltipContent hideLabel nameKey="status" />
-                        }
-                    />
+                    {hasWorkforce && (
+                        <ChartTooltip
+                            cursor={false}
+                            content={
+                                <ChartTooltipContent
+                                    hideLabel
+                                    nameKey="status"
+                                />
+                            }
+                        />
+                    )}
                     <Pie
-                        data={workforce}
-                        dataKey="value"
+                        data={pieData}
+                        dataKey="count"
                         nameKey="status"
                         innerRadius={25}
                         outerRadius={80}
                         strokeWidth={0}
                     >
-                        {workforce.map((entry) => (
+                        {pieData.map((entry) => (
                             <Cell key={entry.status} fill={entry.color} />
                         ))}
                     </Pie>
@@ -65,21 +82,27 @@ export function WorkforceStatusChart() {
             </ChartContainer>
 
             <ul className="grid w-full min-w-0 gap-3 text-sm">
-                {workforce.map((entry) => (
+                {chartData.map((entry) => (
                     <li key={entry.status} className="flex items-center gap-3">
                         <span
                             className="size-3 shrink-0 rounded-full"
                             style={{ backgroundColor: entry.color }}
                         />
                         <span className="text-muted-foreground">
-                            {entry.status}
+                            {entry.label}
                         </span>
                         <strong className="ml-auto text-[13px] font-semibold whitespace-nowrap">
-                            {entry.amount}
+                            {entry.count}{' '}
+                            {entry.count === 1 ? 'employee' : 'employees'} (
+                            {formatPercentage(entry.percentage)})
                         </strong>
                     </li>
                 ))}
             </ul>
         </div>
     );
+}
+
+function formatPercentage(percentage: number): string {
+    return `${Number.isInteger(percentage) ? percentage : percentage.toFixed(1)}%`;
 }

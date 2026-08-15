@@ -68,8 +68,14 @@ class User extends Authenticatable implements FilamentUser
     public function workspaces(): BelongsToMany
     {
         return $this->belongsToMany(Workspace::class)
-            ->withPivot('role', 'status')
+            ->withPivot('id', 'public_id', 'name', 'email', 'role', 'status', 'last_selected_at')
             ->withTimestamps();
+    }
+
+    /** @return HasMany<WorkspaceMember, $this> */
+    public function workspaceMemberships(): HasMany
+    {
+        return $this->hasMany(WorkspaceMember::class);
     }
 
     /** @return HasMany<Payment, $this> */
@@ -86,8 +92,6 @@ class User extends Authenticatable implements FilamentUser
 
     public function getWorkspaceAttribute(): ?Workspace
     {
-        return $this->workspaces()
-            ->latest((new Workspace)->qualifyColumn('created_at'))
-            ->first();
+        return Workspace::currentFor($this);
     }
 }

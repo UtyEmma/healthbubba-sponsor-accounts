@@ -2,13 +2,16 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\WorkspaceMembers\WorkspaceMemberStatus;
 use App\Http\Resources\UserResource;
 use App\Http\Resources\WorkspaceActivityResource;
+use App\Http\Resources\WorkspaceOptionResource;
 use App\Http\Resources\WorkspaceResource;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Services\Activity\WorkspaceActivityAuthorizationService;
 use App\Services\Activity\WorkspaceActivityQuery;
+use App\Services\WorkspaceMembers\WorkspaceMemberAccessService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -17,6 +20,7 @@ class HandleInertiaRequests extends Middleware
     public function __construct(
         private readonly WorkspaceActivityAuthorizationService $activityAuthorization,
         private readonly WorkspaceActivityQuery $activities,
+        private readonly WorkspaceMemberAccessService $workspaceAccess,
     ) {}
 
     /**
@@ -66,6 +70,22 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'workspace' => $workspace === null ? null : new WorkspaceResource($workspace),
+            'workspaceOptions' => $user instanceof User
+                ? WorkspaceOptionResource::collection(
+                    $user->workspaceMemberships()
+                        ->with('workspace')
+                        ->where('status', WorkspaceMemberStatus::Active)
+                        ->orderByDesc('last_selected_at')
+                        ->get(),
+                )->resolve($request)
+                : [],
+            'workspacePermissions' => $workspace instanceof Workspace && $user instanceof User
+                ? [
+                    'canView' => $this->workspaceAccess->canView($user, $workspace),
+                    'canManage' => $this->workspaceAccess->canManage($user, $workspace),
+                    'canViewFinancial' => $this->workspaceAccess->canManage($user, $workspace),
+                ]
+                : ['canView' => false, 'canManage' => false, 'canViewFinancial' => false],
             'auth' => [
                 'user' => $user instanceof User ? new UserResource($user) : null,
             ],

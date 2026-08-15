@@ -32,8 +32,10 @@ const statusVariants: Record<
 
 export function EmployeesTable({
     invitations,
+    canManage,
 }: {
     invitations: PaginatedWorkspaceBeneficiaries;
+    canManage: boolean;
 }) {
     return (
         <Card className="mt-5 overflow-hidden">
@@ -51,16 +53,18 @@ export function EmployeesTable({
                             <TableHead>Department</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Invitation</TableHead>
-                            <TableHead className="pr-8 text-right">
-                                Actions
-                            </TableHead>
+                            {canManage && (
+                                <TableHead className="pr-8 text-right">
+                                    Actions
+                                </TableHead>
+                            )}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {invitations.data.length === 0 ? (
                             <TableRow>
                                 <TableCell
-                                    colSpan={6}
+                                    colSpan={canManage ? 6 : 5}
                                     className="h-28 text-center text-muted-foreground"
                                 >
                                     No employees have been invited yet.
@@ -107,11 +111,13 @@ export function EmployeesTable({
                                             ? `Expires ${formatDate(employee.expiresAt)}`
                                             : formatDate(employee.invitedAt)}
                                     </TableCell>
-                                    <TableCell className="pr-8 text-right">
-                                        <WorkspaceInvitationActions
-                                            invitation={employee}
-                                        />
-                                    </TableCell>
+                                    {canManage && (
+                                        <TableCell className="pr-8 text-right">
+                                            <WorkspaceInvitationActions
+                                                invitation={employee}
+                                            />
+                                        </TableCell>
+                                    )}
                                 </TableRow>
                             ))
                         )}

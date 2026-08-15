@@ -1,12 +1,11 @@
 import { Head, usePage } from '@inertiajs/react';
 
-import { BusinessPortalShell } from '@/components/business-portal-shell';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent } from '@/components/ui/card';
+import { DashboardLayout } from '@/layouts/dashboard';
 import type { WorkspaceBeneficiaryPageProps } from '@/types';
 import { AddEmployeeDialog } from './partials/add-employee-dialog';
 import { EmployeesTable } from './partials/employees-table';
-import { DashboardLayout } from '@/layouts/dashboard';
 
 export default function EmployeesPage({
     invitations,
@@ -14,7 +13,7 @@ export default function EmployeesPage({
     counts,
     importResult,
 }: WorkspaceBeneficiaryPageProps) {
-    const { flash } = usePage().props;
+    const { flash, workspacePermissions } = usePage().props;
 
     return (
         <>
@@ -24,7 +23,11 @@ export default function EmployeesPage({
                     <PageHeader
                         title="Employees"
                         description="Provision and manage healthcare seats for your workforce."
-                        action={<AddEmployeeDialog capacity={capacity} />}
+                        action={
+                            workspacePermissions.canManage ? (
+                                <AddEmployeeDialog capacity={capacity} />
+                            ) : undefined
+                        }
                     />
 
                     {flash.success && (
@@ -81,7 +84,10 @@ export default function EmployeesPage({
                         </section>
                     )}
 
-                    <EmployeesTable invitations={invitations} />
+                    <EmployeesTable
+                        invitations={invitations}
+                        canManage={workspacePermissions.canManage}
+                    />
                 </div>
             </DashboardLayout>
         </>

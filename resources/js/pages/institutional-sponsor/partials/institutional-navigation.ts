@@ -20,11 +20,7 @@ export const institutionalNavigation: PortalNavigationItem[] = [
         icon: LayoutGridIcon,
         href: institutional.dashboard().url,
     },
-    {
-        label: 'Coverage',
-        icon: ShieldPlusIcon,
-        href: institutional.coverage().url,
-    },
+    
     { label: 'Beneficiaries', icon: UsersRoundIcon },
     {
         label: 'Enrollment Codes',

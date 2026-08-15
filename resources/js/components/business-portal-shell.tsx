@@ -12,6 +12,7 @@ import {
 import type { ComponentType, ReactNode, SVGProps } from 'react';
 
 import { BrandMark } from '@/components/brand-mark';
+import { TeamSidebarIcon } from '@/components/sidebar-icons';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -32,6 +33,7 @@ import {
 } from '@/components/ui/sheet';
 import { UserAccountMenu } from '@/components/user-account-menu';
 import business from '@/routes/business';
+import team from '@/routes/team';
 
 export type PortalNavigationItem = {
     label: string;
@@ -62,6 +64,7 @@ const businessNavigation: PortalNavigationItem[] = [
         href: business.plans().url,
     },
     { label: 'Activity Log', icon: HistoryIcon },
+    { label: 'Team', icon: TeamSidebarIcon, href: team.index().url },
 ];
 
 function PortalNavigation({
@@ -72,11 +75,17 @@ function PortalNavigation({
     label: string;
 }) {
     const currentPath = usePage().url.split('?')[0];
+    const { workspacePermissions } = usePage().props;
+    const visibleNavigation = navigation.filter(
+        (item) =>
+            workspacePermissions.canViewFinancial ||
+            !['Wallet', 'Plan & Seats'].includes(item.label),
+    );
 
     return (
         <nav aria-label={label} className="p-3">
             <ul className="flex flex-col gap-1">
-                {navigation.map((item) => {
+                {visibleNavigation.map((item) => {
                     const Icon = item.icon;
                     const isActive = item.href === currentPath;
                     const classes = isActive
@@ -142,7 +151,7 @@ export function BusinessPortalShell({
                     navigationLabel={navigationLabel}
                 />
             </aside>
-            
+
             <div className="lg:pl-64">
                 <header className="sticky top-0 z-30 flex h-12 items-center justify-between border-b border-border bg-background px-4 lg:justify-end">
                     <Sheet>

@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import {
     ArrowRightIcon,
     CalendarClockIcon,
@@ -11,42 +11,44 @@ import { useState } from 'react';
 
 import { BusinessPortalShell } from '@/components/business-portal-shell';
 import { PageHeader } from '@/components/page-header';
-import { BusinessMetricCard } from '@/pages/business-sponsor/partials/business-metric-card';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { BusinessMetricCard } from '@/pages/business-sponsor/partials/business-metric-card';
+import type {
+    ConsultationAllocationSummary,
+    DashboardPageProps,
+} from '@/types';
 
 import { ConsultationTrendsChart } from './partials/consultation-trends-chart';
 import { institutionalNavigation } from './partials/institutional-navigation';
 
-const activity = [
-    {
-        title: 'Bulk uploaded 45 beneficiaries (43 committed, 2 errors)',
-        meta: 'Tobi Adeyinka · 20 Jun',
-    },
-    {
-        title: 'Topped up GP coverage by 500 units',
-        meta: 'Amaka Eze · 18 Jun',
-    },
-    {
-        title: 'Created enrollment code HOPE-SABON-2026',
-        meta: 'Amaka Eze · 15 Jun',
-    },
-];
-
-export default function InstitutionalDashboard() {
+export default function InstitutionalDashboard({
+    dashboard,
+}: DashboardPageProps) {
     const [announcement, setAnnouncement] = useState('');
+    const { workspace } = usePage().props;
+    const gpAllocation = dashboard.coverage.allocations.find(
+        (allocation) => allocation.type === 'gp',
+    );
+    const specialistAllocation = dashboard.coverage.allocations.find(
+        (allocation) => allocation.type === 'specialist',
+    );
+    const fundedBudget = Math.max(
+        Number(dashboard.wallet.totalFunded),
+        Number(dashboard.wallet.balance),
+    );
 
     return (
         <>
-            <Head title="Hope Alive Foundation" />
+            <Head title={workspace.name} />
             <BusinessPortalShell
                 navigation={institutionalNavigation}
                 navigationLabel="Institutional sponsor navigation"
             >
                 <div className="mx-auto w-full max-w-6xl pb-4">
                     <PageHeader
-                        title="Hope Alive Foundation"
+                        title={workspace.name}
                         description="Program reach and coverage utilization at a glance."
                         action={
                             <Button
@@ -68,24 +70,33 @@ export default function InstitutionalDashboard() {
                     >
                         <BusinessMetricCard
                             label="Total beneficiaries"
-                            value="6"
+                            value={String(dashboard.beneficiaries.total)}
                             icon={UsersRoundIcon}
                             tone="green"
                         />
                         <BusinessMetricCard
                             label="Active beneficiaries"
-                            value="5"
+                            value={String(dashboard.beneficiaries.active)}
                             icon={UserRoundCheckIcon}
                             tone="blue"
                         />
                         <BusinessMetricCard
                             label="Coverage balance"
-                            value="₦15,880,000"
+                            value={formatMoney(
+                                dashboard.wallet.balance,
+                                dashboard.wallet.currency,
+                            )}
                             icon={WalletCardsIcon}
                         />
                         <BusinessMetricCard
                             label="Coverage expires in"
-                            value="265d"
+                            value={
+                                dashboard.subscription?.renewalDays === null ||
+                                dashboard.subscription?.renewalDays ===
+                                    undefined
+                                    ? '--'
+                                    : `${dashboard.subscription.renewalDays}d`
+                            }
                             icon={CalendarClockIcon}
                             tone="amber"
                         />
@@ -94,17 +105,17 @@ export default function InstitutionalDashboard() {
                     <section className="grid gap-4 pt-4 md:grid-cols-3">
                         <BusinessMetricCard
                             label="GP remaining"
-                            value="1258"
+                            value={allocationRemaining(gpAllocation)}
                             icon={StethoscopeIcon}
                         />
                         <BusinessMetricCard
                             label="Specialist remaining"
-                            value="332"
+                            value={allocationRemaining(specialistAllocation)}
                             icon={StethoscopeIcon}
                         />
                         <BusinessMetricCard
                             label="Consultations completed"
-                            value="3"
+                            value={String(dashboard.completedConsultations)}
                             icon={StethoscopeIcon}
                             tone="blue"
                         />
@@ -121,7 +132,9 @@ export default function InstitutionalDashboard() {
                                 </p>
                             </CardHeader>
                             <CardContent className="px-5 pt-1 pb-5">
-                                <ConsultationTrendsChart />
+                                <ConsultationTrendsChart
+                                    data={dashboard.consultationTrends}
+                                />
                             </CardContent>
                         </Card>
 
@@ -132,28 +145,43 @@ export default function InstitutionalDashboard() {
                                         Coverage utilization
                                     </CardTitle>
                                     <span className="text-xs font-medium text-success">
-                                        Active
+                                        {dashboard.subscription?.statusLabel ??
+                                            'Inactive'}
                                     </span>
                                 </div>
                                 <p className="text-sm text-muted-foreground">
-                                    Community Health Program 2026
+                                    {dashboard.subscription?.planName ??
+                                        'No active coverage plan'}
                                 </p>
                             </CardHeader>
                             <CardContent className="grid gap-5 px-6 pt-3">
                                 <CoverageProgress
                                     label="GP coverage"
-                                    value="1258 / 2000 left"
-                                    progress={37}
+                                    value={allocationProgressLabel(
+                                        gpAllocation,
+                                    )}
+                                    progress={allocationProgress(gpAllocation)}
                                 />
                                 <CoverageProgress
                                     label="Specialist coverage"
-                                    value="332 / 500 left"
-                                    progress={34}
+                                    value={allocationProgressLabel(
+                                        specialistAllocation,
+                                    )}
+                                    progress={allocationProgress(
+                                        specialistAllocation,
+                                    )}
                                 />
                                 <CoverageProgress
                                     label="Budget"
-                                    value="15880000 / 25000000 left"
-                                    progress={37}
+                                    value={`${formatNumber(
+                                        dashboard.wallet.balance,
+                                    )} / ${formatNumber(
+                                        String(fundedBudget),
+                                    )} left`}
+                                    progress={consumptionProgress(
+                                        Number(dashboard.wallet.balance),
+                                        fundedBudget,
+                                    )}
                                 />
                             </CardContent>
                         </Card>
@@ -177,22 +205,31 @@ export default function InstitutionalDashboard() {
                         </CardHeader>
                         <CardContent className="px-6 pt-3 pb-6">
                             <ul className="grid gap-3">
-                                {activity.map((item) => (
-                                    <li
-                                        key={item.title}
-                                        className="flex items-start gap-3 text-sm"
-                                    >
-                                        <span className="mt-2 size-1.5 shrink-0 rounded-full bg-success" />
-                                        <span>
-                                            <span className="block">
-                                                {item.title}
+                                {dashboard.recentActivities.length > 0 ? (
+                                    dashboard.recentActivities.map((item) => (
+                                        <li
+                                            key={item.id}
+                                            className="flex items-start gap-3 text-sm"
+                                        >
+                                            <span className="mt-2 size-1.5 shrink-0 rounded-full bg-success" />
+                                            <span>
+                                                <span className="block">
+                                                    {item.title}
+                                                </span>
+                                                <span className="block text-xs text-muted-foreground">
+                                                    {item.actor.name} ·{' '}
+                                                    {formatDate(
+                                                        item.occurredAt,
+                                                    )}
+                                                </span>
                                             </span>
-                                            <span className="block text-xs text-muted-foreground">
-                                                {item.meta}
-                                            </span>
-                                        </span>
+                                        </li>
+                                    ))
+                                ) : (
+                                    <li className="text-sm text-muted-foreground">
+                                        No recent activity
                                     </li>
-                                ))}
+                                )}
                             </ul>
                         </CardContent>
                     </Card>
@@ -226,4 +263,69 @@ function CoverageProgress({
             <Progress value={progress} aria-label={`${label}: ${value}`} />
         </div>
     );
+}
+
+function allocationRemaining(
+    allocation: ConsultationAllocationSummary | undefined,
+): string {
+    if (!allocation || allocation.unavailableReason) {
+        return '0';
+    }
+
+    return allocation.remaining === null ? '∞' : String(allocation.remaining);
+}
+
+function allocationProgressLabel(
+    allocation: ConsultationAllocationSummary | undefined,
+): string {
+    if (!allocation || allocation.unavailableReason) {
+        return 'Unavailable';
+    }
+
+    if (allocation.limit === null) {
+        return 'Unlimited';
+    }
+
+    return `${allocation.remaining ?? 0} / ${allocation.limit} left`;
+}
+
+function allocationProgress(
+    allocation: ConsultationAllocationSummary | undefined,
+): number {
+    if (!allocation || allocation.limit === null || allocation.limit === 0) {
+        return 0;
+    }
+
+    return consumptionProgress(allocation.remaining ?? 0, allocation.limit);
+}
+
+function consumptionProgress(remaining: number, total: number): number {
+    if (total <= 0) {
+        return 0;
+    }
+
+    return Math.min(100, Math.max(0, ((total - remaining) / total) * 100));
+}
+
+function formatMoney(amount: string, currency: string): string {
+    return new Intl.NumberFormat('en-NG', {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+    }).format(Number(amount));
+}
+
+function formatNumber(amount: string): string {
+    return new Intl.NumberFormat('en-NG', {
+        maximumFractionDigits: 2,
+    }).format(Number(amount));
+}
+
+function formatDate(value: string): string {
+    return new Intl.DateTimeFormat('en-NG', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+    }).format(new Date(value));
 }

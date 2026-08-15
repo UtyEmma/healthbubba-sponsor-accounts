@@ -211,3 +211,31 @@ export function ActivityLogSidebarIcon(props: SVGProps<SVGSVGElement>) {
         </svg>
     );
 }
+
+export function TeamSidebarIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...iconProps} {...props}>
+            <path
+                d="M6.75 8.25a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+            <path
+                d="M1.5 15.75v-1.5a3 3 0 0 1 3-3H9a3 3 0 0 1 3 3v1.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+            <path
+                d="M12 2.35a3 3 0 0 1 0 5.8M16.5 15.75v-1.5a3 3 0 0 0-2.25-2.9"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </svg>
+    );
+}

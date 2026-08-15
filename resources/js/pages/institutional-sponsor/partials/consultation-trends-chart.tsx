@@ -6,15 +6,7 @@ import {
     ChartTooltipContent,
 } from '@/components/ui/chart';
 import type { ChartConfig } from '@/components/ui/chart';
-
-const trends = [
-    { month: 'Jan', consultations: 140 },
-    { month: 'Feb', consultations: 168 },
-    { month: 'Mar', consultations: 154 },
-    { month: 'Apr', consultations: 194 },
-    { month: 'May', consultations: 231 },
-    { month: 'Jun', consultations: 210 },
-];
+import type { DashboardConsultationTrend } from '@/types';
 
 const chartConfig = {
     consultations: {
@@ -23,7 +15,15 @@ const chartConfig = {
     },
 } satisfies ChartConfig;
 
-export function ConsultationTrendsChart() {
+export function ConsultationTrendsChart({
+    data,
+}: {
+    data: DashboardConsultationTrend[];
+}) {
+    const ticks = chartTicks(
+        Math.max(0, ...data.map((item) => item.consultations)),
+    );
+
     return (
         <ChartContainer
             config={chartConfig}
@@ -32,7 +32,7 @@ export function ConsultationTrendsChart() {
             aria-label="Sponsored consultations completed each month"
         >
             <AreaChart
-                data={trends}
+                data={data}
                 margin={{ top: 14, right: 8, bottom: 0, left: -12 }}
             >
                 <defs>
@@ -65,8 +65,8 @@ export function ConsultationTrendsChart() {
                 <YAxis
                     axisLine={false}
                     tickLine={false}
-                    ticks={[0, 60, 120, 180, 240]}
-                    domain={[0, 240]}
+                    ticks={ticks}
+                    domain={[0, ticks.at(-1) ?? 4]}
                     tickMargin={8}
                 />
                 <ChartTooltip
@@ -83,4 +83,10 @@ export function ConsultationTrendsChart() {
             </AreaChart>
         </ChartContainer>
     );
+}
+
+function chartTicks(maximum: number): number[] {
+    const ceiling = Math.max(4, Math.ceil(maximum / 4) * 4);
+
+    return [0, ceiling / 4, ceiling / 2, (ceiling * 3) / 4, ceiling];
 }

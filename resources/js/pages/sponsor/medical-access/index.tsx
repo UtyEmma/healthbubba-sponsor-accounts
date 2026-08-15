@@ -12,7 +12,7 @@ export default function MedicalAccessIndex({
     beneficiaries,
     dataTypes,
 }: MedicalAccessPageProps) {
-    const { flash } = usePage().props;
+    const { flash, workspacePermissions } = usePage().props;
 
     return (
         <>
@@ -23,10 +23,12 @@ export default function MedicalAccessIndex({
                         title="Medical Access"
                         description="Request consent-gated access to beneficiary clinical data."
                         action={
-                            <RequestAccessDialog
-                                beneficiaries={beneficiaries}
-                                dataTypes={dataTypes}
-                            />
+                            workspacePermissions.canManage ? (
+                                <RequestAccessDialog
+                                    beneficiaries={beneficiaries}
+                                    dataTypes={dataTypes}
+                                />
+                            ) : undefined
                         }
                     />
 

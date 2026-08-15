@@ -4,6 +4,7 @@ namespace App\Http\Requests\WorkspaceBeneficiaries;
 
 use App\Enums\Account\Roles;
 use App\Enums\Account\Status;
+use App\Enums\WorkspaceMembers\WorkspaceMemberRole;
 use App\Enums\AccountTypes;
 use App\Models\User;
 use App\Models\Workspace;
@@ -39,7 +40,7 @@ abstract class AuthorizedWorkspaceBeneficiaryRequest extends FormRequest
         return $user->workspaces()
             ->whereKey($workspace->getKey())
             ->wherePivot('status', Status::ACTIVE->value)
-            ->wherePivotIn('role', [Roles::ADMIN->value, Roles::SUPER_ADMIN->value])
+            ->wherePivotIn('role', [WorkspaceMemberRole::Owner->value, WorkspaceMemberRole::Administrator->value])
             ->exists();
     }
 

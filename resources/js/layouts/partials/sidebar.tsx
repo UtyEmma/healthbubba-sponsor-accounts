@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BarChart3Icon, UsersRoundIcon } from 'lucide-react';
+import { BarChart3Icon, BellIcon, ShieldPlusIcon, UsersRoundIcon } from 'lucide-react';
 import { useMemo } from 'react';
 
 import { BrandMark } from '@/components/brand-mark';
@@ -11,6 +11,7 @@ import {
     DashboardSidebarIcon,
     MedicalAccessSidebarIcon,
     PlanBillingSidebarIcon,
+    TeamSidebarIcon,
     WalletSidebarIcon,
 } from '@/components/sidebar-icons';
 import { home } from '@/routes';
@@ -20,7 +21,9 @@ import business from '@/routes/business';
 import consultations from '@/routes/consultations';
 import medical_access from '@/routes/medical_access';
 import plans from '@/routes/plans';
+import team from '@/routes/team';
 import wallet from '@/routes/wallet';
+import institutional, { notifications } from '@/routes/institutional';
 
 type NavigationItem = {
     label: string;
@@ -31,12 +34,22 @@ type NavigationItem = {
 function Navigation() {
     const currentPath = usePage().url.split('?')[0];
 
-    const { workspace } = usePage().props;
+    const { workspace, workspacePermissions } = usePage().props;
 
     const navigation = useMemo(() => {
         const navigation: NavigationItem[] = [
             { label: 'Dashboard', icon: DashboardSidebarIcon, href: home() },
         ];
+
+        if(workspace.type == 'institution') {
+            navigation.push(
+                {
+                    label: 'Coverage',
+                    icon: ShieldPlusIcon,
+                    href: institutional.coverage(),
+                },
+            )
+        }
 
         if (workspace.type == 'individual' || workspace.type == 'institution') {
             navigation.push(
@@ -81,7 +94,20 @@ function Navigation() {
             );
         }
 
-        if (workspace.type == 'individual' || workspace.type == 'business') {
+        if(workspace.type == 'institution') {
+            navigation.push(
+                {
+                    label: 'Reports',
+                    icon: BarChart3Icon,
+                    href: institutional.reports(),
+                },
+            )
+        }
+
+        if (
+            (workspace.type == 'individual' || workspace.type == 'business') &&
+            workspacePermissions.canViewFinancial
+        ) {
             navigation.push(
                 {
                     label: 'Wallet',
@@ -96,7 +122,23 @@ function Navigation() {
             );
         }
 
-        if (workspace.type == 'individual' || workspace.type == 'business') {
+        navigation.push({
+            label: 'Team',
+            icon: TeamSidebarIcon,
+            href: team.index(),
+        });
+
+        if(workspace.type == 'institution') {
+            navigation.push(
+                   {
+                    label: 'Notifications',
+                    icon: BellIcon,
+                    href: notifications(),
+                }
+            )
+        }
+
+        if (['individual', 'business'].includes(workspace.type)) {
             navigation.push({
                 label: 'Activity Log',
                 icon: ActivityLogSidebarIcon,
@@ -105,7 +147,7 @@ function Navigation() {
         }
 
         return navigation;
-    }, [workspace]);
+    }, [workspace, workspacePermissions.canViewFinancial]);
 
     return (
         <nav aria-label="Primary" className="p-3">

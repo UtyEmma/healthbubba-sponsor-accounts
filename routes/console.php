@@ -22,3 +22,8 @@ Schedule::command('medical-access:expire')
     ->everyMinute()
     ->withoutOverlapping()
     ->onOneServer();
+
+Schedule::command('workspace-members:expire-invitations')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->onOneServer();

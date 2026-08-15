@@ -1,5 +1,6 @@
 import { Form, usePage } from '@inertiajs/react';
 import { CreditCardIcon, WalletIcon } from 'lucide-react';
+import type { ComponentProps } from 'react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -13,23 +14,27 @@ interface AllocationFallbackOption {
     description: string;
 }
 
-const options: AllocationFallbackOption[] = [
-    {
-        value: 'beneficiary_wallet',
-        icon: WalletIcon,
-        title: 'Beneficiary wallet',
-        description: 'Paid from their own balance',
-    },
-    {
-        value: 'card_payment',
-        icon: CreditCardIcon,
-        title: 'Card payment',
-        description: 'Direct external checkout',
-    },
-];
-
-export function AllocationFallbackCard() {
+export function AllocationFallbackCard({
+    className,
+}: Pick<ComponentProps<typeof Card>, 'className'>) {
     const { workspace } = usePage().props;
+    const isBusiness = workspace.type === 'business';
+    const subject = isBusiness ? 'Employee' : 'Beneficiary';
+    const subjects = isBusiness ? 'employees' : 'beneficiaries';
+    const options: AllocationFallbackOption[] = [
+        {
+            value: 'beneficiary_wallet',
+            icon: WalletIcon,
+            title: `${subject} wallet`,
+            description: 'Paid from their own balance',
+        },
+        {
+            value: 'card_payment',
+            icon: CreditCardIcon,
+            title: 'Card payment',
+            description: 'Direct external checkout',
+        },
+    ];
 
     return (
         <Form
@@ -37,13 +42,13 @@ export function AllocationFallbackCard() {
             options={{ preserveScroll: true }}
         >
             {({ errors, processing }) => (
-                <Card className="mt-5">
+                <Card className={cn('mt-5', className)}>
                     <CardHeader className="px-6 pt-7 pb-5">
                         <CardTitle className="text-base leading-5">
                             When allocations run out
                         </CardTitle>
                         <p className="text-sm leading-5 text-muted-foreground">
-                            Care isn’t blocked; beneficiaries unlock direct
+                            Care isn&apos;t blocked; {subjects} unlock direct
                             checkout via:
                         </p>
                     </CardHeader>

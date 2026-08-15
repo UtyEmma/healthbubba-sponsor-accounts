@@ -1,6 +1,7 @@
 import type { Auth } from '@/types/auth';
 import type { WorkspaceActivitySummary } from './activity';
 import type { Workspace } from './workspace';
+import type { WorkspaceOption, WorkspacePermissions } from './team';
 
 declare module 'react' {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -15,6 +16,8 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             workspace: Workspace;
+            workspaceOptions: WorkspaceOption[];
+            workspacePermissions: WorkspacePermissions;
             activityNotifications: WorkspaceActivitySummary | null;
             flash: {
                 success: string | null;

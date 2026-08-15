@@ -8,17 +8,17 @@ import { cn } from '@/lib/utils';
 import beneficiaries from '@/routes/beneficiaries';
 import business from '@/routes/business';
 import type { ConsultationPageProps } from '@/types';
+import { AllocationFallbackCard } from './partials/allocation-fallback';
 import { ConsultationHistory } from './partials/consultation-history';
 import { ConsultationOverview } from './partials/consultation-overview';
-import { AllocationFallbackCard } from './partials/allocation-fallback';
 
 export default function ConsultationsIndex({
     consultations,
     coverage,
 }: ConsultationPageProps) {
-    const { workspace } = usePage().props;
+    const { workspace, workspacePermissions } = usePage().props;
     const managementAction =
-        workspace.type === 'business' ? (
+        workspacePermissions.canManage && workspace.type === 'business' ? (
             <Link
                 href={business.employees()}
                 className={cn(
@@ -54,7 +54,7 @@ export default function ConsultationsIndex({
                 />
 
                 <ConsultationOverview coverage={coverage} />
-                <AllocationFallbackCard />
+                {workspacePermissions.canManage && <AllocationFallbackCard />}
                 <ConsultationHistory consultations={consultations} />
             </div>
         </DashboardLayout>

@@ -5,10 +5,9 @@ namespace App\Http\Controllers\WorkspaceBeneficiaries;
 use App\Actions\WorkspaceBeneficiaries\ExpireWorkspaceBeneficiaryInvitationsAction;
 use App\Enums\AccountTypes;
 use App\Enums\WorkspaceBeneficiaries\WorkspaceBeneficiaryStatus;
+use App\Http\Requests\WorkspaceMembers\AuthorizedWorkspaceViewRequest;
 use App\Http\Resources\WorkspaceBeneficiaryResource;
-use App\Models\Workspace;
 use App\Services\WorkspaceBeneficiaries\WorkspaceBeneficiaryCapacityService;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -19,9 +18,9 @@ final readonly class WorkspaceBeneficiaryIndexController
         private WorkspaceBeneficiaryCapacityService $capacity,
     ) {}
 
-    public function __invoke(Request $request): Response {
-        $workspace = Workspace::current();
-        abort_if($workspace === null, 404);
+    public function __invoke(AuthorizedWorkspaceViewRequest $request): Response
+    {
+        $workspace = $request->workspace();
         abort_unless(in_array($workspace->type, [AccountTypes::INDIVIDUAL, AccountTypes::BUSINESS], true), 403);
 
         $this->expireInvitations->execute();

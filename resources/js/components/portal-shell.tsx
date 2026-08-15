@@ -11,6 +11,7 @@ import {
     DashboardSidebarIcon,
     MedicalAccessSidebarIcon,
     PlanBillingSidebarIcon,
+    TeamSidebarIcon,
     WalletSidebarIcon,
 } from '@/components/sidebar-icons';
 import { Button } from '@/components/ui/button';
@@ -38,6 +39,7 @@ import beneficiaries from '@/routes/beneficiaries';
 import consultations from '@/routes/consultations';
 import medicalAccess from '@/routes/medical_access';
 import plans from '@/routes/plans';
+import team from '@/routes/team';
 import wallet from '@/routes/wallet';
 
 type NavigationItem = {
@@ -74,15 +76,22 @@ const navigation: NavigationItem[] = [
         icon: ActivityLogSidebarIcon,
         href: activityLog.index(),
     },
+    { label: 'Team', icon: TeamSidebarIcon, href: team.index() },
 ];
 
 function PortalNavigation() {
     const currentPath = usePage().url.split('?')[0];
+    const { workspacePermissions } = usePage().props;
+    const visibleNavigation = navigation.filter(
+        (item) =>
+            workspacePermissions.canViewFinancial ||
+            !['Wallet', 'Plan & Billing'].includes(item.label),
+    );
 
     return (
         <nav aria-label="Primary" className="p-3">
             <ul className="flex flex-col gap-1">
-                {navigation.map((item) => {
+                {visibleNavigation.map((item) => {
                     const Icon = item.icon;
                     const isActive = item.href?.url === currentPath;
 
