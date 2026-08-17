@@ -51,12 +51,14 @@ class CreateNewUser implements CreatesNewUsers
 
         $user = User::create($user_data);
 
-        $org_data = [
-            'name' => $input['organization_name'] ?? "{$user->name}'s Workspace",
-            'type' => $input['type']
-        ];
-
-        (new CreateNewWorkspace)->execute($user, $org_data);
+        if(isset($input['organization_name'])) {
+            $org_data = [
+                'name' => $input['organization_name'] ?? "{$user->name}'s Workspace",
+                'type' => $input['type']
+            ];
+    
+            (new CreateNewWorkspace)->execute($user, $org_data);
+        }
         
         DB::commit();
 
