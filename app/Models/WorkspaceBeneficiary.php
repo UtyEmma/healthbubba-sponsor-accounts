@@ -13,6 +13,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property int $workspace_id
+ * @property int|null $campaign_id
  * @property int|null $invited_by_user_id
  * @property int|null $beneficiary_id
  * @property string $public_id
@@ -33,6 +34,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $suspended_at
  * @property Carbon|null $revoked_at
  * @property-read Workspace $workspace
+ * @property-read Campaign|null $campaign
  * @property-read Beneficiary|null $beneficiary
  */
 final class WorkspaceBeneficiary extends Model
@@ -42,6 +44,7 @@ final class WorkspaceBeneficiary extends Model
     /** @var list<string> */
     protected $fillable = [
         'workspace_id',
+        'campaign_id',
         'invited_by_user_id',
         'beneficiary_id',
         'public_id',
@@ -74,6 +77,12 @@ final class WorkspaceBeneficiary extends Model
     public function workspace(): BelongsTo
     {
         return $this->belongsTo(Workspace::class);
+    }
+
+    /** @return BelongsTo<Campaign, $this> */
+    public function campaign(): BelongsTo
+    {
+        return $this->belongsTo(Campaign::class);
     }
 
     /** @return BelongsTo<User, $this> */

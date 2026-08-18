@@ -32,6 +32,7 @@ final readonly class WorkspaceBeneficiaryIndexController
             ->where('status', WorkspaceBeneficiaryStatus::Pending)
             ->count();
         $invitations = $workspace->workspaceBeneficiaries()
+            ->with('campaign:id,name,slug')
             ->latest('id')
             ->paginate(10)
             ->withQueryString();

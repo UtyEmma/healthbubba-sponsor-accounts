@@ -142,6 +142,34 @@ export function MedicalAccessSidebarIcon(props: SVGProps<SVGSVGElement>) {
     );
 }
 
+export function CampaignSidebarIcon(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg {...iconProps} {...props}>
+            <path
+                d="M3 9.75V7.5C3 7.10218 3.15804 6.72064 3.43934 6.43934C3.72064 6.15804 4.10218 6 4.5 6H6.75L13.5 3V14.25L6.75 11.25H4.5C4.10218 11.25 3.72064 11.092 3.43934 10.8107C3.15804 10.5294 3 10.1478 3 9.75Z"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.5"
+            />
+            <path
+                d="M6 11.25L6.75 15H9L8.25 11.916"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.5"
+            />
+            <path
+                d="M15 6.75C15.4788 7.22759 15.7479 7.87577 15.7479 8.55188C15.7479 9.22798 15.4788 9.87616 15 10.3538"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.5"
+            />
+        </svg>
+    );
+}
+
 export function WalletSidebarIcon(props: SVGProps<SVGSVGElement>) {
     return (
         <svg {...iconProps} {...props}>

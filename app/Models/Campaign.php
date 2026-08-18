@@ -1,0 +1,128 @@
+<?php
+
+namespace App\Models;
+
+use App\Enums\CampaignStatus;
+use App\Enums\WorkspaceBeneficiaries\WorkspaceBeneficiaryStatus;
+use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
+
+/**
+ * @property int $id
+ * @property int $workspace_id
+ * @property string $name
+ * @property string $slug
+ * @property string|null $country
+ * @property string|null $city
+ * @property string|null $state
+ * @property string|null $location
+ * @property string|null $target_audience
+ * @property Carbon|null $start_date
+ * @property Carbon|null $end_date
+ * @property bool $booth_required
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Workspace $workspace
+ * @property-read Collection<int, WorkspaceBeneficiary> $beneficiaries
+ */
+final class Campaign extends Model
+{
+    /** @var list<string> */
+    protected $fillable = [
+        'workspace_id',
+        'name',
+        'slug',
+        'location',
+        'state',
+        'city',
+        'country',
+        'target_audience',
+        'start_date',
+        'end_date',
+        'status',
+        'booth_required',
+    ];
+
+    /** @return BelongsTo<Workspace, $this> */
+    public function workspace(): BelongsTo
+    {
+        return $this->belongsTo(Workspace::class);
+    }
+
+    /** @return HasMany<WorkspaceBeneficiary, $this> */
+    public function beneficiaries(): HasMany
+    {
+        return $this->hasMany(WorkspaceBeneficiary::class);
+    }
+
+    /** @return HasMany<WorkspaceBeneficiary, $this> */
+    public function activeBeneficiaries(): HasMany
+    {
+        return $this->beneficiaries()->where(
+            'status',
+            WorkspaceBeneficiaryStatus::Active,
+        );
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    public function lifecycleStatus(): CampaignStatus
+    {
+        $today = CarbonImmutable::today();
+
+        if ($this->end_date?->isBefore($today) === true) {
+            return CampaignStatus::COMPLETED;
+        }
+
+        if ($this->start_date?->isAfter($today) === true) {
+            return CampaignStatus::PENDING;
+        }
+
+        return CampaignStatus::IN_PROGRESS;
+    }
+
+    /** @return array<string, string> */
+    protected function casts(): array
+    {
+        return [
+            'booth_required' => 'boolean',
+            'start_date' => 'date',
+            'end_date' => 'date',
+        ];
+    }
+
+    protected static function booted(): void
+    {
+        self::saving(function (Campaign $campaign): void {
+            if (! $campaign->exists || $campaign->isDirty('slug')) {
+                $campaign->slug = $campaign->uniqueSlug();
+            }
+        });
+    }
+
+    private function uniqueSlug(): string
+    {
+        $source = filled($this->slug) ? $this->slug : $this->name;
+        $base = rtrim(Str::substr(Str::slug((string) $source), 0, 240), '-') ?: 'campaign';
+        $candidate = $base;
+        $suffix = 2;
+
+        while (self::query()
+            ->where('slug', $candidate)
+            ->when($this->exists, fn ($query) => $query->whereKeyNot($this->getKey()))
+            ->exists()) {
+            $candidate = "{$base}-{$suffix}";
+            $suffix++;
+        }
+
+        return $candidate;
+    }
+}

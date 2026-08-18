@@ -1,98 +1,86 @@
-import { Head } from '@inertiajs/react';
-import {
-    DownloadIcon,
-    PlusIcon,
-    RefreshCwIcon,
-    ArrowUpCircleIcon,
-} from 'lucide-react';
-import { useState } from 'react';
+import { Head, Link } from '@inertiajs/react';
+import { ArrowLeftIcon, CalendarDaysIcon } from 'lucide-react';
 
-import { BusinessPortalShell } from '@/components/business-portal-shell';
 import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-import { institutionalNavigation } from '../partials/institutional-navigation';
-import {
-    RenewCoverageDialog,
-    TopUpCoverageDialog,
-    UpgradeCoverageDialog,
-} from './partials/coverage-dialogs';
 import { DashboardLayout } from '@/layouts/dashboard';
+import institutional from '@/routes/institutional';
+import type {
+    Campaign,
+    CampaignStatus,
+    InstitutionalCampaignShowPageProps,
+} from '@/types';
 
-export default function InstitutionalCoveragePage() {
-    const [renewOpen, setRenewOpen] = useState(false);
-    const [topUpOpen, setTopUpOpen] = useState(false);
-    const [upgradeOpen, setUpgradeOpen] = useState(false);
-    const [announcement, setAnnouncement] = useState('');
+const dateFormatter = new Intl.DateTimeFormat('en-NG', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+});
 
-    function complete(message: string) {
-        setAnnouncement(message);
-        setRenewOpen(false);
-        setTopUpOpen(false);
-        setUpgradeOpen(false);
-    }
+export default function InstitutionalCampaignDetailsPage({
+    organization,
+    campaign,
+}: InstitutionalCampaignShowPageProps) {
+    const campaignArea = [
+        campaign.location,
+        campaign.city,
+        campaign.state,
+        campaign.country,
+    ]
+        .filter((value): value is string => Boolean(value))
+        .join(', ');
+    const campaignMetadata = [campaignArea, formatDateRange(campaign)]
+        .filter((value): value is string => Boolean(value))
+        .join(' · ');
 
     return (
         <>
-            <Head title="Coverage" />
-            <DashboardLayout >
+            <Head title={campaign.name} />
+            <DashboardLayout>
                 <div className="mx-auto w-full max-w-6xl">
                     <PageHeader
-                        title="Coverage"
-                        description="Manage purchased coverage, rules, and the transaction ledger."
+                        title="Campaign Details"
+                        description={`Review the campaign configured for ${organization.name}.`}
                         action={
-                            <div className="flex gap-3">
-                                {/* <Button
-                                    variant="outline"
-                                    size="compact"
-                                    onClick={() => setRenewOpen(true)}
-                                >
-                                    <RefreshCwIcon className="size-4" />
-                                    Renew
-                                </Button> */}
-                                <Button
-                                    size="compact"
-                                    onClick={() => setTopUpOpen(true)}
-                                >
-                                    <PlusIcon className="size-4" />
-                                    Top Up
-                                </Button>
-                            </div>
+                            <Link
+                                href={institutional.campaigns.index()}
+                                className={buttonVariants({
+                                    variant: 'outline',
+                                    size: 'compact',
+                                })}
+                            >
+                                <ArrowLeftIcon className="size-4" />
+                                All Campaigns
+                            </Link>
                         }
                     />
 
-                    {/* <Tabs defaultValue="overview" className="pt-10">
-                        <TabsList>
-                            <TabsTrigger value="overview">Overview</TabsTrigger>
-                            <TabsTrigger value="rules">Rules</TabsTrigger>
-                            <TabsTrigger value="ledger">Ledger (5)</TabsTrigger>
-                        </TabsList>
-                    </Tabs> */}
-
                     <Card className="mt-10">
-                        <CardContent className="flex min-h-[96px] flex-col justify-between gap-4 px-6 py-5 sm:flex-row sm:items-center">
+                        <CardContent className="flex min-h-24 flex-col justify-between gap-4 px-6 py-5 sm:flex-row sm:items-center">
                             <div>
                                 <div className="flex flex-wrap items-center gap-2">
                                     <h2 className="text-base font-semibold">
-                                        Community Health Program 2026
+                                        {campaign.name}
                                     </h2>
-                                    <Badge variant="success">Active</Badge>
+                                    <CampaignStatusBadge
+                                        status={campaign.status}
+                                        label={campaign.statusLabel}
+                                    />
                                 </div>
-                                <p className="pt-1 text-sm text-muted-foreground">
-                                    Shared Coverage Pool · 23 Mar 2026 – 23 Mar
-                                    2027
-                                </p>
+                                {campaignMetadata && (
+                                    <p className="pt-1 text-sm text-muted-foreground">
+                                        {campaignMetadata}
+                                    </p>
+                                )}
                             </div>
-                            <div className="flex gap-2">
-                                <Button variant="outline">
-                                    <DownloadIcon className="size-4" />
-                                    Report
-                                </Button>
-                            </div>
+                            <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <CalendarDaysIcon className="size-4" />
+                                {timelineLabel(campaign)}
+                            </span>
                         </CardContent>
                     </Card>
 
@@ -100,96 +88,148 @@ export default function InstitutionalCoveragePage() {
                         <Card>
                             <CardHeader className="gap-1 px-6 pt-6 pb-3">
                                 <CardTitle className="text-base">
-                                    Coverage wallet
+                                    Campaign overview
                                 </CardTitle>
                                 <p className="text-sm text-muted-foreground">
-                                    Purchased, consumed and remaining units.
+                                    Schedule, audience and current campaign
+                                    progress.
                                 </p>
                             </CardHeader>
                             <CardContent className="grid gap-5 px-6 pt-3 pb-6">
-                                <CoverageProgress
-                                    label="GP consultations"
-                                    value="1258 / 2000 left"
-                                    progress={37}
-                                />
-                                <CoverageProgress
-                                    label="Specialist consultations"
-                                    value="332 / 500 left"
-                                    progress={34}
-                                />
+                                <CampaignProgress campaign={campaign} />
+                                <dl className="grid gap-4 border-t pt-5 text-sm sm:grid-cols-2">
+                                    {campaign.startDate && (
+                                        <DetailRow
+                                            label="Start date"
+                                            value={formatDate(
+                                                campaign.startDate,
+                                            )}
+                                        />
+                                    )}
+                                    {campaign.endDate && (
+                                        <DetailRow
+                                            label="End date"
+                                            value={formatDate(campaign.endDate)}
+                                        />
+                                    )}
+                                    {campaign.targetAudience && (
+                                        <DetailRow
+                                            label="Target audience"
+                                            value={campaign.targetAudience}
+                                            wide
+                                        />
+                                    )}
+                                </dl>
                             </CardContent>
                         </Card>
 
                         <Card>
                             <CardHeader className="px-6 pt-6 pb-4">
                                 <CardTitle className="text-base">
-                                    Financial summary
+                                    Campaign setup
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="px-6 pt-2 pb-6">
                                 <dl className="grid gap-4 text-sm">
                                     <SummaryRow
-                                        label="Total budget"
-                                        value="₦25,000,000"
+                                        label="Organization"
+                                        value={organization.name}
                                     />
-                                    <SummaryRow
-                                        label="Consumed"
-                                        value="₦9,120,000"
-                                    />
-                                    <div className="border-t pt-4">
+                                    {campaign.city && (
                                         <SummaryRow
-                                            label="Remaining"
-                                            value="₦15,880,000"
-                                            highlighted
+                                            label="City"
+                                            value={campaign.city}
                                         />
-                                    </div>
+                                    )}
+                                    {campaign.state && (
+                                        <SummaryRow
+                                            label="State"
+                                            value={campaign.state}
+                                        />
+                                    )}
+                                    {campaign.country && (
+                                        <SummaryRow
+                                            label="Country"
+                                            value={campaign.country}
+                                        />
+                                    )}
+                                    {campaign.beneficiaryCount !==
+                                        undefined && (
+                                        <SummaryRow
+                                            label="Beneficiaries"
+                                            value={`${campaign.activeBeneficiaryCount ?? 0} active of ${campaign.beneficiaryCount}`}
+                                        />
+                                    )}
+                                    <SummaryRow
+                                        label="Booth required"
+                                        value={
+                                            campaign.boothRequired
+                                                ? 'Yes'
+                                                : 'No'
+                                        }
+                                        highlighted={campaign.boothRequired}
+                                    />
                                 </dl>
                             </CardContent>
                         </Card>
                     </section>
-
-                    <RenewCoverageDialog
-                        open={renewOpen}
-                        onOpenChange={setRenewOpen}
-                        onComplete={complete}
-                    />
-                    <TopUpCoverageDialog
-                        open={topUpOpen}
-                        onOpenChange={setTopUpOpen}
-                        onComplete={complete}
-                    />
-                    <UpgradeCoverageDialog
-                        open={upgradeOpen}
-                        onOpenChange={setUpgradeOpen}
-                        onComplete={complete}
-                    />
-                    <p className="sr-only" role="status" aria-live="polite">
-                        {announcement}
-                    </p>
                 </div>
             </DashboardLayout>
         </>
     );
 }
 
-function CoverageProgress({
-    label,
-    value,
-    progress,
-}: {
-    label: string;
-    value: string;
-    progress: number;
-}) {
+function CampaignProgress({ campaign }: { campaign: Campaign }) {
+    const progress = timelineProgress(campaign);
+    const value = timelineLabel(campaign);
+
     return (
         <div className="grid gap-2">
             <div className="flex justify-between gap-4 text-sm">
-                <span>{label}</span>
+                <span>Campaign timeline</span>
                 <span className="font-semibold text-muted-foreground">
                     {value}
                 </span>
             </div>
-            <Progress value={progress} aria-label={`${label}: ${value}`} />
+            <Progress
+                value={progress}
+                aria-label={`Campaign timeline: ${value}`}
+            />
+        </div>
+    );
+}
+
+function CampaignStatusBadge({
+    status,
+    label,
+}: {
+    status: CampaignStatus;
+    label: string;
+}) {
+    if (status === 'IN_PROGRESS') {
+        return <Badge variant="success">{label}</Badge>;
+    }
+
+    if (status === 'PENDING') {
+        return <Badge variant="warning">{label}</Badge>;
+    }
+
+    return <Badge variant="secondary">{label}</Badge>;
+}
+
+function DetailRow({
+    label,
+    value,
+    wide = false,
+}: {
+    label: string;
+    value: string;
+    wide?: boolean;
+}) {
+    return (
+        <div className={wide ? 'grid gap-1 sm:col-span-2' : 'grid gap-1'}>
+            <dt className="text-muted-foreground">{label}</dt>
+            <dd className="font-medium">{value}</dd>
         </div>
     );
 }
@@ -209,12 +249,58 @@ function SummaryRow({
             <dd
                 className={
                     highlighted
-                        ? 'text-lg font-semibold text-success'
-                        : 'font-medium'
+                        ? 'font-semibold text-success'
+                        : 'text-right font-medium'
                 }
             >
                 {value}
             </dd>
         </div>
     );
+}
+
+function timelineProgress(campaign: Campaign): number {
+    if (!campaign.startDate || !campaign.endDate) {
+        return 0;
+    }
+
+    const start = Date.parse(`${campaign.startDate}T00:00:00Z`);
+    const end = Date.parse(`${campaign.endDate}T23:59:59Z`);
+    const duration = end - start;
+
+    if (duration <= 0) {
+        return campaign.status === 'COMPLETED' ? 100 : 0;
+    }
+
+    return Math.min(100, Math.max(0, ((Date.now() - start) / duration) * 100));
+}
+
+function timelineLabel(campaign: Campaign): string {
+    if (!campaign.startDate || !campaign.endDate) {
+        return 'Dates not set';
+    }
+
+    if (campaign.status !== 'IN_PROGRESS') {
+        return campaign.statusLabel;
+    }
+
+    const end = Date.parse(`${campaign.endDate}T23:59:59Z`);
+    const daysRemaining = Math.max(
+        0,
+        Math.ceil((end - Date.now()) / 86_400_000),
+    );
+
+    return `${daysRemaining} day${daysRemaining === 1 ? '' : 's'} remaining`;
+}
+
+function formatDateRange(campaign: Campaign): string | null {
+    if (!campaign.startDate || !campaign.endDate) {
+        return null;
+    }
+
+    return `${formatDate(campaign.startDate)} – ${formatDate(campaign.endDate)}`;
+}
+
+function formatDate(value: string): string {
+    return dateFormatter.format(new Date(value));
 }

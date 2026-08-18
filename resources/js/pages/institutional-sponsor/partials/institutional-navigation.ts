@@ -3,9 +3,8 @@ import {
     BellIcon,
     CreditCardIcon,
     LayoutGridIcon,
-    ShieldPlusIcon,
+    MegaphoneIcon,
     StethoscopeIcon,
-    TicketIcon,
     UserRoundCheckIcon,
     UsersRoundIcon,
 } from 'lucide-react';
@@ -20,12 +19,12 @@ export const institutionalNavigation: PortalNavigationItem[] = [
         icon: LayoutGridIcon,
         href: institutional.dashboard().url,
     },
-    
+
     { label: 'Beneficiaries', icon: UsersRoundIcon },
     {
-        label: 'Enrollment Codes',
-        icon: TicketIcon,
-        href: institutional.enrollment_codes().url,
+        label: 'Campaigns',
+        icon: MegaphoneIcon,
+        href: institutional.campaigns.index().url,
     },
     {
         label: 'Consultations',

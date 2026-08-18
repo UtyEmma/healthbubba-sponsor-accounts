@@ -7,6 +7,11 @@ use App\Http\Controllers\Appointments\ConsultationController;
 use App\Http\Controllers\Appointments\UpdateAllocationFallbackController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InstitutionalCampaigns\InstitutionalCampaignIndexController;
+use App\Http\Controllers\InstitutionalCampaigns\InstitutionalCampaignShowController;
+use App\Http\Controllers\InstitutionalOnboarding\CompleteInstitutionalOrganizationProfileController;
+use App\Http\Controllers\InstitutionalOnboarding\ShowInstitutionalOrganizationController;
+use App\Http\Controllers\InstitutionalOnboarding\ShowInstitutionalSupportController;
 use App\Http\Controllers\MedicalAccessRequests\DecideMedicalAccessRequestController;
 use App\Http\Controllers\MedicalAccessRequests\MedicalAccessIndexController;
 use App\Http\Controllers\MedicalAccessRequests\ShowMedicalAccessRequestReviewController;
@@ -37,6 +42,7 @@ use App\Http\Controllers\WorkspaceMembers\StoreWorkspaceMemberInvitationControll
 use App\Http\Controllers\WorkspaceMembers\UpdateWorkspaceMemberAccessController as UpdateTeamMemberAccessController;
 use App\Http\Controllers\WorkspaceMembers\UpdateWorkspaceMemberRoleController;
 use App\Http\Controllers\WorkspaceMembers\WorkspaceTeamIndexController;
+use App\Http\Middleware\EnsureInstitutionalOnboardingComplete;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('payments')->name('payments.')->group(function () {
@@ -80,7 +86,17 @@ Route::prefix('team-invitations')->name('team-invitations.')->group(function () 
         ->name('decline');
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', EnsureInstitutionalOnboardingComplete::class])->group(function () {
+    Route::prefix('institutional-onboarding')->name('institutional_onboarding.')->group(function () {
+        Route::get('/organization', ShowInstitutionalOrganizationController::class)
+            ->name('organization.edit');
+        Route::post('/organization', CompleteInstitutionalOrganizationProfileController::class)
+            ->middleware('throttle:10,1')
+            ->name('organization.update');
+        Route::get('/contact-support', ShowInstitutionalSupportController::class)
+            ->name('support');
+    });
+
     Route::get('/', DashboardController::class)->name('home');
 
     Route::prefix('wallet')->name('wallet.')->group(function () {
@@ -168,12 +184,17 @@ Route::middleware('auth')->group(function () {
         Route::get('/plan-and-seats', BillingController::class)->name('plans');
     });
 
+    Route::redirect('/coverage', '/institutional-sponsor/campaigns')->name('institutional.coverage');
+
+    Route::prefix('campaigns')->group(function(){
+        Route::get('/', InstitutionalCampaignIndexController::class)->name('campaigns.index');
+        Route::get('/{campaign:slug}', InstitutionalCampaignShowController::class)->name('campaigns.show');
+    });
     Route::prefix('institutional-sponsor')->name('institutional.')->group(function () {
         Route::get('/dashboard', DashboardController::class)->name('dashboard');
         Route::redirect('/consultations', '/consultations')->name('consultations');
         Route::inertia('/notifications', 'institutional-sponsor/notifications/index')->name('notifications');
-        Route::inertia('/coverage', 'institutional-sponsor/coverage/index')->name('coverage');
-        Route::inertia('/enrollment-codes', 'institutional-sponsor/enrollment-codes/index')->name('enrollment_codes');
+        Route::redirect('/enrollment-codes', '/institutional-sponsor/campaigns')->name('enrollment_codes');
         Route::inertia('/reports', 'institutional-sponsor/reports/index')->name('reports');
         Route::redirect('/team', '/team')->name('team');
     });

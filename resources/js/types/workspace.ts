@@ -8,6 +8,7 @@ export interface Workspace {
     name: string;
     logo?: string | null;
     description?: string | null;
+    onboardedAt: string | null;
     type: AccountType;
     fallbackChannel: AllocationFallback | null;
     wallet?: Wallet | null;

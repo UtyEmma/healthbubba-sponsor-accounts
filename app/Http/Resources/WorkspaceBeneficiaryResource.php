@@ -15,6 +15,9 @@ final class WorkspaceBeneficiaryResource extends JsonResource
         return [
             'id' => (int) $this->getKey(),
             'publicId' => $this->public_id,
+            'campaignId' => $this->campaign_id,
+            'campaignName' => $this->relationLoaded('campaign') ? $this->campaign?->name : null,
+            'campaignSlug' => $this->relationLoaded('campaign') ? $this->campaign?->slug : null,
             'firstName' => $this->first_name,
             'lastName' => $this->last_name,
             'name' => trim("{$this->first_name} {$this->last_name}"),

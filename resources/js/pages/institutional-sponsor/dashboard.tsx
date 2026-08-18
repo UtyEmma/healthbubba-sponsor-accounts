@@ -1,4 +1,4 @@
-import { Head, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import {
     ArrowRightIcon,
     CalendarClockIcon,
@@ -9,19 +9,19 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 
-import { BusinessPortalShell } from '@/components/business-portal-shell';
 import { PageHeader } from '@/components/page-header';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { DashboardLayout } from '@/layouts/dashboard';
 import { BusinessMetricCard } from '@/pages/business-sponsor/partials/business-metric-card';
+import institutional from '@/routes/institutional';
 import type {
     ConsultationAllocationSummary,
     DashboardPageProps,
 } from '@/types';
 
 import { ConsultationTrendsChart } from './partials/consultation-trends-chart';
-import { institutionalNavigation } from './partials/institutional-navigation';
 
 export default function InstitutionalDashboard({
     dashboard,
@@ -42,25 +42,20 @@ export default function InstitutionalDashboard({
     return (
         <>
             <Head title={workspace.name} />
-            <BusinessPortalShell
-                navigation={institutionalNavigation}
-                navigationLabel="Institutional sponsor navigation"
-            >
+            <DashboardLayout>
                 <div className="mx-auto w-full max-w-6xl pb-4">
                     <PageHeader
                         title={workspace.name}
                         description="Program reach and coverage utilization at a glance."
                         action={
-                            <Button
-                                size="compact"
-                                onClick={() =>
-                                    setAnnouncement(
-                                        'Coverage management selected.',
-                                    )
-                                }
+                            <Link
+                                href={institutional.campaigns.index()}
+                                className={buttonVariants({
+                                    size: 'compact',
+                                })}
                             >
-                                Manage Coverage
-                            </Button>
+                                Manage Campaigns
+                            </Link>
                         }
                     />
 
@@ -238,7 +233,7 @@ export default function InstitutionalDashboard({
                         {announcement}
                     </p>
                 </div>
-            </BusinessPortalShell>
+            </DashboardLayout>
         </>
     );
 }

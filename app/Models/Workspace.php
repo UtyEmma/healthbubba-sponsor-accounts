@@ -13,8 +13,10 @@ use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Revoltify\Subscriptionify\Concerns\InteractsWithSubscriptions;
@@ -25,19 +27,31 @@ use Revoltify\Subscriptionify\Models\Feature;
  * @property int $id
  * @property string $name
  * @property string|null $description
+ * @property Carbon|null $onboarded_at
  * @property string|null $logo
  * @property AccountTypes $type
  * @property AllocationFallback|null $fallback_channel
+ * @property-read EloquentCollection<int, Campaign> $campaigns
+ * @property-read Campaign|null $latestCampaign
  * @property-read EloquentCollection<int, Beneficiary> $patients
  */
 class Workspace extends Model implements Subscribable
 {
     use HasWallet, InteractsWithSubscriptions, Notifiable;
 
-    protected $fillable = ['name', 'type', 'logo', 'description', 'fallback_channel'];
+    protected $fillable = [
+        'name',
+        'type',
+        'logo',
+        'description',
+        'onboarded_at',
+        'fallback_channel',
+    ];
 
     protected $casts = [
         'type' => AccountTypes::class,
+        'booth_required' => 'boolean',
+        'onboarded_at' => 'datetime',
         'fallback_channel' => AllocationFallback::class,
     ];
 
@@ -65,6 +79,18 @@ class Workspace extends Model implements Subscribable
     public function workspaceBeneficiaries(): HasMany
     {
         return $this->hasMany(WorkspaceBeneficiary::class);
+    }
+
+    /** @return HasMany<Campaign, $this> */
+    public function campaigns(): HasMany
+    {
+        return $this->hasMany(Campaign::class);
+    }
+
+    /** @return HasOne<Campaign, $this> */
+    public function latestCampaign(): HasOne
+    {
+        return $this->hasOne(Campaign::class)->latestOfMany();
     }
 
     /** @return HasMany<MedicalAccessRequest, $this> */

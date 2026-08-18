@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
@@ -15,6 +16,8 @@ use Laravel\Fortify\Contracts\CreatesNewUsers;
 class CreateNewUser implements CreatesNewUsers
 {
     use PasswordValidationRules;
+
+    public function __construct(private readonly CreateNewWorkspace $createWorkspace) {}
 
     /**
      * Validate and create a newly registered user.
@@ -28,7 +31,13 @@ class CreateNewUser implements CreatesNewUsers
         Validator::make($input, [
             'name' => ['required', 'string', 'max:255'],
             'organization_name' => [
-                Rule::requiredIf(fn() => !in_array($input['type'], [AccountTypes::INDIVIDUAL->value]))
+                Rule::requiredIf(fn (): bool => in_array($input['type'] ?? null, [
+                    AccountTypes::BUSINESS->value,
+                    AccountTypes::INSTITUTION->value,
+                ], true)),
+                'nullable',
+                'string',
+                'max:255',
             ],
             'email' => [
                 'required',
@@ -41,27 +50,25 @@ class CreateNewUser implements CreatesNewUsers
             'password' => $this->passwordRules(),
         ])->validate();
 
-        DB::beginTransaction();
+        return DB::transaction(function () use ($input): User {
+            $accountType = AccountTypes::from($input['type']);
+            $user = User::query()->create([
+                'name' => Str::squish($input['name']),
+                'email' => Str::lower(trim($input['email'])),
+                'type' => $accountType,
+                'password' => Hash::make($input['password']),
+            ]);
 
-        $user_data = collect($input)
-                        ->only(['name', 'email'])
-                        ->merge([
-                            'password' => Hash::make($input['password'])
-                        ])->toArray();
+            $workspaceName = $accountType === AccountTypes::INDIVIDUAL
+                ? "{$user->name}'s Workspace"
+                : Str::squish($input['organization_name']);
 
-        $user = User::create($user_data);
+            $this->createWorkspace->execute($user, [
+                'name' => $workspaceName,
+                'type' => $accountType,
+            ]);
 
-        if(isset($input['organization_name'])) {
-            $org_data = [
-                'name' => $input['organization_name'] ?? "{$user->name}'s Workspace",
-                'type' => $input['type']
-            ];
-    
-            (new CreateNewWorkspace)->execute($user, $org_data);
-        }
-        
-        DB::commit();
-
-        return $user;
+            return $user;
+        });
     }
 }

@@ -14,6 +14,9 @@ export type WorkspaceBeneficiarySource = 'manual' | 'import';
 export interface WorkspaceBeneficiary {
     id: number;
     publicId: string;
+    campaignId: number | null;
+    campaignName: string | null;
+    campaignSlug: string | null;
     firstName: string;
     lastName: string;
     name: string;

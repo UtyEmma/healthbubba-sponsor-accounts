@@ -21,6 +21,7 @@ final class WorkspaceResource extends JsonResource
             'name' => $this->name,
             'logo' => $this->logo,
             'description' => $this->description,
+            'onboardedAt' => $this->onboarded_at?->toISOString(),
             'type' => $this->type->value,
             'fallbackChannel' => $this->fallback_channel?->value,
         ];

@@ -7,6 +7,7 @@ import type { WalletPageProps } from '@/types';
 
 import { AddFundsDialog } from './partials/wallet-dialogs';
 import { TransactionsCard, WalletSummary } from './partials/wallet-overview';
+import { DashboardLayout } from '@/layouts/dashboard';
 
 export default function WalletIndex({ wallet, transactions }: WalletPageProps) {
     const { errors, flash } = usePage().props;
@@ -14,7 +15,7 @@ export default function WalletIndex({ wallet, transactions }: WalletPageProps) {
     return (
         <>
             <Head title="Wallet" />
-            <PortalShell>
+            <DashboardLayout>
                 <div className="mx-auto w-full max-w-6xl">
                     <PageHeader
                         title="Wallet"
@@ -31,7 +32,7 @@ export default function WalletIndex({ wallet, transactions }: WalletPageProps) {
 
                     <TransactionsCard transactions={transactions} />
                 </div>
-            </PortalShell>
+            </DashboardLayout>
         </>
     );
 }

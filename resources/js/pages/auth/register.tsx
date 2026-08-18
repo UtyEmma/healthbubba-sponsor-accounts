@@ -1,4 +1,4 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import {
     ArrowRight,
     Building2Icon,
@@ -6,17 +6,16 @@ import {
     LandmarkIcon,
     UserIcon,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import type { FormEvent } from 'react';
+import { useState } from 'react';
 
 import { BrandMark } from '@/components/brand-mark';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { login, register } from '@/routes';
-import { Disclose } from '@/components/toggle/disclose';
-import { FieldLabel } from '@/components/ui/field';
 import InputError from '@/components/input/input-error';
+import { Disclose } from '@/components/toggle/disclose';
+import { Button } from '@/components/ui/button';
+import { FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { AccountTypes } from '@/constants/account';
+import { login, register } from '@/routes';
 
 const accountTypes = [
     {
@@ -51,12 +50,14 @@ export default function Login() {
     });
 
     function submit() {
-        form.post(register().url);
+        form.post(register().url, {
+            onError: (errors) => {
+                if (errors.type) {
+                    setStep(1);
+                }
+            },
+        });
     }
-
-    useEffect(() => {
-        if (form.errors.type) setStep(1);
-    }, [form.errors]);
 
     return (
         <>
@@ -278,7 +279,11 @@ export default function Login() {
                                             error={form.errors.password}
                                         />
                                     </div>
-                                    <Button onClick={submit} className="w-full">
+                                    <Button
+                                        onClick={submit}
+                                        className="w-full"
+                                        disabled={form.processing}
+                                    >
                                         Continue to portal{' '}
                                         <ArrowRight className="size-4" />
                                     </Button>

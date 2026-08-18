@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BarChart3Icon, BellIcon, ShieldPlusIcon, UsersRoundIcon } from 'lucide-react';
+import { BarChart3Icon, BellIcon, UsersRoundIcon } from 'lucide-react';
 import { useMemo } from 'react';
 
 import { BrandMark } from '@/components/brand-mark';
@@ -7,6 +7,7 @@ import type { SidebarIcon } from '@/components/sidebar-icons';
 import {
     ActivityLogSidebarIcon,
     BeneficiariesSidebarIcon,
+    CampaignSidebarIcon,
     ConsultationsSidebarIcon,
     DashboardSidebarIcon,
     MedicalAccessSidebarIcon,
@@ -19,11 +20,12 @@ import activity_log from '@/routes/activity_log';
 import beneficiaries from '@/routes/beneficiaries';
 import business from '@/routes/business';
 import consultations from '@/routes/consultations';
+import institutional, { notifications } from '@/routes/institutional';
 import medical_access from '@/routes/medical_access';
 import plans from '@/routes/plans';
 import team from '@/routes/team';
 import wallet from '@/routes/wallet';
-import institutional, { notifications } from '@/routes/institutional';
+import campaigns from '@/routes/campaigns';
 
 type NavigationItem = {
     label: string;
@@ -41,14 +43,12 @@ function Navigation() {
             { label: 'Dashboard', icon: DashboardSidebarIcon, href: home() },
         ];
 
-        if(workspace.type == 'institution') {
-            navigation.push(
-                {
-                    label: 'Coverage',
-                    icon: ShieldPlusIcon,
-                    href: institutional.coverage(),
-                },
-            )
+        if (workspace.type == 'institution') {
+            navigation.push({
+                label: 'Campaigns',
+                icon: CampaignSidebarIcon,
+                href: campaigns.index(),
+            });
         }
 
         if (workspace.type == 'individual' || workspace.type == 'institution') {
@@ -94,32 +94,29 @@ function Navigation() {
             );
         }
 
-        if(workspace.type == 'institution') {
-            navigation.push(
-                {
-                    label: 'Reports',
-                    icon: BarChart3Icon,
-                    href: institutional.reports(),
-                },
-            )
+        if (workspace.type == 'institution') {
+            navigation.push({
+                label: 'Reports',
+                icon: BarChart3Icon,
+                href: institutional.reports(),
+            });
         }
+
+        navigation.push({
+            label: 'Wallet',
+            icon: WalletSidebarIcon,
+            href: wallet.index(),
+        });
 
         if (
             (workspace.type == 'individual' || workspace.type == 'business') &&
             workspacePermissions.canViewFinancial
         ) {
-            navigation.push(
-                {
-                    label: 'Wallet',
-                    icon: WalletSidebarIcon,
-                    href: wallet.index(),
-                },
-                {
-                    label: 'Plan & Billing',
-                    icon: PlanBillingSidebarIcon,
-                    href: plans.index(),
-                },
-            );
+            navigation.push({
+                label: 'Plan & Billing',
+                icon: PlanBillingSidebarIcon,
+                href: plans.index(),
+            });
         }
 
         navigation.push({
@@ -128,14 +125,12 @@ function Navigation() {
             href: team.index(),
         });
 
-        if(workspace.type == 'institution') {
-            navigation.push(
-                   {
-                    label: 'Notifications',
-                    icon: BellIcon,
-                    href: notifications(),
-                }
-            )
+        if (workspace.type == 'institution') {
+            navigation.push({
+                label: 'Notifications',
+                icon: BellIcon,
+                href: notifications(),
+            });
         }
 
         if (['individual', 'business'].includes(workspace.type)) {
@@ -154,7 +149,12 @@ function Navigation() {
             <ul className="flex flex-col gap-1">
                 {navigation.map((item) => {
                     const Icon = item.icon;
-                    const isActive = item.href?.url === currentPath;
+                    const itemPath = item.href?.url;
+                    const isActive =
+                        itemPath === currentPath ||
+                        (itemPath !== undefined &&
+                            itemPath !== '/' &&
+                            currentPath.startsWith(`${itemPath}/`));
 
                     return (
                         <li key={item.label}>

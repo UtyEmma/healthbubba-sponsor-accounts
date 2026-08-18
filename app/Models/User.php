@@ -8,6 +8,7 @@ use App\Concerns\HasRole;
 use App\Concerns\HasStatus;
 use App\Enums\Account\Roles;
 use App\Enums\Account\Status;
+use App\Enums\AccountTypes;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -24,6 +25,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string $name
  * @property string $email
+ * @property AccountTypes|null $type
  * @property Roles $role
  * @property Status $status
  * @property Carbon|null $email_verified_at
@@ -52,6 +54,7 @@ class User extends Authenticatable implements FilamentUser
     {
         return [
             'role' => Roles::class,
+            'type' => AccountTypes::class,
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
