@@ -8,7 +8,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -22,6 +22,7 @@ use Illuminate\Support\Str;
  * @property string|null $state
  * @property string|null $location
  * @property string|null $target_audience
+ * @property int $beneficiary_limit
  * @property Carbon|null $start_date
  * @property Carbon|null $end_date
  * @property bool $booth_required
@@ -32,6 +33,11 @@ use Illuminate\Support\Str;
  */
 final class Campaign extends Model
 {
+    /** @var array<string, mixed> */
+    protected $attributes = [
+        'beneficiary_limit' => 100,
+    ];
+
     /** @var list<string> */
     protected $fillable = [
         'workspace_id',
@@ -42,6 +48,7 @@ final class Campaign extends Model
         'city',
         'country',
         'target_audience',
+        'beneficiary_limit',
         'start_date',
         'end_date',
         'status',
@@ -54,14 +61,14 @@ final class Campaign extends Model
         return $this->belongsTo(Workspace::class);
     }
 
-    /** @return HasMany<WorkspaceBeneficiary, $this> */
-    public function beneficiaries(): HasMany
+    /** @return MorphMany<WorkspaceBeneficiary, $this> */
+    public function beneficiaries(): MorphMany
     {
-        return $this->hasMany(WorkspaceBeneficiary::class);
+        return $this->morphMany(WorkspaceBeneficiary::class, 'relatable');
     }
 
-    /** @return HasMany<WorkspaceBeneficiary, $this> */
-    public function activeBeneficiaries(): HasMany
+    /** @return MorphMany<WorkspaceBeneficiary, $this> */
+    public function activeBeneficiaries(): MorphMany
     {
         return $this->beneficiaries()->where(
             'status',
@@ -94,6 +101,7 @@ final class Campaign extends Model
     {
         return [
             'booth_required' => 'boolean',
+            'beneficiary_limit' => 'integer',
             'start_date' => 'date',
             'end_date' => 'date',
         ];

@@ -81,6 +81,12 @@ class Workspace extends Model implements Subscribable
         return $this->hasMany(WorkspaceBeneficiary::class);
     }
 
+    /** @return MorphMany<WorkspaceBeneficiary, $this> */
+    public function beneficiaryEnrollments(): MorphMany
+    {
+        return $this->morphMany(WorkspaceBeneficiary::class, 'relatable');
+    }
+
     /** @return HasMany<Campaign, $this> */
     public function campaigns(): HasMany
     {

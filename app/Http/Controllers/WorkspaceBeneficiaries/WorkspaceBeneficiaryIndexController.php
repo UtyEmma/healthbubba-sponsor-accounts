@@ -25,14 +25,14 @@ final readonly class WorkspaceBeneficiaryIndexController
 
         $this->expireInvitations->execute();
         $summary = $this->capacity->summary($workspace);
-        $activeCount = $workspace->workspaceBeneficiaries()
+        $activeCount = $workspace->beneficiaryEnrollments()
             ->where('status', WorkspaceBeneficiaryStatus::Active)
             ->count();
-        $pendingCount = $workspace->workspaceBeneficiaries()
+        $pendingCount = $workspace->beneficiaryEnrollments()
             ->where('status', WorkspaceBeneficiaryStatus::Pending)
             ->count();
-        $invitations = $workspace->workspaceBeneficiaries()
-            ->with('campaign:id,name,slug')
+        $invitations = $workspace->beneficiaryEnrollments()
+            ->with('relatable')
             ->latest('id')
             ->paginate(10)
             ->withQueryString();

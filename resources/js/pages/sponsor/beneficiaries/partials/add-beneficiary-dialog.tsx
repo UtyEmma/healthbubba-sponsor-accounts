@@ -20,8 +20,10 @@ import type { WorkspaceCapacity } from '@/types';
 
 export function AddBeneficiaryDialog({
     capacity,
+    form,
 }: {
     capacity: WorkspaceCapacity;
+    form?: ReturnType<typeof StoreWorkspaceBeneficiaryController.form>;
 }) {
     const [open, setOpen] = useState(false);
 
@@ -51,7 +53,7 @@ export function AddBeneficiaryDialog({
                 </DialogHeader>
 
                 <Form
-                    {...StoreWorkspaceBeneficiaryController.form()}
+                    {...(form ?? StoreWorkspaceBeneficiaryController.form())}
                     resetOnSuccess
                     onSuccess={() => setOpen(false)}
                 >
@@ -86,12 +88,16 @@ export function AddBeneficiaryDialog({
                                     error={errors.phone}
                                     disabled={processing}
                                 />
-                                {(errors.capacity || errors.subscription) && (
+                                {(errors.capacity ||
+                                    errors.subscription ||
+                                    errors.campaign) && (
                                     <p
                                         className="text-sm text-destructive"
                                         role="alert"
                                     >
-                                        {errors.capacity ?? errors.subscription}
+                                        {errors.capacity ??
+                                            errors.subscription ??
+                                            errors.campaign}
                                     </p>
                                 )}
                             </div>

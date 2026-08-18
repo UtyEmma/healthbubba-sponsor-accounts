@@ -1,18 +1,29 @@
-import { Head, Link } from '@inertiajs/react';
-import { ArrowLeftIcon, CalendarDaysIcon } from 'lucide-react';
+import { Head, usePage } from '@inertiajs/react';
+import { CalendarDaysIcon, MapPin } from 'lucide-react';
 
+import StoreCampaignBeneficiaryController from '@/actions/App/Http/Controllers/InstitutionalCampaigns/StoreCampaignBeneficiaryController';
 import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
-import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { DashboardLayout } from '@/layouts/dashboard';
-import institutional from '@/routes/institutional';
+import { AddBeneficiaryDialog } from '@/pages/sponsor/beneficiaries/partials/add-beneficiary-dialog';
+import { BeneficiariesTable } from '@/pages/sponsor/beneficiaries/partials/beneficiaries-table';
 import type {
     Campaign,
     CampaignStatus,
     InstitutionalCampaignShowPageProps,
 } from '@/types';
+
+interface CampaignDetailsSharedProps {
+    [key: string]: unknown;
+    flash: {
+        success?: string;
+    };
+    workspacePermissions: {
+        canManage: boolean;
+    };
+}
 
 const dateFormatter = new Intl.DateTimeFormat('en-NG', {
     day: 'numeric',
@@ -21,21 +32,26 @@ const dateFormatter = new Intl.DateTimeFormat('en-NG', {
     timeZone: 'UTC',
 });
 
+// function formatDateRange(campaign: Campaign): string | null {
+//     if (!campaign.startDate || !campaign.endDate) {
+//         return null;
+//     }
+
+//     return `${dateFormatter.format(new Date(campaign.startDate))} – ${dateFormatter.format(new Date(campaign.endDate))}`;
+// }
+
 export default function InstitutionalCampaignDetailsPage({
     organization,
     campaign,
+    beneficiaries,
+    capacity,
 }: InstitutionalCampaignShowPageProps) {
-    const campaignArea = [
-        campaign.location,
-        campaign.city,
-        campaign.state,
-        campaign.country,
-    ]
+    const { flash, workspacePermissions } =
+        usePage<CampaignDetailsSharedProps>().props;
+    const location = [campaign.location, campaign.city, campaign.state]
         .filter((value): value is string => Boolean(value))
         .join(', ');
-    const campaignMetadata = [campaignArea, formatDateRange(campaign)]
-        .filter((value): value is string => Boolean(value))
-        .join(' · ');
+    const campaignDate = formatDateRange(campaign);
 
     return (
         <>
@@ -43,21 +59,31 @@ export default function InstitutionalCampaignDetailsPage({
             <DashboardLayout>
                 <div className="mx-auto w-full max-w-6xl">
                     <PageHeader
-                        title="Campaign Details"
+                        title={campaign.name}
                         description={`Review the campaign configured for ${organization.name}.`}
                         action={
-                            <Link
-                                href={institutional.campaigns.index()}
-                                className={buttonVariants({
-                                    variant: 'outline',
-                                    size: 'compact',
-                                })}
-                            >
-                                <ArrowLeftIcon className="size-4" />
-                                All Campaigns
-                            </Link>
+                            workspacePermissions.canManage ? (
+                                <AddBeneficiaryDialog
+                                    capacity={capacity}
+                                    form={StoreCampaignBeneficiaryController.form(
+                                        campaign.slug,
+                                    )}
+                                />
+                            ) : undefined
                         }
                     />
+
+                    {flash.success && (
+                        <p className="mt-5 rounded-xl border border-success/20 bg-success-muted px-4 py-3 text-sm text-success">
+                            {flash.success}
+                        </p>
+                    )}
+
+                    {capacity.unavailableReason && (
+                        <p className="pt-4 text-sm text-muted-foreground">
+                            {capacity.unavailableReason}
+                        </p>
+                    )}
 
                     <Card className="mt-10">
                         <CardContent className="flex min-h-24 flex-col justify-between gap-4 px-6 py-5 sm:flex-row sm:items-center">
@@ -71,11 +97,32 @@ export default function InstitutionalCampaignDetailsPage({
                                         label={campaign.statusLabel}
                                     />
                                 </div>
-                                {campaignMetadata && (
+
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-sm text-muted-foreground">
+                                    {campaignDate && (
+                                        <span className="inline-flex items-center gap-1.5">
+                                            <CalendarDaysIcon
+                                                className="size-3.5"
+                                                aria-hidden="true"
+                                            />
+                                            {campaignDate}
+                                        </span>
+                                    )}
+                                    {location && (
+                                        <span className="inline-flex items-center gap-1.5">
+                                            <MapPin
+                                                className="size-3.5"
+                                                aria-hidden="true"
+                                            />
+                                            {location}
+                                        </span>
+                                    )}
+                                </div>
+                                {/* {location && (
                                     <p className="pt-1 text-sm text-muted-foreground">
-                                        {campaignMetadata}
+                                        {location}
                                     </p>
-                                )}
+                                )} */}
                             </div>
                             <span className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <CalendarDaysIcon className="size-4" />
@@ -153,13 +200,23 @@ export default function InstitutionalCampaignDetailsPage({
                                             value={campaign.country}
                                         />
                                     )}
-                                    {campaign.beneficiaryCount !==
+                                    {campaign.activeBeneficiaryCount !==
                                         undefined && (
                                         <SummaryRow
-                                            label="Beneficiaries"
-                                            value={`${campaign.activeBeneficiaryCount ?? 0} active of ${campaign.beneficiaryCount}`}
+                                            label="Active beneficiaries"
+                                            value={String(
+                                                campaign.activeBeneficiaryCount,
+                                            )}
                                         />
                                     )}
+                                    <SummaryRow
+                                        label="Capacity used"
+                                        value={`${capacity.used} of ${capacity.total}`}
+                                    />
+                                    <SummaryRow
+                                        label="Remaining spaces"
+                                        value={String(capacity.remaining)}
+                                    />
                                     <SummaryRow
                                         label="Booth required"
                                         value={
@@ -172,6 +229,16 @@ export default function InstitutionalCampaignDetailsPage({
                                 </dl>
                             </CardContent>
                         </Card>
+                    </section>
+
+                    <section
+                        className="pt-5"
+                        aria-label="Campaign beneficiaries"
+                    >
+                        <BeneficiariesTable
+                            invitations={beneficiaries}
+                            canManage={false}
+                        />
                     </section>
                 </div>
             </DashboardLayout>

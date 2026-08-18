@@ -13,6 +13,8 @@ final class CampaignResource extends JsonResource
     public function toArray(Request $request): array
     {
         $status = $this->lifecycleStatus();
+        $hasCapacityCount = $this->getAttribute('capacity_used') !== null;
+        $capacityUsed = (int) ($this->getAttribute('capacity_used') ?? 0);
 
         return [
             'id' => (int) $this->getKey(),
@@ -23,6 +25,7 @@ final class CampaignResource extends JsonResource
             'state' => $this->state,
             'location' => $this->location,
             'targetAudience' => $this->target_audience,
+            'beneficiaryLimit' => $this->beneficiary_limit,
             'startDate' => $this->start_date?->toDateString(),
             'endDate' => $this->end_date?->toDateString(),
             'status' => $status->value,
@@ -30,6 +33,11 @@ final class CampaignResource extends JsonResource
             'boothRequired' => $this->booth_required,
             'beneficiaryCount' => $this->whenCounted('beneficiaries'),
             'activeBeneficiaryCount' => $this->whenCounted('activeBeneficiaries'),
+            'capacityUsed' => $this->when($hasCapacityCount, $capacityUsed),
+            'capacityRemaining' => $this->when(
+                $hasCapacityCount,
+                max(0, $this->beneficiary_limit - $capacityUsed),
+            ),
             'createdAt' => $this->created_at?->toISOString(),
         ];
     }

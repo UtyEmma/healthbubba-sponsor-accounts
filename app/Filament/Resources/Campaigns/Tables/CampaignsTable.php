@@ -39,6 +39,10 @@ class CampaignsTable
                 ->counts('beneficiaries')
                 ->numeric()
                 ->sortable(),
+            TextColumn::make('beneficiary_limit')
+                ->label('Limit')
+                ->numeric()
+                ->sortable(),
             TextColumn::make('start_date')
                 ->label('Starts')
                 ->date()

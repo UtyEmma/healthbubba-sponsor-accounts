@@ -8,12 +8,14 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property int $workspace_id
- * @property int|null $campaign_id
+ * @property string $relatable_type
+ * @property int $relatable_id
  * @property int|null $invited_by_user_id
  * @property int|null $beneficiary_id
  * @property string $public_id
@@ -34,7 +36,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $suspended_at
  * @property Carbon|null $revoked_at
  * @property-read Workspace $workspace
- * @property-read Campaign|null $campaign
+ * @property-read Workspace|Campaign $relatable
  * @property-read Beneficiary|null $beneficiary
  */
 final class WorkspaceBeneficiary extends Model
@@ -44,7 +46,8 @@ final class WorkspaceBeneficiary extends Model
     /** @var list<string> */
     protected $fillable = [
         'workspace_id',
-        'campaign_id',
+        'relatable_type',
+        'relatable_id',
         'invited_by_user_id',
         'beneficiary_id',
         'public_id',
@@ -79,10 +82,10 @@ final class WorkspaceBeneficiary extends Model
         return $this->belongsTo(Workspace::class);
     }
 
-    /** @return BelongsTo<Campaign, $this> */
-    public function campaign(): BelongsTo
+    /** @return MorphTo<Model, $this> */
+    public function relatable(): MorphTo
     {
-        return $this->belongsTo(Campaign::class);
+        return $this->morphTo();
     }
 
     /** @return BelongsTo<User, $this> */

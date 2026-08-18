@@ -45,7 +45,7 @@ final readonly class ImportWorkspaceEmployeesAction
             $this->capacity->expirePending($workspace);
             $used = $this->capacity->used($workspace);
             $emails = array_map(static fn (array $row): string => $row['data']->email, $parsed->rows);
-            $existingByEmail = $workspace->workspaceBeneficiaries()
+            $existingByEmail = $workspace->beneficiaryEnrollments()
                 ->whereIn('email', $emails)
                 ->lockForUpdate()
                 ->get()
@@ -140,6 +140,7 @@ final readonly class ImportWorkspaceEmployeesAction
             'workspace_id' => $workspace->getKey(),
             'public_id' => (string) Str::ulid(),
         ]);
+        $invitation->relatable()->associate($workspace);
         $invitation->fill([
             'invited_by_user_id' => $inviter->getKey(),
             'beneficiary_id' => $beneficiaryId,

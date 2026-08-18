@@ -1,23 +1,12 @@
 import { Head, Link } from '@inertiajs/react';
-import { ArrowUpRightIcon, MegaphoneIcon, CalendarIcon, Clock } from 'lucide-react';
+import { MegaphoneIcon } from 'lucide-react';
 
 import { PageHeader } from '@/components/page-header';
-import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { DashboardLayout } from '@/layouts/dashboard';
-import { cn } from '@/lib/utils';
-import institutional from '@/routes/institutional';
-import type {
-    Campaign,
-    CampaignStatus,
-    InstitutionalCampaignIndexPageProps,
-} from '@/types';
-import campaigns from '@/routes/campaigns';
+import type { InstitutionalCampaignIndexPageProps } from '@/types';
 import CampaignItem from './partials/campaign-item';
-
-
 
 export default function InstitutionalCampaignsPage({
     organization,
@@ -96,4 +85,3 @@ export default function InstitutionalCampaignsPage({
         </>
     );
 }
-

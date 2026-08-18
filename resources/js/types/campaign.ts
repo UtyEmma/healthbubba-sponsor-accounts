@@ -1,7 +1,13 @@
 import type { Workspace } from './workspace';
-import type { PaginationLink } from './workspace-beneficiary';
+import type {
+    PaginatedWorkspaceBeneficiaries,
+    PaginationLink,
+    WorkspaceCapacity,
+} from './workspace-beneficiary';
 
 export type CampaignStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
+
+export type CampaignBeneficiaryCapacity = WorkspaceCapacity;
 
 export interface Campaign {
     id: number;
@@ -12,6 +18,7 @@ export interface Campaign {
     state: string | null;
     location: string | null;
     targetAudience: string | null;
+    beneficiaryLimit: number;
     startDate: string | null;
     endDate: string | null;
     status: CampaignStatus;
@@ -19,6 +26,8 @@ export interface Campaign {
     boothRequired: boolean;
     beneficiaryCount?: number;
     activeBeneficiaryCount?: number;
+    capacityUsed?: number;
+    capacityRemaining?: number;
     createdAt: string | null;
 }
 
@@ -50,4 +59,6 @@ export interface InstitutionalCampaignIndexPageProps {
 export interface InstitutionalCampaignShowPageProps {
     organization: Workspace;
     campaign: Campaign;
+    beneficiaries: PaginatedWorkspaceBeneficiaries;
+    capacity: CampaignBeneficiaryCapacity;
 }

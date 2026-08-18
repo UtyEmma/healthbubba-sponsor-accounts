@@ -16,7 +16,7 @@ final class WorkspaceBeneficiaryCapacityService
     {
         $this->expirePending($workspace);
         $subscription = $this->query($workspace)->first();
-        $used = $workspace->workspaceBeneficiaries()->consumingCapacity()->count();
+        $used = $workspace->beneficiaryEnrollments()->consumingCapacity()->count();
 
         if (! $subscription instanceof Subscription || ! $this->hasUsableTerm($subscription)) {
             return new CapacitySummary($used, 0, 'An active or trialing subscription is required.');
@@ -40,12 +40,12 @@ final class WorkspaceBeneficiaryCapacityService
 
     public function used(Workspace $workspace): int
     {
-        return $workspace->workspaceBeneficiaries()->consumingCapacity()->count();
+        return $workspace->beneficiaryEnrollments()->consumingCapacity()->count();
     }
 
     public function expirePending(Workspace $workspace): int
     {
-        return $workspace->workspaceBeneficiaries()
+        return $workspace->beneficiaryEnrollments()
             ->where('status', WorkspaceBeneficiaryStatus::Pending)
             ->where('expires_at', '<=', now())
             ->update(['status' => WorkspaceBeneficiaryStatus::Expired]);

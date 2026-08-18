@@ -13,7 +13,12 @@ final readonly class StoreWorkspaceBeneficiaryController
 
     public function __invoke(StoreWorkspaceBeneficiaryRequest $request): RedirectResponse
     {
-        $this->invite->execute($request->workspace(), $request->user(), $request->invitationData());
+        $this->invite->execute(
+            $request->workspace(),
+            $request->user(),
+            $request->invitationData(),
+            $request->workspace(),
+        );
 
         return redirect()->route(
             $request->workspace()->type === AccountTypes::BUSINESS ? 'business.employees' : 'beneficiaries.index',

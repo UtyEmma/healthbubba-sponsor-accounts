@@ -1,8 +1,10 @@
-import { CalendarDaysIcon, Clock3Icon, MapPin } from 'lucide-react';
+import { Link } from '@inertiajs/react';
+import { CalendarDaysIcon, MapPin } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import campaigns from '@/routes/campaigns';
 import type { Campaign, CampaignStatus } from '@/types';
 
 const dateFormatter = new Intl.DateTimeFormat('en-NG', {
@@ -19,7 +21,7 @@ export default function CampaignItem({ campaign }: { campaign: Campaign }) {
     const campaignDate = formatDateRange(campaign);
 
     return (
-        <>
+        <Link href={campaigns.show({ campaign: campaign }).url}>
             <Card>
                 <CardContent className="p-6">
                     <div className="flex items-start justify-between gap-4">
@@ -28,7 +30,7 @@ export default function CampaignItem({ campaign }: { campaign: Campaign }) {
                                 <h2 className="truncate font-semibold">
                                     {campaign.name}
                                 </h2>
-                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs text-muted-foreground">
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-sm text-muted-foreground">
                                     {campaignDate && (
                                         <span className="inline-flex items-center gap-1.5">
                                             <CalendarDaysIcon
@@ -40,10 +42,13 @@ export default function CampaignItem({ campaign }: { campaign: Campaign }) {
                                     )}
                                     {location && (
                                         <span className="inline-flex items-center gap-1.5">
-                                            <MapPin className="size-3.5"
-                                                aria-hidden="true" />
+                                            <MapPin
+                                                className="size-3.5"
+                                                aria-hidden="true"
+                                            />
                                             {location}
-                                        </span>)}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -73,13 +78,13 @@ export default function CampaignItem({ campaign }: { campaign: Campaign }) {
                             <p className="pt-3 text-xs text-muted-foreground">
                                 {beneficiariesAdded(campaign)} total
                                 beneficiaries added out of{' '}
-                                {totalAudience(campaign)} target audience
+                                {totalAudience(campaign)} campaign spaces
                             </p>
                         )}
                     </div>
                 </CardContent>
             </Card>
-        </>
+        </Link>
     );
 }
 
@@ -102,27 +107,13 @@ function CampaignStatusBadge({
 }
 
 function totalAudience(campaign: Campaign): number {
-    const totalAudienceValue = (
-        campaign as Campaign & {
-            totalAudience?: number | string | null;
-        }
-    ).totalAudience;
-
-    const value = Number(totalAudienceValue ?? 0);
+    const value = Number(campaign.beneficiaryLimit);
 
     return Number.isFinite(value) ? value : 0;
 }
 
 function beneficiariesAdded(campaign: Campaign): number {
-    const totalBeneficiariesAdded = (
-        campaign as Campaign & {
-            totalBeneficiariesAdded?: number | string | null;
-        }
-    ).totalBeneficiariesAdded;
-
-    const value = Number(
-        totalBeneficiariesAdded ?? campaign.beneficiaryCount ?? 0,
-    );
+    const value = Number(campaign.capacityUsed ?? 0);
 
     return Number.isFinite(value) ? value : 0;
 }

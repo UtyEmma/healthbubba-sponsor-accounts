@@ -56,6 +56,7 @@ final class CompleteInstitutionalOrganizationProfileAction
                 'city' => $data->city,
                 'state' => $data->state,
                 'target_audience' => $data->targetAudience,
+                'beneficiary_limit' => $data->beneficiaryLimit,
                 'start_date' => $data->startDate,
                 'end_date' => $data->endDate,
                 'booth_required' => $data->boothRequired,

@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Campaign;
+use App\Models\Workspace;
 use App\Models\WorkspaceBeneficiary;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -15,9 +17,9 @@ final class WorkspaceBeneficiaryResource extends JsonResource
         return [
             'id' => (int) $this->getKey(),
             'publicId' => $this->public_id,
-            'campaignId' => $this->campaign_id,
-            'campaignName' => $this->relationLoaded('campaign') ? $this->campaign?->name : null,
-            'campaignSlug' => $this->relationLoaded('campaign') ? $this->campaign?->slug : null,
+            'relatable' => $this->relationLoaded('relatable')
+                ? $this->relatableData()
+                : null,
             'firstName' => $this->first_name,
             'lastName' => $this->last_name,
             'name' => trim("{$this->first_name} {$this->last_name}"),
@@ -36,5 +38,25 @@ final class WorkspaceBeneficiaryResource extends JsonResource
             'suspendedAt' => $this->suspended_at?->toISOString(),
             'revokedAt' => $this->revoked_at?->toISOString(),
         ];
+    }
+
+    /** @return array<string, int|string|null>|null */
+    private function relatableData(): ?array
+    {
+        return match (true) {
+            $this->relatable instanceof Campaign => [
+                'type' => 'campaign',
+                'id' => (int) $this->relatable->getKey(),
+                'name' => $this->relatable->name,
+                'slug' => $this->relatable->slug,
+            ],
+            $this->relatable instanceof Workspace => [
+                'type' => 'workspace',
+                'id' => (int) $this->relatable->getKey(),
+                'name' => $this->relatable->name,
+                'slug' => null,
+            ],
+            default => null,
+        };
     }
 }

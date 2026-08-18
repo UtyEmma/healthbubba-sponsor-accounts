@@ -10,6 +10,7 @@ final readonly class InstitutionalCampaignOnboardingData
         public string $campaignName,
         public ?string $campaignLocation,
         public ?string $targetAudience,
+        public int $beneficiaryLimit,
         public string $startDate,
         public string $endDate,
         public bool $boothRequired,

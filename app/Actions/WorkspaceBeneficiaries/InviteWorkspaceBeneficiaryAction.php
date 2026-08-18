@@ -8,11 +8,13 @@ use App\DTOs\WorkspaceBeneficiaries\InviteWorkspaceBeneficiaryData;
 use App\Enums\AccountTypes;
 use App\Enums\Activity\WorkspaceActivityType;
 use App\Enums\WorkspaceBeneficiaries\WorkspaceBeneficiaryStatus;
+use App\Models\Campaign;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Models\WorkspaceBeneficiary;
 use App\Services\Activity\WorkspaceActivityLogger;
 use App\Services\WorkspaceBeneficiaries\BeneficiaryLookupService;
+use App\Services\WorkspaceBeneficiaries\CampaignBeneficiaryCapacityService;
 use App\Services\WorkspaceBeneficiaries\EmployeeIdGenerator;
 use App\Services\WorkspaceBeneficiaries\WorkspaceBeneficiaryCapacityService;
 use Illuminate\Support\Facades\DB;
@@ -24,20 +26,36 @@ final readonly class InviteWorkspaceBeneficiaryAction
     public function __construct(
         private BeneficiaryLookupService $beneficiaries,
         private WorkspaceBeneficiaryCapacityService $capacity,
+        private CampaignBeneficiaryCapacityService $campaignCapacity,
         private EmployeeIdGenerator $employeeIds,
         private SendWorkspaceBeneficiaryInvitationAction $sendInvitation,
         private WorkspaceActivityLogger $activities,
     ) {}
 
-    public function execute(Workspace $workspace, User $inviter, InviteWorkspaceBeneficiaryData $data): WorkspaceBeneficiary
-    {
+    public function execute(
+        Workspace $workspace,
+        User $inviter,
+        InviteWorkspaceBeneficiaryData $data,
+        Workspace|Campaign $relatable,
+    ): WorkspaceBeneficiary {
         $beneficiaryId = $this->beneficiaries->idsByEmail([$data->email])->get($data->email);
 
-        $invitation = DB::transaction(function () use ($workspace, $inviter, $data, $beneficiaryId): WorkspaceBeneficiary {
-            $subscription = $this->capacity->lockSubscription($workspace);
-            $this->capacity->expirePending($workspace);
+        $invitation = DB::transaction(function () use ($workspace, $inviter, $data, $beneficiaryId, $relatable): WorkspaceBeneficiary {
+            $target = $this->lockTarget($workspace, $relatable);
 
-            $existing = $workspace->workspaceBeneficiaries()
+            if ($target instanceof Campaign) {
+                $this->campaignCapacity->expirePending($target);
+                $capacityExhausted = $this->campaignCapacity->used($target) >= $target->beneficiary_limit;
+            } else {
+                $subscription = $this->capacity->lockSubscription($workspace);
+                $this->capacity->expirePending($workspace);
+                $capacityExhausted = $this->capacity->used($workspace) >= $subscription->capacity_count;
+            }
+
+            $existing = WorkspaceBeneficiary::query()
+                ->whereBelongsTo($workspace)
+                ->where('relatable_type', $target->getMorphClass())
+                ->where('relatable_id', $target->getKey())
                 ->where('email', $data->email)
                 ->lockForUpdate()
                 ->first();
@@ -52,9 +70,11 @@ final readonly class InviteWorkspaceBeneficiaryAction
                 ]);
             }
 
-            if ($this->capacity->used($workspace) >= $subscription->capacity_count) {
+            if ($capacityExhausted) {
                 throw ValidationException::withMessages([
-                    'capacity' => 'There are no remaining beneficiary or employee seats on the current plan.',
+                    'capacity' => $target instanceof Campaign
+                        ? 'This campaign has reached its beneficiary limit.'
+                        : 'There are no remaining beneficiary or employee seats on the current plan.',
                 ]);
             }
 
@@ -76,6 +96,7 @@ final readonly class InviteWorkspaceBeneficiaryAction
                 'workspace_id' => $workspace->getKey(),
                 'public_id' => (string) Str::ulid(),
             ]);
+            $invitation->relatable()->associate($target);
 
             $invitation->fill([
                 'invited_by_user_id' => $inviter->getKey(),
@@ -115,5 +136,27 @@ final readonly class InviteWorkspaceBeneficiaryAction
         $this->sendInvitation->execute($invitation);
 
         return $invitation;
+    }
+
+    private function lockTarget(Workspace $workspace, Workspace|Campaign $relatable): Workspace|Campaign
+    {
+        if ($relatable instanceof Campaign) {
+            if ($workspace->type !== AccountTypes::INSTITUTION) {
+                throw ValidationException::withMessages([
+                    'campaign' => 'Campaign beneficiaries are only available to institutional workspaces.',
+                ]);
+            }
+
+            return $this->campaignCapacity->lockCampaign($workspace, $relatable);
+        }
+
+        if (! $relatable->is($workspace)
+            || ! in_array($workspace->type, [AccountTypes::INDIVIDUAL, AccountTypes::BUSINESS], true)) {
+            throw ValidationException::withMessages([
+                'workspace' => 'The selected beneficiary target is not available for this workspace.',
+            ]);
+        }
+
+        return $workspace;
     }
 }

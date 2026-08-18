@@ -133,6 +133,21 @@ export default function InstitutionalOrganizationPage({
                                         />
                                     </label>
 
+                                    <label className="grid gap-1.5 text-sm font-medium sm:col-span-2">
+                                        Beneficiary limit
+                                        <Input
+                                            name="beneficiary_limit"
+                                            type="number"
+                                            min={1}
+                                            max={100000}
+                                            defaultValue={100}
+                                            required
+                                        />
+                                        <InputError
+                                            error={errors.beneficiary_limit}
+                                        />
+                                    </label>
+
                                     <fieldset className="grid gap-3 sm:col-span-2">
                                         <legend className="text-sm font-medium">
                                             Does this campaign require a

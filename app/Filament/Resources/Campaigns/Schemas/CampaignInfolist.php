@@ -23,6 +23,9 @@ class CampaignInfolist
                         TextEntry::make('beneficiaries_count')
                             ->label('Beneficiaries')
                             ->numeric(),
+                        TextEntry::make('beneficiary_limit')
+                            ->label('Beneficiary limit')
+                            ->numeric(),
                         TextEntry::make('start_date')
                             ->label('Start date')
                             ->date()

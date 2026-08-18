@@ -6,9 +6,9 @@ use App\Http\Controllers\Activity\WorkspaceActivityIndexController;
 use App\Http\Controllers\Appointments\ConsultationController;
 use App\Http\Controllers\Appointments\UpdateAllocationFallbackController;
 use App\Http\Controllers\BillingController;
+use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\InstitutionalCampaigns\InstitutionalCampaignIndexController;
-use App\Http\Controllers\InstitutionalCampaigns\InstitutionalCampaignShowController;
+use App\Http\Controllers\InstitutionalCampaigns\StoreCampaignBeneficiaryController;
 use App\Http\Controllers\InstitutionalOnboarding\CompleteInstitutionalOrganizationProfileController;
 use App\Http\Controllers\InstitutionalOnboarding\ShowInstitutionalOrganizationController;
 use App\Http\Controllers\InstitutionalOnboarding\ShowInstitutionalSupportController;
@@ -186,9 +186,12 @@ Route::middleware(['auth', EnsureInstitutionalOnboardingComplete::class])->group
 
     Route::redirect('/coverage', '/institutional-sponsor/campaigns')->name('institutional.coverage');
 
-    Route::prefix('campaigns')->group(function(){
-        Route::get('/', InstitutionalCampaignIndexController::class)->name('campaigns.index');
-        Route::get('/{campaign:slug}', InstitutionalCampaignShowController::class)->name('campaigns.show');
+    Route::prefix('campaigns')->group(function () {
+        Route::get('/', [CampaignController::class, 'index'])->name('campaigns.index');
+        Route::get('/{campaign:slug}', [CampaignController::class, 'show'])->name('campaigns.show');
+        Route::post('/{campaign:slug}/beneficiaries', StoreCampaignBeneficiaryController::class)
+            ->middleware('throttle:20,1')
+            ->name('campaigns.beneficiaries.store');
     });
     Route::prefix('institutional-sponsor')->name('institutional.')->group(function () {
         Route::get('/dashboard', DashboardController::class)->name('dashboard');

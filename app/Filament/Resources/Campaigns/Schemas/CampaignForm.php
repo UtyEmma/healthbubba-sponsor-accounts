@@ -88,6 +88,15 @@ class CampaignForm
                         Section::make('Administration')
                             ->description('Campaigns can be updated as support requirements change.')
                             ->schema([
+                                TextInput::make('beneficiary_limit')
+                                    ->label('Beneficiary limit')
+                                    ->helperText('Maximum active, suspended, or pending beneficiaries for this campaign.')
+                                    ->numeric()
+                                    ->integer()
+                                    ->minValue(1)
+                                    ->maxValue(100000)
+                                    ->default(100)
+                                    ->required(),
                                 Toggle::make('booth_required')
                                     ->label('Booth required')
                                     ->helperText('Indicates whether HealthBubba support should arrange a booth for this campaign.')

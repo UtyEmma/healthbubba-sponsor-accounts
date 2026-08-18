@@ -11,12 +11,24 @@ export type WorkspaceBeneficiaryAccessAction = 'suspend' | 'restore' | 'revoke';
 
 export type WorkspaceBeneficiarySource = 'manual' | 'import';
 
+export type WorkspaceBeneficiaryRelatable =
+    | {
+          type: 'campaign';
+          id: number;
+          name: string;
+          slug: string;
+      }
+    | {
+          type: 'workspace';
+          id: number;
+          name: string;
+          slug: null;
+      };
+
 export interface WorkspaceBeneficiary {
     id: number;
     publicId: string;
-    campaignId: number | null;
-    campaignName: string | null;
-    campaignSlug: string | null;
+    relatable: WorkspaceBeneficiaryRelatable | null;
     firstName: string;
     lastName: string;
     name: string;
