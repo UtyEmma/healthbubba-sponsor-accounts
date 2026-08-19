@@ -68,7 +68,7 @@ export default function InstitutionalCampaignDetailsPage({
                                             campaign.slug,
                                         )}
                                     />
-                                    
+
                                     <PurchaseQuotaCard campaign={campaign} />
                                 </div>
 
@@ -129,7 +129,39 @@ export default function InstitutionalCampaignDetailsPage({
                                     </CardContent>
                                 </Card>
 
-                                <CampaignConsultationUsage coverage={coverage} />
+                                <div className="grid md:grid-cols-3 gap-5">
+                                    <div className="col-span-2">
+                                        <CampaignConsultationUsage coverage={coverage} />
+                                    </div>
+                                    <div>
+                                        <Card>
+                                            <CardHeader className="px-6 pt-6 pb-4">
+                                                <CardTitle className="text-base">
+                                                    Financial summary
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="px-6 pt-2 pb-6">
+                                                <dl className="grid gap-4 text-sm">
+                                                    <SummaryRow
+                                                        label="Total budget"
+                                                        value="₦25,000,000"
+                                                    />
+                                                    <SummaryRow
+                                                        label="Consumed"
+                                                        value="₦9,120,000"
+                                                    />
+                                                    <div className="border-t pt-4">
+                                                        <SummaryRow
+                                                            label="Remaining"
+                                                            value="₦15,880,000"
+                                                            highlighted
+                                                        />
+                                                    </div>
+                                                </dl>
+                                            </CardContent>
+                                        </Card>
+                                    </div>
+                                </div>
                             </div>
                         </TabsContent>
 
@@ -147,7 +179,7 @@ export default function InstitutionalCampaignDetailsPage({
                             />
                         </TabsContent>
                     </Tabs>
-                    
+
                 </div>
             </DashboardLayout>
         </>
@@ -184,4 +216,29 @@ function formatDateRange(campaign: Campaign): string | null {
 
 function formatDate(value: string): string {
     return dateFormatter.format(new Date(value));
+}
+
+function SummaryRow({
+    label,
+    value,
+    highlighted = false,
+}: {
+    label: string;
+    value: string;
+    highlighted?: boolean;
+}) {
+    return (
+        <div className="flex justify-between gap-4">
+            <dt className="text-muted-foreground">{label}</dt>
+            <dd
+                className={
+                    highlighted
+                        ? 'text-lg font-semibold text-success'
+                        : 'font-medium'
+                }
+            >
+                {value}
+            </dd>
+        </div>
+    );
 }

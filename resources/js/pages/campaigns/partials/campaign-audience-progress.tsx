@@ -4,21 +4,18 @@ import React from 'react'
 
 export default function ({campaign}: {campaign: Campaign}) {
     return (
-        <>
+        <div className='space-y-1'>
             <div className="flex justify-between gap-2 text-sm">
                 <span className="text-muted-foreground">
-                    Beneficiaries reached
+                    Beneficiaries
                 </span>
                 <span className="font-medium">
                     {beneficiariesAdded(campaign)} of{' '}
                     {totalAudience(campaign)}
                 </span>
             </div>
-            <Progress
-                className="mt-1"
-                value={audienceProgress(campaign)}
-            />
-        </>
+            <Progress value={audienceProgress(campaign)} />
+        </div>
     )
 }
 
