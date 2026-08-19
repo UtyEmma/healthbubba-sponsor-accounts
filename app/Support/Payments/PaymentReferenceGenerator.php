@@ -18,4 +18,9 @@ final class PaymentReferenceGenerator
 
         return $prefix.'-'.Str::upper((string) Str::ulid());
     }
+
+    public function generateQuota(): string
+    {
+        return 'QUO-'.Str::upper((string) Str::ulid());
+    }
 }

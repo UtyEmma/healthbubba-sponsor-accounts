@@ -22,6 +22,7 @@ import type {
 } from '@/types';
 
 import { ConsultationTrendsChart } from './partials/consultation-trends-chart';
+import campaigns from '@/routes/campaigns';
 
 export default function InstitutionalDashboard({
     dashboard,
@@ -49,7 +50,7 @@ export default function InstitutionalDashboard({
                         description="Program reach and coverage utilization at a glance."
                         action={
                             <Link
-                                href={institutional.campaigns.index()}
+                                href={campaigns.index()}
                                 className={buttonVariants({
                                     size: 'compact',
                                 })}

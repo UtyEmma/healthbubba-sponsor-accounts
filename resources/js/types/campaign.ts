@@ -1,3 +1,7 @@
+import type {
+    ConsultationCoverage,
+    PaginatedConsultations,
+} from './consultation';
 import type { Workspace } from './workspace';
 import type {
     PaginatedWorkspaceBeneficiaries,
@@ -24,11 +28,23 @@ export interface Campaign {
     status: CampaignStatus;
     statusLabel: string;
     boothRequired: boolean;
+    gpFee: string | null;
+    specialistFee: string | null;
     beneficiaryCount?: number;
     activeBeneficiaryCount?: number;
     capacityUsed?: number;
     capacityRemaining?: number;
     createdAt: string | null;
+}
+
+export interface CampaignConsultationQuota {
+    id: number;
+    consultationType: string;
+    quantity: number;
+    unitFee: string;
+    totalCost: string;
+    reference: string;
+    createdAt: string;
 }
 
 export interface PaginatedCampaigns {
@@ -61,4 +77,6 @@ export interface InstitutionalCampaignShowPageProps {
     campaign: Campaign;
     beneficiaries: PaginatedWorkspaceBeneficiaries;
     capacity: CampaignBeneficiaryCapacity;
+    coverage: ConsultationCoverage;
+    consultations: PaginatedConsultations;
 }

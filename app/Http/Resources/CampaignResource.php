@@ -31,6 +31,8 @@ final class CampaignResource extends JsonResource
             'status' => $status->value,
             'statusLabel' => $status->label(),
             'boothRequired' => $this->booth_required,
+            'gpFee' => $this->gp_fee,
+            'specialistFee' => $this->specialist_fee,
             'beneficiaryCount' => $this->whenCounted('beneficiaries'),
             'activeBeneficiaryCount' => $this->whenCounted('activeBeneficiaries'),
             'capacityUsed' => $this->when($hasCapacityCount, $capacityUsed),

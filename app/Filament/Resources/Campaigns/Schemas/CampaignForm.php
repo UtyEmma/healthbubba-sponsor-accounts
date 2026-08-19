@@ -104,6 +104,25 @@ class CampaignForm
                                     ->required(),
                             ])
                             ->columnSpan(['default' => 'full', 'xl' => 4]),
+                        Section::make('Consultation fees')
+                            ->description('Set the per-consultation fee for GP and specialist consultations. These fees are charged when the workspace purchases consultation quotas.')
+                            ->schema([
+                                TextInput::make('gp_fee')
+                                    ->label('GP consultation fee (₦)')
+                                    ->helperText('Fee per GP consultation in Naira.')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->prefix('₦')
+                                    ->default(config('campaigns.default_gp_fee', 0)),
+                                TextInput::make('specialist_fee')
+                                    ->label('Specialist consultation fee (₦)')
+                                    ->helperText('Fee per specialist consultation in Naira.')
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->prefix('₦')
+                                    ->default(config('campaigns.default_specialist_fee', 0)),
+                            ])
+                            ->columnSpanFull(),
                     ]),
             ]);
     }

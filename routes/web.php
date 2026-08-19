@@ -8,6 +8,7 @@ use App\Http\Controllers\Appointments\UpdateAllocationFallbackController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InstitutionalCampaigns\PurchaseCampaignConsultationQuotaController;
 use App\Http\Controllers\InstitutionalCampaigns\StoreCampaignBeneficiaryController;
 use App\Http\Controllers\InstitutionalOnboarding\CompleteInstitutionalOrganizationProfileController;
 use App\Http\Controllers\InstitutionalOnboarding\ShowInstitutionalOrganizationController;
@@ -192,6 +193,9 @@ Route::middleware(['auth', EnsureInstitutionalOnboardingComplete::class])->group
         Route::post('/{campaign:slug}/beneficiaries', StoreCampaignBeneficiaryController::class)
             ->middleware('throttle:20,1')
             ->name('campaigns.beneficiaries.store');
+        Route::post('/{campaign:slug}/consultation-quotas', PurchaseCampaignConsultationQuotaController::class)
+            ->middleware('throttle:10,1')
+            ->name('campaigns.consultation-quotas.store');
     });
     Route::prefix('institutional-sponsor')->name('institutional.')->group(function () {
         Route::get('/dashboard', DashboardController::class)->name('dashboard');

@@ -8,4 +8,5 @@ enum TransactionTypes: string
     case SUBSCRIPTION = 'subscription';
     case CAPACITY_PURCHASE = 'capacity_purchase';
     case PLAN_CHANGE = 'plan_change';
+    case CONSULTATION_QUOTA = 'consultation_quota';
 }

@@ -26,10 +26,7 @@ final readonly class CampaignBeneficiaryCapacityService
         );
     }
 
-    public function lockCampaign(Workspace $workspace, Campaign $campaign): Campaign
-    {
-        $this->workspaceCapacity->lockSubscription($workspace);
-
+    public function lockCampaign(Workspace $workspace, Campaign $campaign): Campaign {
         return Campaign::query()
             ->whereBelongsTo($workspace)
             ->whereKey($campaign->getKey())

@@ -51,7 +51,7 @@ function Navigation() {
             });
         }
 
-        if (workspace.type == 'individual' || workspace.type == 'institution') {
+        if (workspace.type == 'individual') {
             navigation.push(
                 {
                     label: 'Beneficiaries',

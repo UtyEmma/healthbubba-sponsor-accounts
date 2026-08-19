@@ -40,6 +40,14 @@ class CampaignInfolist
                         IconEntry::make('booth_required')
                             ->label('Booth required')
                             ->boolean(),
+                        TextEntry::make('gp_fee')
+                            ->label('GP fee')
+                            ->prefix('₦')
+                            ->placeholder('Not set'),
+                        TextEntry::make('specialist_fee')
+                            ->label('Specialist fee')
+                            ->prefix('₦')
+                            ->placeholder('Not set'),
                     ])
                     ->columns(2),
                 Section::make('Location')

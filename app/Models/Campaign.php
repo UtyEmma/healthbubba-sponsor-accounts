@@ -8,6 +8,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -23,13 +24,16 @@ use Illuminate\Support\Str;
  * @property string|null $location
  * @property string|null $target_audience
  * @property int $beneficiary_limit
+ * @property bool $booth_required
+ * @property string|null $gp_fee
+ * @property string|null $specialist_fee
  * @property Carbon|null $start_date
  * @property Carbon|null $end_date
- * @property bool $booth_required
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Workspace $workspace
  * @property-read Collection<int, WorkspaceBeneficiary> $beneficiaries
+ * @property-read Collection<int, CampaignConsultationQuota> $consultationQuotas
  */
 final class Campaign extends Model
 {
@@ -49,10 +53,12 @@ final class Campaign extends Model
         'country',
         'target_audience',
         'beneficiary_limit',
+        'booth_required',
+        'gp_fee',
+        'specialist_fee',
         'start_date',
         'end_date',
         'status',
-        'booth_required',
     ];
 
     /** @return BelongsTo<Workspace, $this> */
@@ -74,6 +80,12 @@ final class Campaign extends Model
             'status',
             WorkspaceBeneficiaryStatus::Active,
         );
+    }
+
+    /** @return HasMany<CampaignConsultationQuota, $this> */
+    public function consultationQuotas(): HasMany
+    {
+        return $this->hasMany(CampaignConsultationQuota::class);
     }
 
     public function getRouteKeyName(): string
@@ -102,6 +114,8 @@ final class Campaign extends Model
         return [
             'booth_required' => 'boolean',
             'beneficiary_limit' => 'integer',
+            'gp_fee' => 'decimal:2',
+            'specialist_fee' => 'decimal:2',
             'start_date' => 'date',
             'end_date' => 'date',
         ];

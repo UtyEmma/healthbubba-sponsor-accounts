@@ -19,10 +19,8 @@ import { Input } from '@/components/ui/input';
 import type { WorkspaceCapacity } from '@/types';
 
 export function AddBeneficiaryDialog({
-    capacity,
     form,
 }: {
-    capacity: WorkspaceCapacity;
     form?: ReturnType<typeof StoreWorkspaceBeneficiaryController.form>;
 }) {
     const [open, setOpen] = useState(false);
@@ -34,7 +32,6 @@ export function AddBeneficiaryDialog({
                     <Button
                         size="compact"
                         className="self-start sm:self-auto"
-                        disabled={!capacity.canInvite}
                     />
                 }
             >
@@ -47,8 +44,8 @@ export function AddBeneficiaryDialog({
                         Add a beneficiary
                     </DialogTitle>
                     <DialogDescription className="leading-5">
-                        The invitation reserves one of {capacity.remaining}{' '}
-                        remaining beneficiary slots for 24 hours.
+                        {/* The invitation reserves one of {capacity.remaining}{' '}
+                        remaining beneficiary slots for 24 hours. */}
                     </DialogDescription>
                 </DialogHeader>
 
