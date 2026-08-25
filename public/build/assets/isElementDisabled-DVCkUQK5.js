@@ -1,0 +1,1 @@
+import{i as e,t}from"./react-B8IZ02wI.js";var n=e(t(),1);function r({controlled:e,default:t,name:r,state:i=`value`}){let{current:a}=n.useRef(e!==void 0),[o,s]=n.useState(t);return[a?e:o,n.useCallback(e=>{a||s(e)},[])]}function i(e){return e==null||e.hasAttribute(`disabled`)||e.getAttribute(`aria-disabled`)===`true`}export{r as n,i as t};
