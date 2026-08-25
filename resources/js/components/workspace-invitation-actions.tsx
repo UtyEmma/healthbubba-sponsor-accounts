@@ -2,6 +2,7 @@ import { Form } from '@inertiajs/react';
 import { EllipsisIcon } from 'lucide-react';
 import { useState } from 'react';
 
+import UpdateCampaignBeneficiaryAccessController from '@/actions/App/Http/Controllers/InstitutionalCampaigns/UpdateCampaignBeneficiaryAccessController';
 import CancelWorkspaceBeneficiaryInvitationController from '@/actions/App/Http/Controllers/WorkspaceBeneficiaries/CancelWorkspaceBeneficiaryInvitationController';
 import ResendWorkspaceBeneficiaryInvitationController from '@/actions/App/Http/Controllers/WorkspaceBeneficiaries/ResendWorkspaceBeneficiaryInvitationController';
 import UpdateWorkspaceBeneficiaryAccessController from '@/actions/App/Http/Controllers/WorkspaceBeneficiaries/UpdateWorkspaceBeneficiaryAccessController';
@@ -40,13 +41,15 @@ const actionLabels: Record<ConfirmationAction, string> = {
 
 export function WorkspaceInvitationActions({
     invitation,
+    campaignSlug,
 }: {
     invitation: WorkspaceBeneficiary;
+    campaignSlug?: string;
 }) {
     const [confirmation, setConfirmation] = useState<ConfirmationAction | null>(
         null,
     );
-    const actions = availableActions(invitation.status);
+    const actions = availableActions(invitation.status, Boolean(campaignSlug));
 
     if (actions.length === 0) {
         return (
@@ -79,7 +82,9 @@ export function WorkspaceInvitationActions({
                             }
                             onClick={() => setConfirmation(action)}
                         >
-                            {actionLabels[action]}
+                            {campaignSlug && action === 'revoke'
+                                ? 'Remove beneficiary'
+                                : actionLabels[action]}
                         </DropdownMenuItem>
                     ))}
                 </DropdownMenuContent>
@@ -89,6 +94,7 @@ export function WorkspaceInvitationActions({
                 <InvitationActionConfirmation
                     invitation={invitation}
                     action={confirmation}
+                    campaignSlug={campaignSlug}
                     open
                     onOpenChange={(open) => {
                         if (!open) {
@@ -104,15 +110,21 @@ export function WorkspaceInvitationActions({
 function InvitationActionConfirmation({
     invitation,
     action,
+    campaignSlug,
     open,
     onOpenChange,
 }: {
     invitation: WorkspaceBeneficiary;
     action: ConfirmationAction;
+    campaignSlug?: string;
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
-    const details = confirmationDetails(action, invitation);
+    const details = confirmationDetails(
+        action,
+        invitation,
+        Boolean(campaignSlug),
+    );
     const form =
         action === 'cancel'
             ? CancelWorkspaceBeneficiaryInvitationController.form({
@@ -122,9 +134,14 @@ function InvitationActionConfirmation({
               ? ResendWorkspaceBeneficiaryInvitationController.form({
                     workspaceBeneficiary: invitation.publicId,
                 })
-              : UpdateWorkspaceBeneficiaryAccessController.form({
-                    workspaceBeneficiary: invitation.publicId,
-                });
+              : campaignSlug
+                ? UpdateCampaignBeneficiaryAccessController.form({
+                      campaign: campaignSlug,
+                      workspaceBeneficiary: invitation.publicId,
+                  })
+                : UpdateWorkspaceBeneficiaryAccessController.form({
+                      workspaceBeneficiary: invitation.publicId,
+                  });
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -204,7 +221,20 @@ function InvitationActionConfirmation({
 
 function availableActions(
     status: WorkspaceBeneficiaryStatus,
+    campaign: boolean,
 ): ConfirmationAction[] {
+    if (campaign) {
+        if (status === 'active') {
+            return ['suspend', 'revoke'];
+        }
+
+        if (status === 'suspended') {
+            return ['restore', 'revoke'];
+        }
+
+        return [];
+    }
+
     switch (status) {
         case 'pending':
             return ['resend', 'cancel'];
@@ -234,6 +264,7 @@ function isDestructiveAction(action: ConfirmationAction): boolean {
 function confirmationDetails(
     action: ConfirmationAction,
     invitation: WorkspaceBeneficiary,
+    campaign: boolean,
 ): {
     title: string;
     description: string;
@@ -275,6 +306,16 @@ function confirmationDetails(
                 processingLabel: 'Restoring…',
             };
         case 'revoke':
+            if (campaign) {
+                return {
+                    title: 'Remove this beneficiary?',
+                    description: `${invitation.name} will lose access through this campaign and their reserved campaign space will be released. They can be invited again later.`,
+                    cancelLabel: 'Keep beneficiary',
+                    confirmLabel: 'Remove beneficiary',
+                    processingLabel: 'Removing…',
+                };
+            }
+
             return {
                 title: 'Revoke this access?',
                 description: `${invitation.name} will lose sponsored healthcare access and their reserved seat will be released. You can invite them again later.`,

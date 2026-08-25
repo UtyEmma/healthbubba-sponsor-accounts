@@ -3,16 +3,18 @@
 namespace App\Http\Requests\InstitutionalCampaigns;
 
 use App\Enums\Account\Roles;
-use App\Enums\Consultations\ConsultationType;
+use App\Enums\WorkspaceBeneficiaries\WorkspaceBeneficiaryAccessAction;
 use App\Enums\WorkspaceMembers\WorkspaceMemberRole;
 use App\Enums\WorkspaceMembers\WorkspaceMemberStatus;
 use App\Http\Requests\InstitutionalOnboarding\AuthorizedInstitutionalWorkspaceRequest;
 use App\Models\Campaign;
 use App\Models\User;
+use App\Models\WorkspaceBeneficiary;
 use App\Models\WorkspaceMember;
 use Illuminate\Validation\Rule;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-final class PurchaseConsultationQuotaRequest extends AuthorizedInstitutionalWorkspaceRequest
+final class UpdateCampaignBeneficiaryAccessRequest extends AuthorizedInstitutionalWorkspaceRequest
 {
     public function authorize(): bool
     {
@@ -21,11 +23,16 @@ final class PurchaseConsultationQuotaRequest extends AuthorizedInstitutionalWork
         }
 
         $campaign = $this->route('campaign');
+        $beneficiary = $this->route('workspaceBeneficiary');
         $user = $this->user();
 
         if (! $campaign instanceof Campaign
+            || ! $beneficiary instanceof WorkspaceBeneficiary
             || ! $user instanceof User
-            || $campaign->workspace_id !== (int) $this->workspace()->getKey()) {
+            || $campaign->workspace_id !== (int) $this->workspace()->getKey()
+            || $beneficiary->workspace_id !== (int) $this->workspace()->getKey()
+            || $beneficiary->relatable_type !== $campaign->getMorphClass()
+            || $beneficiary->relatable_id !== $campaign->getKey()) {
             return false;
         }
 
@@ -48,8 +55,21 @@ final class PurchaseConsultationQuotaRequest extends AuthorizedInstitutionalWork
     public function rules(): array
     {
         return [
-            'consultation_type' => ['required', Rule::enum(ConsultationType::class)],
-            'quantity' => ['required', 'integer', 'min:1', 'max:1000'],
+            'action' => ['required', Rule::enum(WorkspaceBeneficiaryAccessAction::class)],
         ];
+    }
+
+    public function beneficiary(): WorkspaceBeneficiary
+    {
+        $beneficiary = $this->route('workspaceBeneficiary');
+
+        return $beneficiary instanceof WorkspaceBeneficiary
+            ? $beneficiary
+            : throw new NotFoundHttpException('Campaign beneficiary not found.');
+    }
+
+    public function accessAction(): WorkspaceBeneficiaryAccessAction
+    {
+        return WorkspaceBeneficiaryAccessAction::from($this->string('action')->toString());
     }
 }

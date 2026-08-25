@@ -1,22 +1,22 @@
-import { Progress } from '@/components/ui/progress'
-import { Campaign } from '@/types';
-import React from 'react'
+import { Progress } from '@/components/ui/progress';
+import type { Campaign } from '@/types';
 
-export default function ({campaign}: {campaign: Campaign}) {
+export default function CampaignAudienceProgress({
+    campaign,
+}: {
+    campaign: Campaign;
+}) {
     return (
-        <div className='space-y-1'>
+        <div className="space-y-1">
             <div className="flex justify-between gap-2 text-sm">
-                <span className="text-muted-foreground">
-                    Beneficiaries
-                </span>
+                <span className="text-muted-foreground">Beneficiaries</span>
                 <span className="font-medium">
-                    {beneficiariesAdded(campaign)} of{' '}
-                    {totalAudience(campaign)}
+                    {beneficiariesAdded(campaign)} of {totalAudience(campaign)}
                 </span>
             </div>
             <Progress value={audienceProgress(campaign)} />
         </div>
-    )
+    );
 }
 
 function audienceProgress(campaign: Campaign): number {
@@ -41,4 +41,3 @@ function beneficiariesAdded(campaign: Campaign): number {
 
     return Number.isFinite(value) ? value : 0;
 }
-

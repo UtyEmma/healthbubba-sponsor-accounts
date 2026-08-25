@@ -21,17 +21,16 @@ final class EmployeeImportReader
         'last_name',
         'email',
         'phone',
-        'department',
     ];
 
-    public function read(UploadedFile $file): ParsedEmployeeImport
+    public function read(UploadedFile $file, bool $requiresEmployeeFields = true): ParsedEmployeeImport
     {
         $reader = $this->readerFor($file);
 
         try {
             $reader->open($file->getRealPath());
 
-            return $this->readFirstSheet($reader);
+            return $this->readFirstSheet($reader, $requiresEmployeeFields);
         } catch (ValidationException $exception) {
             throw $exception;
         } catch (Throwable) {
@@ -43,8 +42,10 @@ final class EmployeeImportReader
         }
     }
 
-    private function readFirstSheet(CsvReader|XlsxReader $reader): ParsedEmployeeImport
-    {
+    private function readFirstSheet(
+        CsvReader|XlsxReader $reader,
+        bool $requiresEmployeeFields,
+    ): ParsedEmployeeImport {
         foreach ($reader->getSheetIterator() as $sheet) {
             $headers = null;
             $rows = [];
@@ -65,7 +66,10 @@ final class EmployeeImportReader
                         static fn (string $header): string => Str::snake(mb_strtolower(trim($header))),
                         $values,
                     );
-                    $missing = array_values(array_diff(self::REQUIRED_HEADERS, $headers));
+                    $requiredHeaders = $requiresEmployeeFields
+                        ? [...self::REQUIRED_HEADERS, 'department']
+                        : self::REQUIRED_HEADERS;
+                    $missing = array_values(array_diff($requiredHeaders, $headers));
 
                     if ($missing !== []) {
                         throw ValidationException::withMessages([
@@ -93,7 +97,9 @@ final class EmployeeImportReader
                     'last_name' => ['required', 'string', 'max:100'],
                     'email' => ['required', 'email:rfc', 'max:255'],
                     'phone' => ['required', 'string', 'max:32'],
-                    'department' => ['required', 'string', 'max:120'],
+                    'department' => $requiresEmployeeFields
+                        ? ['required', 'string', 'max:120']
+                        : ['nullable', 'string', 'max:120'],
                     'employee_id' => ['nullable', 'string', 'max:32', 'regex:/^[A-Za-z0-9_-]+$/'],
                 ]);
 

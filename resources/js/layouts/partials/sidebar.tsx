@@ -26,6 +26,7 @@ import plans from '@/routes/plans';
 import team from '@/routes/team';
 import wallet from '@/routes/wallet';
 import campaigns from '@/routes/campaigns';
+import { cn } from '@/lib/utils';
 
 type NavigationItem = {
     label: string;
@@ -80,11 +81,6 @@ function Navigation() {
                     label: 'Employees',
                     icon: UsersRoundIcon,
                     href: business.employees(),
-                },
-                {
-                    label: 'Consultations',
-                    icon: ConsultationsSidebarIcon,
-                    href: consultations.index(),
                 },
                 {
                     label: 'Reports',
@@ -163,9 +159,10 @@ function Navigation() {
                                     href={item.href}
                                     aria-current={isActive ? 'page' : undefined}
                                     className={
+                                        cn('min-h-10',
                                         isActive
-                                            ? 'flex min-h-8 items-center gap-3 rounded-md bg-accent px-2 text-sm font-medium text-secondary'
-                                            : 'flex min-h-10 items-center gap-3 rounded-md px-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-secondary'
+                                            ? 'flex  items-center gap-3 rounded-md bg-accent px-2 text-sm font-medium text-secondary'
+                                            : 'flex items-center gap-3 rounded-md px-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-secondary')
                                     }
                                 >
                                     <Icon className="size-[18px] shrink-0" />

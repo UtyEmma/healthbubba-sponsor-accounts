@@ -11,7 +11,7 @@ use App\Models\WorkspaceMember;
 use Illuminate\Foundation\Http\FormRequest;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-abstract class AuthorizedWorkspaceViewRequest extends FormRequest
+class AuthorizedWorkspaceViewRequest extends FormRequest
 {
     public function authorize(): bool
     {

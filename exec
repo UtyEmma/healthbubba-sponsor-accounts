@@ -1,0 +1,6 @@
+implement adding beneficiary to campaigns
+
+implement adding comsultation quota for a campaign. The user should select the consultant type (GP or SPECIALIST) and also indicate the number of consultations that may be purchased
+the consultation quota is charged from the workspaces wallet based on the set gp_fee and specialist_fee for the campaign
+
+where the user has insufficient funds for the amount of consultations they wish to pay for, they may be redirected

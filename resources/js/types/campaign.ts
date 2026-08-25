@@ -4,6 +4,7 @@ import type {
 } from './consultation';
 import type { Workspace } from './workspace';
 import type {
+    EmployeeImportResult,
     PaginatedWorkspaceBeneficiaries,
     PaginationLink,
     WorkspaceCapacity,
@@ -47,6 +48,19 @@ export interface CampaignConsultationQuota {
     createdAt: string;
 }
 
+export interface CampaignFinancialSummary {
+    currency: string;
+    walletBalance: string;
+    gpSpent: string;
+    specialistSpent: string;
+    totalSpent: string;
+}
+
+export interface CampaignConsultationSummary {
+    coverage: ConsultationCoverage;
+    financialSummary: CampaignFinancialSummary;
+}
+
 export interface PaginatedCampaigns {
     data: Campaign[];
     links: {
@@ -77,6 +91,7 @@ export interface InstitutionalCampaignShowPageProps {
     campaign: Campaign;
     beneficiaries: PaginatedWorkspaceBeneficiaries;
     capacity: CampaignBeneficiaryCapacity;
-    coverage: ConsultationCoverage;
+    campaignConsultation: CampaignConsultationSummary;
     consultations: PaginatedConsultations;
+    importResult: EmployeeImportResult | null;
 }

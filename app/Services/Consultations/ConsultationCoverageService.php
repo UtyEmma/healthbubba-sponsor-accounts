@@ -2,6 +2,7 @@
 
 namespace App\Services\Consultations;
 
+use App\DTOs\Campaigns\CampaignConsultationSummaryData;
 use App\DTOs\Consultations\ConsultationAllocation;
 use App\DTOs\Consultations\ConsultationAllocationScaling;
 use App\DTOs\Consultations\ConsultationCoverageSummary;
@@ -20,6 +21,7 @@ use App\Models\Consultations\Consultation;
 use App\Models\Subscription;
 use App\Models\Workspace;
 use App\Models\WorkspaceBeneficiary;
+use App\Queries\InstitutionalCampaigns\CampaignConsultationSummaryQuery;
 use App\Services\Payments\CapacityPricingService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
@@ -33,6 +35,7 @@ final readonly class ConsultationCoverageService
     public function __construct(
         private ConsultationTypeResolver $types,
         private CapacityPricingService $capacityPricing,
+        private CampaignConsultationSummaryQuery $campaignConsultations,
     ) {}
 
     public function activeSubscription(Workspace $workspace, bool $lock = false): ?Subscription
@@ -130,6 +133,12 @@ final readonly class ConsultationCoverageService
     /** @return array{planName: string|null, activeBeneficiaries: int, allocations: list<array<string, mixed>>, scaling: array<string, mixed>} */
     public function summary(Workspace $workspace): array
     {
+        if ($workspace->type === AccountTypes::INSTITUTION) {
+            return $this->institutionalSummary(
+                $this->campaignConsultations->getForWorkspace($workspace),
+            );
+        }
+
         $subscription = $this->activeSubscription($workspace);
         $scaling = $this->scaling($workspace, $subscription);
         $activeBeneficiaries = $workspace->workspaceBeneficiaries()
@@ -197,6 +206,22 @@ final readonly class ConsultationCoverageService
             'activeBeneficiaries' => $activeBeneficiaries,
             'allocations' => $summaries,
             'scaling' => $scaling->toArray(),
+        ];
+    }
+
+    /** @return array{planName: string, activeBeneficiaries: int, allocations: list<array<string, mixed>>, scaling: array<string, mixed>} */
+    private function institutionalSummary(CampaignConsultationSummaryData $summary): array
+    {
+        return [
+            'planName' => $summary->campaignName,
+            'activeBeneficiaries' => $summary->activeBeneficiaries,
+            'allocations' => $summary->allocations,
+            'scaling' => $this->unavailableScaling(
+                capacityLabel: 'Campaign beneficiaries',
+                capacityUnit: 'beneficiary',
+                capacityUnitPlural: 'beneficiaries',
+                reason: 'Institutional coverage uses consultation units purchased for campaigns and does not require a subscription plan.',
+            )->toArray(),
         ];
     }
 

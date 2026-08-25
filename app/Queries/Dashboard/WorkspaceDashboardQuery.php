@@ -46,7 +46,9 @@ final readonly class WorkspaceDashboardQuery
 
     public function execute(Workspace $workspace, User $user): WorkspaceDashboard
     {
-        $subscription = $this->subscription($workspace);
+        $subscription = $workspace->type === AccountTypes::INSTITUTION
+            ? null
+            : $this->subscription($workspace);
         $coverage = $this->coverage->summary($workspace);
         $wallet = $workspace->wallet()->firstOrFail();
         $walletBalance = $wallet->balance;

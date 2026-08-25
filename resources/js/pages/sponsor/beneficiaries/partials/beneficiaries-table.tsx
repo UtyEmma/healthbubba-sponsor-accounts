@@ -34,9 +34,11 @@ const statusVariants: Record<
 export function BeneficiariesTable({
     invitations,
     canManage,
+    campaignSlug,
 }: {
     invitations: PaginatedWorkspaceBeneficiaries;
     canManage: boolean;
+    campaignSlug?: string;
 }) {
     return (
         <Card className="overflow-hidden">
@@ -123,6 +125,7 @@ export function BeneficiariesTable({
                                         <TableCell className="pr-8 text-right">
                                             <WorkspaceInvitationActions
                                                 invitation={invitation}
+                                                campaignSlug={campaignSlug}
                                             />
                                         </TableCell>
                                     )}

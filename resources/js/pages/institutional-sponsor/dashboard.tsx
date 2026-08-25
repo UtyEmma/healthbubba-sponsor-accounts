@@ -15,14 +15,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { DashboardLayout } from '@/layouts/dashboard';
 import { BusinessMetricCard } from '@/pages/business-sponsor/partials/business-metric-card';
-import institutional from '@/routes/institutional';
+import campaigns from '@/routes/campaigns';
 import type {
     ConsultationAllocationSummary,
     DashboardPageProps,
 } from '@/types';
 
 import { ConsultationTrendsChart } from './partials/consultation-trends-chart';
-import campaigns from '@/routes/campaigns';
 
 export default function InstitutionalDashboard({
     dashboard,
@@ -85,14 +84,8 @@ export default function InstitutionalDashboard({
                             icon={WalletCardsIcon}
                         />
                         <BusinessMetricCard
-                            label="Coverage expires in"
-                            value={
-                                dashboard.subscription?.renewalDays === null ||
-                                dashboard.subscription?.renewalDays ===
-                                    undefined
-                                    ? '--'
-                                    : `${dashboard.subscription.renewalDays}d`
-                            }
+                            label="Coverage model"
+                            value="Campaign funded"
                             icon={CalendarClockIcon}
                             tone="amber"
                         />
@@ -141,13 +134,12 @@ export default function InstitutionalDashboard({
                                         Coverage utilization
                                     </CardTitle>
                                     <span className="text-xs font-medium text-success">
-                                        {dashboard.subscription?.statusLabel ??
-                                            'Inactive'}
+                                        Campaign funded
                                     </span>
                                 </div>
                                 <p className="text-sm text-muted-foreground">
-                                    {dashboard.subscription?.planName ??
-                                        'No active coverage plan'}
+                                    Purchased consultation units across
+                                    campaigns
                                 </p>
                             </CardHeader>
                             <CardContent className="grid gap-5 px-6 pt-3">

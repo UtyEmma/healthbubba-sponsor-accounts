@@ -9,7 +9,7 @@ use Carbon\CarbonImmutable;
 final readonly class ConsultationAllocation
 {
     public function __construct(
-        public int $subscriptionId,
+        public ?int $subscriptionId,
         public ?int $planId,
         public string $planName,
         public ConsultationType $type,

@@ -46,7 +46,7 @@ final class CompleteInstitutionalOrganizationProfileAction
                 ]);
             }
 
-            if ($lockedWorkspace->onboarded_at !== null) {
+            if ($lockedWorkspace->campaigns()->exists()) {
                 return $lockedWorkspace;
             }
 
@@ -61,6 +61,7 @@ final class CompleteInstitutionalOrganizationProfileAction
                 'end_date' => $data->endDate,
                 'booth_required' => $data->boothRequired,
             ]);
+            $lockedWorkspace->update(['onboarded_at' => now()]);
 
             InstitutionalAccountCreated::dispatch(
                 workspaceId: (int) $lockedWorkspace->getKey(),

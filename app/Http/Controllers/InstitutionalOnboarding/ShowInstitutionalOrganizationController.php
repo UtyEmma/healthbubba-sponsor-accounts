@@ -18,7 +18,7 @@ final readonly class ShowInstitutionalOrganizationController
         $workspace = $request->workspace();
 
         if (! $this->onboarding->requiresProfileCompletion($workspace)) {
-            return redirect()->route('institutional_onboarding.support');
+            return redirect()->route('home');
         }
 
         return Inertia::render('institutional-onboarding/organization', [

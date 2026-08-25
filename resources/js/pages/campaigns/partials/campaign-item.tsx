@@ -3,7 +3,6 @@ import { CalendarDaysIcon, MapPin } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import campaigns from '@/routes/campaigns';
 import type { Campaign, CampaignStatus } from '@/types';
 import CampaignAudienceProgress from './campaign-audience-progress';
@@ -62,15 +61,6 @@ export default function CampaignItem({ campaign }: { campaign: Campaign }) {
                     </div>
                     <div className="pt-6">
                         <CampaignAudienceProgress campaign={campaign} />
-                        
-
-                        {/* {totalAudience(campaign) > 0 && (
-                            <p className="pt-3 text-xs text-muted-foreground">
-                                {beneficiariesAdded(campaign)} total
-                                beneficiaries added out of{' '}
-                                {totalAudience(campaign)} campaign spaces
-                            </p>
-                        )} */}
                     </div>
                 </CardContent>
             </Card>
@@ -95,20 +85,6 @@ function CampaignStatusBadge({
 
     return <Badge variant="secondary">{label}</Badge>;
 }
-
-function totalAudience(campaign: Campaign): number {
-    const value = Number(campaign.beneficiaryLimit);
-
-    return Number.isFinite(value) ? value : 0;
-}
-
-function beneficiariesAdded(campaign: Campaign): number {
-    const value = Number(campaign.capacityUsed ?? 0);
-
-    return Number.isFinite(value) ? value : 0;
-}
-
-
 
 function formatDateRange(campaign: Campaign): string | null {
     if (!campaign.startDate || !campaign.endDate) {

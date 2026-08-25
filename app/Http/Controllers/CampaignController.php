@@ -5,13 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\InstitutionalCampaigns\IndexInstitutionalCampaignRequest;
 use App\Http\Requests\InstitutionalCampaigns\ShowInstitutionalCampaignRequest;
 use App\Http\Resources\CampaignBeneficiaryCapacityResource;
+use App\Http\Resources\CampaignConsultationSummaryResource;
 use App\Http\Resources\CampaignResource;
 use App\Http\Resources\ConsultationResource;
 use App\Http\Resources\WorkspaceBeneficiaryResource;
 use App\Http\Resources\WorkspaceResource;
 use App\Models\Campaign;
+use App\Queries\InstitutionalCampaigns\CampaignConsultationSummaryQuery;
 use App\Queries\InstitutionalCampaigns\WorkspaceCampaignQuery;
-use App\Services\Consultations\ConsultationCoverageService;
 use App\Services\WorkspaceBeneficiaries\CampaignBeneficiaryCapacityService;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -21,7 +22,7 @@ final readonly class CampaignController
     public function __construct(
         private WorkspaceCampaignQuery $campaigns,
         private CampaignBeneficiaryCapacityService $capacity,
-        private ConsultationCoverageService $coverage,
+        private CampaignConsultationSummaryQuery $consultationSummary,
     ) {}
 
     public function index(IndexInstitutionalCampaignRequest $request): Response
@@ -42,6 +43,7 @@ final readonly class CampaignController
     ): Response {
         $workspace = $request->workspace();
         $campaign = $this->campaigns->prepareForDisplay($campaign);
+        $consultationSummary = $this->consultationSummary->get($campaign, $workspace);
 
         return Inertia::render('campaigns/show', [
             'organization' => new WorkspaceResource($workspace),
@@ -49,7 +51,13 @@ final readonly class CampaignController
             'beneficiaries' => WorkspaceBeneficiaryResource::collection(
                 $this->campaigns->paginateBeneficiaries($campaign),
             ),
-            'coverage' => $this->coverage->summary($workspace),
+            'capacity' => new CampaignBeneficiaryCapacityResource(
+                $this->capacity->summary($campaign),
+            ),
+            'campaignConsultation' => new CampaignConsultationSummaryResource(
+                $consultationSummary,
+            ),
+            'importResult' => $request->session()->get('import_result'),
             'consultations' => ConsultationResource::collection(
                 $this->campaigns->paginateConsultations($campaign),
             ),

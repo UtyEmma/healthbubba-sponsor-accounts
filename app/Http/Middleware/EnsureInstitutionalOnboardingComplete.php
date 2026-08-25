@@ -34,10 +34,6 @@ final readonly class EnsureInstitutionalOnboardingComplete
             return redirect()->route('institutional_onboarding.organization.edit');
         }
 
-        if (! $this->onboarding->hasProfileApproved($workspace)) {
-            return redirect()->route('institutional_onboarding.support');
-        }
-
         return $next($request);
     }
 }

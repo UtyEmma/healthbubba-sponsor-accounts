@@ -3,16 +3,14 @@
 namespace App\Http\Requests\InstitutionalCampaigns;
 
 use App\Enums\Account\Roles;
-use App\Enums\Consultations\ConsultationType;
 use App\Enums\WorkspaceMembers\WorkspaceMemberRole;
 use App\Enums\WorkspaceMembers\WorkspaceMemberStatus;
 use App\Http\Requests\InstitutionalOnboarding\AuthorizedInstitutionalWorkspaceRequest;
 use App\Models\Campaign;
 use App\Models\User;
 use App\Models\WorkspaceMember;
-use Illuminate\Validation\Rule;
 
-final class PurchaseConsultationQuotaRequest extends AuthorizedInstitutionalWorkspaceRequest
+final class ImportCampaignBeneficiariesRequest extends AuthorizedInstitutionalWorkspaceRequest
 {
     public function authorize(): bool
     {
@@ -44,12 +42,17 @@ final class PurchaseConsultationQuotaRequest extends AuthorizedInstitutionalWork
             ->exists();
     }
 
-    /** @return array<string, mixed> */
+    /** @return array<string, list<string>> */
     public function rules(): array
     {
         return [
-            'consultation_type' => ['required', Rule::enum(ConsultationType::class)],
-            'quantity' => ['required', 'integer', 'min:1', 'max:1000'],
+            'file' => [
+                'required',
+                'file',
+                'max:10240',
+                'mimes:csv,xlsx',
+                'mimetypes:text/csv,text/plain,application/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip',
+            ],
         ];
     }
 }

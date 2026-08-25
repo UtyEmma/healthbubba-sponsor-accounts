@@ -9,24 +9,18 @@ use App\Models\Workspace;
 
 final readonly class CampaignBeneficiaryCapacityService
 {
-    public function __construct(
-        private WorkspaceBeneficiaryCapacityService $workspaceCapacity,
-    ) {}
-
-    public function summary(Campaign $campaign, Workspace $workspace): CapacitySummary
+    public function summary(Campaign $campaign): CapacitySummary
     {
         $this->expirePending($campaign);
-
-        $workspaceSummary = $this->workspaceCapacity->summary($workspace);
 
         return new CapacitySummary(
             used: $this->used($campaign),
             total: max(0, $campaign->beneficiary_limit),
-            unavailableReason: $workspaceSummary->unavailableReason,
         );
     }
 
-    public function lockCampaign(Workspace $workspace, Campaign $campaign): Campaign {
+    public function lockCampaign(Workspace $workspace, Campaign $campaign): Campaign
+    {
         return Campaign::query()
             ->whereBelongsTo($workspace)
             ->whereKey($campaign->getKey())

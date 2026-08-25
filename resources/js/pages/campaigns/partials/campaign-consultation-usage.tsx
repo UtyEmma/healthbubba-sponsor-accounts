@@ -14,17 +14,18 @@ export function CampaignConsultationUsage({
         <section aria-label="Consultation usage">
             <Card>
                 <CardHeader className="gap-1">
-                    <CardTitle className="text-base">
-                        Coverage wallet
-                    </CardTitle>
+                    <CardTitle className="text-base">Coverage wallet</CardTitle>
                     <p className="text-sm text-muted-foreground">
                         Purchased, consumed and remaining units.
                     </p>
                 </CardHeader>
-                <CardContent className='space-y-5 pt-0'>
-                    {
-                        coverage.allocations.map(allocation => <AllocationState allocation={allocation} />)
-                    }
+                <CardContent className="space-y-5 pt-0">
+                    {coverage.allocations.map((allocation) => (
+                        <AllocationState
+                            key={allocation.type}
+                            allocation={allocation}
+                        />
+                    ))}
                 </CardContent>
             </Card>
         </section>
@@ -43,15 +44,16 @@ function AllocationState({
             : allocation.limit === 0
               ? 0
               : Math.min(100, (used / allocation.limit) * 100);
-    const limit =
-        allocation.limit === null ? 'Unlimited' : allocation.limit;
+    const limit = allocation.limit === null ? 'Unlimited' : allocation.limit;
+    const remaining =
+        allocation.remaining === null ? 'Unlimited' : allocation.remaining;
 
     return (
-        <div className='space-y-1'>
+        <div className="space-y-1">
             <div className="flex items-center justify-between text-sm">
                 <span>{allocation.label}</span>
                 <strong className="font-medium">
-                    {used} / {limit} left
+                    {remaining} / {limit} left
                 </strong>
             </div>
             <Progress

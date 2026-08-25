@@ -1,23 +1,21 @@
 import { Head, usePage } from '@inertiajs/react';
 import { CalendarDaysIcon, MapPin } from 'lucide-react';
 
-import StoreCampaignBeneficiaryController from '@/actions/App/Http/Controllers/InstitutionalCampaigns/StoreCampaignBeneficiaryController';
 import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DashboardLayout } from '@/layouts/dashboard';
-import { AddBeneficiaryDialog } from '@/pages/sponsor/beneficiaries/partials/add-beneficiary-dialog';
 import { BeneficiariesTable } from '@/pages/sponsor/beneficiaries/partials/beneficiaries-table';
 import type {
     Campaign,
     CampaignStatus,
     InstitutionalCampaignShowPageProps,
 } from '@/types';
+import { AddCampaignBeneficiaryDialog } from './partials/add-campaign-beneficiary-dialog';
+import CampaignAudienceProgress from './partials/campaign-audience-progress';
 import { CampaignConsultationHistory } from './partials/campaign-consultation-history';
 import { CampaignConsultationUsage } from './partials/campaign-consultation-usage';
-import CampaignAudienceProgress from './partials/campaign-audience-progress';
 import { PurchaseQuotaCard } from './partials/purchase-quota-card';
 
 interface CampaignDetailsSharedProps {
@@ -41,8 +39,10 @@ export default function InstitutionalCampaignDetailsPage({
     organization,
     campaign,
     beneficiaries,
-    coverage,
+    capacity,
+    campaignConsultation,
     consultations,
+    importResult,
 }: InstitutionalCampaignShowPageProps) {
     const { flash, workspacePermissions } =
         usePage<CampaignDetailsSharedProps>().props;
@@ -61,17 +61,14 @@ export default function InstitutionalCampaignDetailsPage({
                         description={`Review the campaign configured for ${organization.name}.`}
                         action={
                             workspacePermissions.canManage ? (
-
-                                <div className='flex gap-2'>
-                                    <AddBeneficiaryDialog
-                                        form={StoreCampaignBeneficiaryController.form(
-                                            campaign.slug,
-                                        )}
+                                <div className="flex gap-2">
+                                    <AddCampaignBeneficiaryDialog
+                                        campaignSlug={campaign.slug}
+                                        capacity={capacity}
                                     />
 
                                     <PurchaseQuotaCard campaign={campaign} />
                                 </div>
-
                             ) : undefined
                         }
                     />
@@ -82,11 +79,34 @@ export default function InstitutionalCampaignDetailsPage({
                         </p>
                     )}
 
-                    <Tabs defaultValue="overview" className="pt-5 flex-col">
-                        <TabsList >
+                    {importResult && (
+                        <div className="mt-5 rounded-xl border bg-card px-4 py-3 text-sm">
+                            <p className="font-medium">
+                                Import complete: {importResult.imported}{' '}
+                                invited, {importResult.skipped} skipped
+                            </p>
+                            {importResult.errors.length > 0 && (
+                                <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
+                                    {importResult.errors.map((error) => (
+                                        <li key={error.row}>
+                                            Row {error.row}:{' '}
+                                            {error.errors.join(' ')}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                    )}
+
+                    <Tabs defaultValue="overview" className="flex-col pt-5">
+                        <TabsList>
                             <TabsTrigger value="overview">Overview</TabsTrigger>
-                            <TabsTrigger value="beneficiaries">Beneficiaries</TabsTrigger>
-                            <TabsTrigger value="consultations">Consultations</TabsTrigger>
+                            <TabsTrigger value="beneficiaries">
+                                Beneficiaries
+                            </TabsTrigger>
+                            <TabsTrigger value="consultations">
+                                Consultations
+                            </TabsTrigger>
                         </TabsList>
 
                         <TabsContent value={'overview'}>
@@ -106,9 +126,9 @@ export default function InstitutionalCampaignDetailsPage({
 
                                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-sm text-muted-foreground">
                                                 {campaignDate && (
-                                                    <span className="inline-flex items-center gap-1.5">
+                                                    <span className="inline-flex shrink-0 items-center gap-1.5">
                                                         <CalendarDaysIcon
-                                                            className="size-3.5"
+                                                            className="size-4 shrink-0"
                                                             aria-hidden="true"
                                                         />
                                                         {campaignDate}
@@ -117,21 +137,28 @@ export default function InstitutionalCampaignDetailsPage({
                                                 {location && (
                                                     <span className="inline-flex items-center gap-1.5">
                                                         <MapPin
-                                                            className="size-3.5"
+                                                            className="size-4 shrink-0"
                                                             aria-hidden="true"
                                                         />
-                                                        {location}
+
+                                                        <span>{location}</span>
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
-                                        <CampaignAudienceProgress campaign={campaign} />
+                                        <CampaignAudienceProgress
+                                            campaign={campaign}
+                                        />
                                     </CardContent>
                                 </Card>
 
-                                <div className="grid md:grid-cols-3 gap-5">
-                                    <div className="col-span-2">
-                                        <CampaignConsultationUsage coverage={coverage} />
+                                <div className="grid gap-5 md:grid-cols-3">
+                                    <div className="md:col-span-2">
+                                        <CampaignConsultationUsage
+                                            coverage={
+                                                campaignConsultation.coverage
+                                            }
+                                        />
                                     </div>
                                     <div>
                                         <Card>
@@ -143,17 +170,38 @@ export default function InstitutionalCampaignDetailsPage({
                                             <CardContent className="px-6 pt-2 pb-6">
                                                 <dl className="grid gap-4 text-sm">
                                                     <SummaryRow
-                                                        label="Total budget"
-                                                        value="₦25,000,000"
+                                                        label="GP consultations"
+                                                        value={formatMoney(
+                                                            campaignConsultation
+                                                                .financialSummary
+                                                                .gpSpent,
+                                                            campaignConsultation
+                                                                .financialSummary
+                                                                .currency,
+                                                        )}
                                                     />
                                                     <SummaryRow
-                                                        label="Consumed"
-                                                        value="₦9,120,000"
+                                                        label="Specialist consultations"
+                                                        value={formatMoney(
+                                                            campaignConsultation
+                                                                .financialSummary
+                                                                .specialistSpent,
+                                                            campaignConsultation
+                                                                .financialSummary
+                                                                .currency,
+                                                        )}
                                                     />
                                                     <div className="border-t pt-4">
                                                         <SummaryRow
-                                                            label="Remaining"
-                                                            value="₦15,880,000"
+                                                            label="Total amount spent"
+                                                            value={formatMoney(
+                                                                campaignConsultation
+                                                                    .financialSummary
+                                                                    .totalSpent,
+                                                                campaignConsultation
+                                                                    .financialSummary
+                                                                    .currency,
+                                                            )}
                                                             highlighted
                                                         />
                                                     </div>
@@ -168,7 +216,8 @@ export default function InstitutionalCampaignDetailsPage({
                         <TabsContent value="beneficiaries">
                             <BeneficiariesTable
                                 invitations={beneficiaries}
-                                canManage={false}
+                                canManage={workspacePermissions.canManage}
+                                campaignSlug={campaign.slug}
                             />
                         </TabsContent>
 
@@ -179,13 +228,11 @@ export default function InstitutionalCampaignDetailsPage({
                             />
                         </TabsContent>
                     </Tabs>
-
                 </div>
             </DashboardLayout>
         </>
     );
 }
-
 
 function CampaignStatusBadge({
     status,
@@ -205,7 +252,6 @@ function CampaignStatusBadge({
     return <Badge variant="secondary">{label}</Badge>;
 }
 
-
 function formatDateRange(campaign: Campaign): string | null {
     if (!campaign.startDate || !campaign.endDate) {
         return null;
@@ -216,6 +262,13 @@ function formatDateRange(campaign: Campaign): string | null {
 
 function formatDate(value: string): string {
     return dateFormatter.format(new Date(value));
+}
+
+function formatMoney(value: string, currency: string): string {
+    return new Intl.NumberFormat('en-NG', {
+        style: 'currency',
+        currency,
+    }).format(Number(value));
 }
 
 function SummaryRow({

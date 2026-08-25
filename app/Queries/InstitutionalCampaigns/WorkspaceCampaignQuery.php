@@ -4,6 +4,7 @@ namespace App\Queries\InstitutionalCampaigns;
 
 use App\DTOs\Consultations\ConsultationViewData;
 use App\Enums\Appointments\AppointmentStatus;
+use App\Enums\WorkspaceBeneficiaries\WorkspaceBeneficiaryStatus;
 use App\Models\Campaign;
 use App\Models\Consultations\Appointment;
 use App\Models\Consultations\Consultation;
@@ -24,7 +25,7 @@ final readonly class WorkspaceCampaignQuery
                 'beneficiaries',
                 'activeBeneficiaries',
                 'beneficiaries as capacity_used' => static function (Builder $query): void {
-                    $query->consumingCapacity();
+                    self::whereCurrentlyEnrolled($query);
                 },
             ])
             ->orderByDesc('start_date')
@@ -64,7 +65,7 @@ final readonly class WorkspaceCampaignQuery
         }
 
         $snapshots = Consultation::query()
-            ->where('workspace_beneficiary_id', $beneficiaryIds->all())
+            ->whereIn('workspace_beneficiary_id', $beneficiaryIds->all())
             ->orderByDesc('id')
             ->paginate(
                 perPage: 20,
@@ -135,8 +136,22 @@ final readonly class WorkspaceCampaignQuery
             'beneficiaries',
             'activeBeneficiaries',
             'beneficiaries as capacity_used' => static function (Builder $query): void {
-                $query->consumingCapacity();
+                self::whereCurrentlyEnrolled($query);
             },
         ]);
+    }
+
+    /** @param Builder<WorkspaceBeneficiary> $query */
+    private static function whereCurrentlyEnrolled(Builder $query): void
+    {
+        $query->where(function (Builder $query): void {
+            $query->whereIn('status', [
+                WorkspaceBeneficiaryStatus::Active,
+                WorkspaceBeneficiaryStatus::Suspended,
+            ])->orWhere(function (Builder $query): void {
+                $query->where('status', WorkspaceBeneficiaryStatus::Pending)
+                    ->where('expires_at', '>', now());
+            });
+        });
     }
 }

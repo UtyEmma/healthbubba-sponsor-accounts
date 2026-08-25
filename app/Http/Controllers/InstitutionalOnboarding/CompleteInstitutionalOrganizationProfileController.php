@@ -18,7 +18,7 @@ final readonly class CompleteInstitutionalOrganizationProfileController
             data: $request->onboardingData(),
         );
 
-        return redirect()->route('institutional_onboarding.support')
-            ->with('success', 'Your campaign details have been submitted to support.');
+        return redirect()->route('home')
+            ->with('success', 'Your campaign has been created successfully.');
     }
 }

@@ -8,6 +8,7 @@ use App\Enums\Transactions\TransactionFlow;
 use App\Enums\Transactions\TransactionStatus;
 use App\Enums\Transactions\TransactionTypes;
 use App\Exceptions\Payments\CheckoutUnavailable;
+use App\Models\Campaign;
 use App\Models\CampaignConsultationQuota;
 use App\Models\Transaction;
 use App\Models\Wallet;
@@ -23,20 +24,30 @@ final readonly class PurchaseConsultationQuotaAction
 
     public function execute(PurchaseConsultationQuotaData $data): CampaignConsultationQuota
     {
-        $fee = $this->resolveFee($data->campaign, $data->consultationType);
-        $unitFee = Money::fromMajor($fee, 'NGN');
-        $totalCost = $unitFee->multiply($data->quantity);
-
-        return DB::transaction(function () use ($data, $unitFee, $totalCost): CampaignConsultationQuota {
+        return DB::transaction(function () use ($data): CampaignConsultationQuota {
+            $campaign = Campaign::query()
+                ->whereBelongsTo($data->workspace)
+                ->whereKey($data->campaign->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+            $unitFee = Money::fromMajor(
+                $this->resolveFee($campaign, $data->consultationType),
+                'NGN',
+            );
+            $totalCost = $unitFee->multiply($data->quantity);
             $wallet = $this->lockedWallet($data);
             $balance = Money::fromMajor($wallet->balance, $wallet->currency);
+
+            if ($balance->currency !== $totalCost->currency) {
+                throw new CheckoutUnavailable('The workspace wallet currency does not match this purchase.');
+            }
 
             if ($balance->amountInMinorUnits < $totalCost->amountInMinorUnits) {
                 throw new CheckoutUnavailable('Your wallet balance is insufficient for this purchase.');
             }
 
             $quota = CampaignConsultationQuota::query()->create([
-                'campaign_id' => $data->campaign->getKey(),
+                'campaign_id' => $campaign->getKey(),
                 'workspace_id' => $data->workspace->getKey(),
                 'consultation_type' => $data->consultationType,
                 'quantity' => $data->quantity,
@@ -68,11 +79,12 @@ final readonly class PurchaseConsultationQuotaAction
                     'description' => sprintf(
                         '%s consultation quota purchase for %s',
                         $data->consultationType->label(),
-                        $data->campaign->name,
+                        $campaign->name,
                     ),
                     'quantity' => $data->quantity,
-                    'campaign_id' => $data->campaign->getKey(),
+                    'campaign_id' => $campaign->getKey(),
                     'consultation_type' => $data->consultationType->value,
+                    'purchased_by_user_id' => $data->user->getKey(),
                 ],
             ]);
 
@@ -80,20 +92,20 @@ final readonly class PurchaseConsultationQuotaAction
         }, 3);
     }
 
-    private function resolveFee($campaign, ConsultationType $type): int
+    private function resolveFee(Campaign $campaign, ConsultationType $type): string
     {
         $fee = match ($type) {
             ConsultationType::GeneralPractitioner => $campaign->gp_fee,
             ConsultationType::Specialist => $campaign->specialist_fee,
         };
 
-        if ($fee === null || $fee === '0.00') {
+        if ($fee === null || (float) $fee <= 0) {
             throw new CheckoutUnavailable(
                 'The '.$type->label().' fee has not been set for this campaign.',
             );
         }
 
-        return (int) round((float) $fee);
+        return $fee;
     }
 
     private function lockedWallet(PurchaseConsultationQuotaData $data): Wallet

@@ -1,19 +1,7 @@
-import { useState } from 'react';
 import { useForm } from '@inertiajs/react';
-import { CoinsIcon } from 'lucide-react';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import campaigns from '@/routes/campaigns';
-import type { Campaign } from '@/types';
 import {
     Dialog,
     DialogClose,
@@ -24,16 +12,26 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import campaigns from '@/routes/campaigns';
+import type { Campaign } from '@/types';
 
 const formatter = new Intl.NumberFormat('en-NG', {
     style: 'currency',
     currency: 'NGN',
 });
 
+interface PurchaseQuotaForm {
+    consultation_type: string;
+    quantity: string;
+    purchase?: string;
+}
+
 export function PurchaseQuotaCard({ campaign }: { campaign: Campaign }) {
     const { data, setData, post, processing, errors, reset, wasSuccessful } =
-        useForm({
-            consultation_type: '' as string,
+        useForm<PurchaseQuotaForm>({
+            consultation_type: '',
             quantity: '',
         });
 
@@ -65,9 +63,7 @@ export function PurchaseQuotaCard({ campaign }: { campaign: Campaign }) {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger
-                render={<Button size="compact" />}
-            >
+            <DialogTrigger render={<Button size="compact" />}>
                 Top up
             </DialogTrigger>
 
@@ -84,89 +80,103 @@ export function PurchaseQuotaCard({ campaign }: { campaign: Campaign }) {
                 <form onSubmit={handleSubmit}>
                     <div className="grid gap-4 px-6 py-4">
                         <div className="grid gap-2">
-                        <Label htmlFor="consultation_type">
-                            Consultation type
-                        </Label>
-                        <Select
-                            value={data.consultation_type}
-                            onValueChange={(value) => setData('consultation_type', value)}
-                        >
-                            <SelectTrigger id="consultation_type" className='w-full'>
-                                <SelectValue placeholder="Select type"  />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="gp">
+                            <Label htmlFor="consultation_type">
+                                Consultation type
+                            </Label>
+                            <select
+                                id="consultation_type"
+                                name="consultation_type"
+                                value={data.consultation_type}
+                                onChange={(event) =>
+                                    setData(
+                                        'consultation_type',
+                                        event.target.value,
+                                    )
+                                }
+                                className="h-10 w-full rounded-control border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+                            >
+                                <option value="">Select type</option>
+                                <option value="gp">
                                     GP Consultation
-                                    {gpFee > 0 && (
-                                        <span className="ml-2 text-muted-foreground">
-                                            ({formatter.format(gpFee)}/unit)
-                                        </span>
-                                    )}
-                                </SelectItem>
-                                <SelectItem value="specialist">
+                                    {gpFee > 0
+                                        ? ` (${formatter.format(gpFee)}/unit)`
+                                        : ''}
+                                </option>
+                                <option value="specialist">
                                     Specialist Consultation
-                                    {specialistFee > 0 && (
-                                        <span className="ml-2 text-muted-foreground">
-                                            ({formatter.format(specialistFee)}
-                                            /unit)
-                                        </span>
-                                    )}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        {errors.consultation_type && (
-                            <p className="text-xs text-destructive">
-                                {errors.consultation_type}
-                            </p>
-                        )}
+                                    {specialistFee > 0
+                                        ? ` (${formatter.format(specialistFee)}/unit)`
+                                        : ''}
+                                </option>
+                            </select>
+                            {errors.consultation_type && (
+                                <p className="text-xs text-destructive">
+                                    {errors.consultation_type}
+                                </p>
+                            )}
                         </div>
 
                         <div className="grid gap-2">
-                        <Label htmlFor="quantity">
-                            Number of consultations
-                        </Label>
-                        <Input
-                            id="quantity"
-                            type="number"
-                            min={1}
-                            max={1000}
-                            value={data.quantity}
-                            onChange={(e) => setData('quantity', e.target.value)}
-                            placeholder="e.g. 10"
-                        />
-                        {errors.quantity && (
-                            <p className="text-xs text-destructive">
-                                {errors.quantity}
-                            </p>
-                        )}
+                            <Label htmlFor="quantity">
+                                Number of consultations
+                            </Label>
+                            <Input
+                                id="quantity"
+                                type="number"
+                                min={1}
+                                max={1000}
+                                value={data.quantity}
+                                onChange={(e) =>
+                                    setData('quantity', e.target.value)
+                                }
+                                placeholder="e.g. 10"
+                            />
+                            {errors.quantity && (
+                                <p className="text-xs text-destructive">
+                                    {errors.quantity}
+                                </p>
+                            )}
                         </div>
 
                         {unitFee > 0 && quantity > 0 && (
                             <div className="rounded-lg border border-border bg-muted/50 p-3 text-sm">
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">
-                                    Unit fee
-                                </span>
-                                <span>{formatter.format(unitFee)}</span>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">
+                                        Unit fee
+                                    </span>
+                                    <span>{formatter.format(unitFee)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">
+                                        Quantity
+                                    </span>
+                                    <span>{quantity}</span>
+                                </div>
+                                <div className="mt-2 flex justify-between border-t pt-2 font-semibold">
+                                    <span>Total cost</span>
+                                    <span>{formatter.format(totalCost)}</span>
+                                </div>
                             </div>
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">
-                                    Quantity
-                                </span>
-                                <span>{quantity}</span>
-                            </div>
-                            <div className="mt-2 flex justify-between border-t pt-2 font-semibold">
-                                <span>Total cost</span>
-                                <span>{formatter.format(totalCost)}</span>
-                            </div>
-                            </div>
+                        )}
+                        {errors.purchase && (
+                            <p
+                                className="text-sm text-destructive"
+                                role="alert"
+                            >
+                                {errors.purchase}
+                            </p>
                         )}
                     </div>
 
                     <DialogFooter className="flex-row justify-end gap-3 border-t px-6 py-3">
                         <DialogClose
                             render={
-                                <Button type="button" variant="outline" size="compact" disabled={processing} />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="compact"
+                                    disabled={processing}
+                                />
                             }
                         >
                             Cancel

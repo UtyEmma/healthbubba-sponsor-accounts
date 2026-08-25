@@ -42,7 +42,7 @@ final readonly class InviteWorkspaceBeneficiaryAction
 
         $invitation = DB::transaction(function () use ($workspace, $inviter, $data, $beneficiaryId, $relatable): WorkspaceBeneficiary {
             $target = $this->lockTarget($workspace, $relatable);
-            
+
             if ($target instanceof Campaign) {
                 $this->campaignCapacity->expirePending($target);
                 $capacityExhausted = $this->campaignCapacity->used($target) >= $target->beneficiary_limit;
@@ -60,15 +60,17 @@ final readonly class InviteWorkspaceBeneficiaryAction
                 ->lockForUpdate()
                 ->first();
 
-            // if (in_array($existing?->status, [
-            //     WorkspaceBeneficiaryStatus::Active,
-            //     WorkspaceBeneficiaryStatus::Suspended,
-            //     WorkspaceBeneficiaryStatus::Pending,
-            // ], true)) {
-            //     throw ValidationException::withMessages([
-            //         'email' => 'This email already has an active, suspended, or pending workspace record.',
-            //     ]);
-            // }
+            if (in_array($existing?->status, [
+                WorkspaceBeneficiaryStatus::Active,
+                WorkspaceBeneficiaryStatus::Suspended,
+                WorkspaceBeneficiaryStatus::Pending,
+            ], true)) {
+                throw ValidationException::withMessages([
+                    'email' => $target instanceof Campaign
+                        ? 'This email already has an active, suspended, or pending record for this campaign.'
+                        : 'This email already has an active, suspended, or pending workspace record.',
+                ]);
+            }
 
             if ($capacityExhausted) {
                 throw ValidationException::withMessages([

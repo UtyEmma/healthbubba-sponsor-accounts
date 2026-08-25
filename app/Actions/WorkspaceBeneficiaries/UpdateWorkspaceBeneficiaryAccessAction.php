@@ -7,10 +7,12 @@ use App\DTOs\Activity\WorkspaceActivityData;
 use App\Enums\Activity\WorkspaceActivityType;
 use App\Enums\WorkspaceBeneficiaries\WorkspaceBeneficiaryAccessAction;
 use App\Enums\WorkspaceBeneficiaries\WorkspaceBeneficiaryStatus;
+use App\Models\Campaign;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Models\WorkspaceBeneficiary;
 use App\Services\Activity\WorkspaceActivityLogger;
+use App\Services\WorkspaceBeneficiaries\CampaignBeneficiaryCapacityService;
 use App\Services\WorkspaceBeneficiaries\WorkspaceBeneficiaryCapacityService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -19,6 +21,7 @@ final readonly class UpdateWorkspaceBeneficiaryAccessAction
 {
     public function __construct(
         private WorkspaceBeneficiaryCapacityService $capacity,
+        private CampaignBeneficiaryCapacityService $campaignCapacity,
         private WorkspaceActivityLogger $activities,
     ) {}
 
@@ -29,11 +32,7 @@ final readonly class UpdateWorkspaceBeneficiaryAccessAction
         WorkspaceBeneficiaryAccessAction $action,
     ): WorkspaceBeneficiary {
         return DB::transaction(function () use ($workspace, $user, $beneficiary, $action): WorkspaceBeneficiary {
-            $this->capacity->lockSubscription($workspace);
-            $locked = $workspace->workspaceBeneficiaries()
-                ->whereKey($beneficiary->getKey())
-                ->lockForUpdate()
-                ->firstOrFail();
+            $locked = $this->lockBeneficiary($workspace, $beneficiary);
 
             $updated = match ($action) {
                 WorkspaceBeneficiaryAccessAction::Suspend => $this->suspend($locked),
@@ -58,6 +57,31 @@ final readonly class UpdateWorkspaceBeneficiaryAccessAction
 
             return $updated;
         });
+    }
+
+    private function lockBeneficiary(
+        Workspace $workspace,
+        WorkspaceBeneficiary $beneficiary,
+    ): WorkspaceBeneficiary {
+        if ($beneficiary->relatable_type === (new Campaign)->getMorphClass()) {
+            $campaign = Campaign::query()
+                ->whereBelongsTo($workspace)
+                ->whereKey($beneficiary->relatable_id)
+                ->firstOrFail();
+            $campaign = $this->campaignCapacity->lockCampaign($workspace, $campaign);
+
+            return $campaign->beneficiaries()
+                ->whereKey($beneficiary->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+        }
+
+        $this->capacity->lockSubscription($workspace);
+
+        return $workspace->beneficiaryEnrollments()
+            ->whereKey($beneficiary->getKey())
+            ->lockForUpdate()
+            ->firstOrFail();
     }
 
     private function suspend(WorkspaceBeneficiary $beneficiary): WorkspaceBeneficiary
