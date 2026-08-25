@@ -25,8 +25,8 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-import { institutionalNavigation } from '../institutional-sponsor/partials/institutional-navigation';
-import { CommunityChart } from '../institutional-sponsor/reports/partials/community-chart';
+// import { institutionalNavigation } from '../institutional-sponsor/partials/institutional-navigation';
+// import { CommunityChart } from '../institutional-sponsor/reports/partials/community-chart';
 import { DashboardLayout } from '@/layouts/dashboard';
 
 const reportCards = [
@@ -112,7 +112,7 @@ export default function InstitutionalReportsPage() {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="px-5 pb-5">
-                                    <CommunityChart />
+                                    {/* <CommunityChart />s */}
                                 </CardContent>
                             </Card>
                             <Card className="mt-4 overflow-hidden">
