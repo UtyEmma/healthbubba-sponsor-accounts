@@ -43,7 +43,7 @@ export function AllocationFallbackCard({
         >
             {({ errors, processing }) => (
                 <Card className={cn('mt-5', className)}>
-                    <CardHeader className="px-6 pt-7 pb-5">
+                    <CardHeader className="px-6 pt-7">
                         <CardTitle className="text-base leading-5">
                             When allocations run out
                         </CardTitle>
@@ -59,9 +59,9 @@ export function AllocationFallbackCard({
                                 <label
                                     key={value}
                                     className={cn(
-                                        'flex items-center gap-3 rounded-xl border border-border p-4',
+                                        'flex items-center gap-3 rounded-xl border border-border p-2',
                                         workspace.fallbackChannel === value &&
-                                            'border-primary bg-success-muted',
+                                            'border-secondary bg-success-muted',
                                         processing
                                             ? 'cursor-wait'
                                             : 'cursor-pointer',
@@ -80,14 +80,14 @@ export function AllocationFallbackCard({
                                         }}
                                         className="sr-only"
                                     />
-                                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-success-muted text-success">
+                                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-success-muted text-secondary">
                                         <Icon className="size-5" />
                                     </span>
                                     <div>
-                                        <h3 className="leading-5 font-medium">
+                                        <h3 className="leading-5 text-sm font-medium">
                                             {title}
                                         </h3>
-                                        <p className="text-sm leading-4 text-muted-foreground">
+                                        <p className="text-xs leading-4 text-muted-foreground">
                                             {description}
                                         </p>
                                     </div>
