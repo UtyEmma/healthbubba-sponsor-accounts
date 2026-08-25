@@ -57,7 +57,7 @@ export default function WorkspaceTeamPage({
     const [inviteOpen, setInviteOpen] = useState(false);
     const [confirmation, setConfirmation] = useState<{
         member: WorkspaceTeamMember;
-        action: 'disable' | 'cancel';
+        action: 'disable' | 'cancel' | 'resend';
     } | null>(null);
 
     return (
@@ -224,7 +224,7 @@ function MemberActions({
     onConfirm,
 }: {
     member: WorkspaceTeamMember;
-    onConfirm: (action: 'disable' | 'cancel') => void;
+    onConfirm: (action: 'disable' | 'cancel' | 'resend') => void;
 }) {
     if (member.status === 'active') {
         return (
@@ -261,18 +261,14 @@ function MemberActions({
 
     return (
         <div className="flex justify-end gap-2">
-            <Form {...team.invitations.resend.form(member.id)}>
-                {({ processing }) => (
-                    <Button
-                        type="submit"
-                        variant="outline"
-                        size="compact"
-                        disabled={processing}
-                    >
-                        Resend
-                    </Button>
-                )}
-            </Form>
+            <Button
+                type="button"
+                variant="outline"
+                size="compact"
+                onClick={() => onConfirm('resend')}
+            >
+                Resend
+            </Button>
             {member.status === 'invited' && (
                 <Button
                     variant="outline"
@@ -379,7 +375,7 @@ function ConfirmationDialog({
 }: {
     confirmation: {
         member: WorkspaceTeamMember;
-        action: 'disable' | 'cancel';
+        action: 'disable' | 'cancel' | 'resend';
     } | null;
     onOpenChange: (open: boolean) => void;
 }) {
@@ -388,21 +384,30 @@ function ConfirmationDialog({
     }
 
     const isDisable = confirmation.action === 'disable';
+    const isResend = confirmation.action === 'resend';
     const form = isDisable
         ? team.members.access.update.form(confirmation.member.id)
-        : team.invitations.cancel.form(confirmation.member.id);
+        : isResend
+          ? team.invitations.resend.form(confirmation.member.id)
+          : team.invitations.cancel.form(confirmation.member.id);
 
     return (
         <Dialog open onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>
-                        {isDisable ? 'Disable Member' : 'Cancel Invitation'}
+                        {isDisable
+                            ? 'Disable Member'
+                            : isResend
+                              ? 'Resend Invitation'
+                              : 'Cancel Invitation'}
                     </DialogTitle>
                     <DialogDescription>
                         {isDisable
                             ? `Are you sure you wish to disable ${confirmation.member.name}'s workspace access?`
-                            : `Are you sure you wish to cancel the invitation for ${confirmation.member.name}?`}
+                            : isResend
+                              ? `Are you sure you wish to resend the invitation to ${confirmation.member.name}? Their previous invitation link will no longer work.`
+                              : `Are you sure you wish to cancel the invitation for ${confirmation.member.name}?`}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form} onSuccess={() => onOpenChange(false)}>
@@ -416,18 +421,20 @@ function ConfirmationDialog({
                                     <Button type="button" variant="outline" />
                                 }
                             >
-                                Keep
+                                Cancel
                             </DialogClose>
                             <Button
                                 type="submit"
-                                variant="destructive"
+                                variant={isResend ? 'primary' : 'destructive'}
                                 disabled={processing}
                             >
                                 {processing
                                     ? 'Updating...'
                                     : isDisable
                                       ? 'Disable'
-                                      : 'Cancel Invitation'}
+                                      : isResend
+                                        ? 'Resend Invitation'
+                                        : 'Cancel Invitation'}
                             </Button>
                         </DialogFooter>
                     )}
