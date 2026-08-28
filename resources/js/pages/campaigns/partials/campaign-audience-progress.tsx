@@ -12,6 +12,7 @@ export default function CampaignAudienceProgress({
                 <span className="text-muted-foreground">Beneficiaries</span>
                 <span className="font-medium">
                     {beneficiariesAdded(campaign)} of {totalAudience(campaign)}
+                    {campaign.beneficiaryLimit === null && ' estimated'}
                 </span>
             </div>
             <Progress value={audienceProgress(campaign)} />
@@ -31,7 +32,9 @@ function audienceProgress(campaign: Campaign): number {
 }
 
 function totalAudience(campaign: Campaign): number {
-    const value = Number(campaign.beneficiaryLimit);
+    const value = Number(
+        campaign.beneficiaryLimit ?? campaign.estimatedBeneficiaries ?? 0,
+    );
 
     return Number.isFinite(value) ? value : 0;
 }

@@ -2,16 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\DTOs\Campaigns\CampaignCreationConfigurationData;
 use App\Http\Requests\InstitutionalCampaigns\IndexInstitutionalCampaignRequest;
 use App\Http\Requests\InstitutionalCampaigns\ShowInstitutionalCampaignRequest;
 use App\Http\Resources\CampaignBeneficiaryCapacityResource;
 use App\Http\Resources\CampaignConsultationSummaryResource;
+use App\Http\Resources\CampaignCreationConfigurationResource;
+use App\Http\Resources\CampaignIndexSummaryResource;
 use App\Http\Resources\CampaignResource;
 use App\Http\Resources\ConsultationResource;
 use App\Http\Resources\WorkspaceBeneficiaryResource;
 use App\Http\Resources\WorkspaceResource;
 use App\Models\Campaign;
 use App\Queries\InstitutionalCampaigns\CampaignConsultationSummaryQuery;
+use App\Queries\InstitutionalCampaigns\CampaignIndexSummaryQuery;
 use App\Queries\InstitutionalCampaigns\WorkspaceCampaignQuery;
 use App\Services\WorkspaceBeneficiaries\CampaignBeneficiaryCapacityService;
 use Inertia\Inertia;
@@ -23,16 +27,31 @@ final readonly class CampaignController
         private WorkspaceCampaignQuery $campaigns,
         private CampaignBeneficiaryCapacityService $capacity,
         private CampaignConsultationSummaryQuery $consultationSummary,
+        private CampaignIndexSummaryQuery $indexSummary,
     ) {}
 
     public function index(IndexInstitutionalCampaignRequest $request): Response
     {
         $workspace = $request->workspace();
+        $summary = $this->indexSummary->get($workspace);
 
         return Inertia::render('campaigns/index', [
             'organization' => new WorkspaceResource($workspace),
             'campaigns' => CampaignResource::collection(
                 $this->campaigns->paginate($workspace),
+            ),
+            'summary' => new CampaignIndexSummaryResource(
+                $summary,
+            ),
+            'creation' => new CampaignCreationConfigurationResource(
+                new CampaignCreationConfigurationData(
+                    currency: $summary->currency,
+                    walletBalance: $summary->availableBalance,
+                    gpUnitFee: (string) config('campaigns.default_gp_fee'),
+                    specialistUnitFee: (string) config('campaigns.default_specialist_fee'),
+                    boothSetupUnitFee: (string) config('campaigns.booth_setup_fee'),
+                    boothMonthlyUnitFee: (string) config('campaigns.booth_monthly_fee'),
+                ),
             ),
         ]);
     }

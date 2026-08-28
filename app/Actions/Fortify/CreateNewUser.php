@@ -33,7 +33,6 @@ class CreateNewUser implements CreatesNewUsers
             'organization_name' => [
                 Rule::requiredIf(fn (): bool => in_array($input['type'] ?? null, [
                     AccountTypes::BUSINESS->value,
-                    AccountTypes::INSTITUTION->value,
                 ], true)),
                 'nullable',
                 'string',
@@ -46,7 +45,14 @@ class CreateNewUser implements CreatesNewUsers
                 'max:255',
                 Rule::unique(User::class),
             ],
-            'type' => ['required', 'string', Rule::enum(AccountTypes::class)],
+            'type' => [
+                'required',
+                'string',
+                Rule::in([
+                    AccountTypes::INDIVIDUAL->value,
+                    AccountTypes::BUSINESS->value,
+                ]),
+            ],
             'password' => $this->passwordRules(),
         ])->validate();
 
@@ -57,6 +63,7 @@ class CreateNewUser implements CreatesNewUsers
                 'email' => Str::lower(trim($input['email'])),
                 'type' => $accountType,
                 'password' => Hash::make($input['password']),
+                'account_verified_at' => now(),
             ]);
 
             $workspaceName = $accountType === AccountTypes::INDIVIDUAL

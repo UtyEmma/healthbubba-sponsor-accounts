@@ -79,6 +79,7 @@ export interface WorkspaceCapacity {
     total: number;
     remaining: number;
     canInvite: boolean;
+    unlimited?: boolean;
     unavailableReason: string | null;
 }
 

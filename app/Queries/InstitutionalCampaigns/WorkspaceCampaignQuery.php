@@ -4,6 +4,7 @@ namespace App\Queries\InstitutionalCampaigns;
 
 use App\DTOs\Consultations\ConsultationViewData;
 use App\Enums\Appointments\AppointmentStatus;
+use App\Enums\CampaignStatus;
 use App\Enums\WorkspaceBeneficiaries\WorkspaceBeneficiaryStatus;
 use App\Models\Campaign;
 use App\Models\Consultations\Appointment;
@@ -12,14 +13,17 @@ use App\Models\Workspace;
 use App\Models\WorkspaceBeneficiary;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator as PaginationLengthAwarePaginator;
 
 final readonly class WorkspaceCampaignQuery
 {
+    public function __construct(private CampaignMetricsQuery $metrics) {}
+
     /** @return LengthAwarePaginator<int, Campaign> */
     public function paginate(Workspace $workspace): LengthAwarePaginator
     {
-        return Campaign::query()
+        $paginator = Campaign::query()
             ->whereBelongsTo($workspace)
             ->withCount([
                 'beneficiaries',
@@ -28,10 +32,18 @@ final readonly class WorkspaceCampaignQuery
                     self::whereCurrentlyEnrolled($query);
                 },
             ])
+            ->orderByRaw(
+                'CASE WHEN status = ? OR ended_at IS NOT NULL OR end_date < ? THEN 1 ELSE 0 END',
+                [CampaignStatus::COMPLETED->value, today()->toDateString()],
+            )
             ->orderByDesc('start_date')
             ->orderByDesc('id')
             ->paginate(20)
             ->withQueryString();
+
+        $this->metrics->hydrate(new Collection($paginator->getCollection()->all()));
+
+        return $paginator;
     }
 
     /** @return LengthAwarePaginator<int, WorkspaceBeneficiary> */
@@ -132,13 +144,16 @@ final readonly class WorkspaceCampaignQuery
 
     public function prepareForDisplay(Campaign $campaign): Campaign
     {
-        return $campaign->loadCount([
+        $campaign = $campaign->loadCount([
             'beneficiaries',
             'activeBeneficiaries',
             'beneficiaries as capacity_used' => static function (Builder $query): void {
                 self::whereCurrentlyEnrolled($query);
             },
         ]);
+        $this->metrics->hydrate(new Collection([$campaign]));
+
+        return $campaign;
     }
 
     /** @param Builder<WorkspaceBeneficiary> $query */

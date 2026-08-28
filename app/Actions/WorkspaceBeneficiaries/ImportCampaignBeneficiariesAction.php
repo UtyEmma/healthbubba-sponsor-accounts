@@ -82,7 +82,7 @@ final readonly class ImportCampaignBeneficiariesAction
                     continue;
                 }
 
-                if ($used >= $campaign->beneficiary_limit) {
+                if ($campaign->beneficiary_limit !== null && $used >= $campaign->beneficiary_limit) {
                     $errors[] = new ImportRowError($row['row'], [
                         'This campaign has reached its beneficiary limit.',
                     ]);

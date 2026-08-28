@@ -39,4 +39,14 @@ return [
         'service_token' => env('HEALTHBUBBA_SERVICE_TOKEN'),
     ],
 
+    'termii' => [
+        'base_url' => env('TERMII_BASE_URL'),
+        'api_key' => env('TERMII_API_KEY'),
+        'sender_id' => env('TERMII_SENDER_ID', 'HealthBubba'),
+        'channel' => env('TERMII_CHANNEL', 'generic'),
+        'timeout' => (int) env('TERMII_TIMEOUT', 10),
+        'connect_timeout' => (int) env('TERMII_CONNECT_TIMEOUT', 3),
+        'configured' => filled(env('TERMII_BASE_URL')) && filled(env('TERMII_API_KEY')),
+    ],
+
 ];

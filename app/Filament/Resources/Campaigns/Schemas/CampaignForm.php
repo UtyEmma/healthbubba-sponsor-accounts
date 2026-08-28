@@ -48,6 +48,10 @@ class CampaignForm
                 ->label('Campaign')
                 ->required()
                 ->maxLength(255),
+            Textarea::make('description')
+                ->rows(3)
+                ->maxLength(2000)
+                ->columnSpanFull(),
             TextInput::make('slug')
                 ->helperText('Used in sponsor-facing campaign URLs. Leave blank to generate it from the campaign name.')
                 ->maxLength(255)
@@ -95,8 +99,11 @@ class CampaignForm
                                     ->integer()
                                     ->minValue(1)
                                     ->maxValue(100000)
-                                    ->default(100)
-                                    ->required(),
+                                    ->nullable(),
+                                TextInput::make('estimated_beneficiaries')
+                                    ->numeric()
+                                    ->integer()
+                                    ->minValue(1),
                                 Toggle::make('booth_required')
                                     ->label('Booth required')
                                     ->helperText('Indicates whether HealthBubba support should arrange a booth for this campaign.')
@@ -122,6 +129,22 @@ class CampaignForm
                                     ->prefix('₦')
                                     ->default(config('campaigns.default_specialist_fee', 0)),
                             ])
+                            ->columnSpanFull(),
+                        Section::make('Healthcare budgets')
+                            ->schema([
+                                TextInput::make('medication_budget')->numeric()->prefix('₦'),
+                                TextInput::make('laboratory_budget')->numeric()->prefix('₦'),
+                            ])
+                            ->columnSpanFull(),
+                        Section::make('Booth deployment')
+                            ->schema([
+                                TextInput::make('booth_count')->numeric()->integer()->minValue(1),
+                                DatePicker::make('booth_preferred_deployment_date'),
+                                TextInput::make('booth_site'),
+                                TextInput::make('booth_contact_name'),
+                                TextInput::make('booth_contact_phone'),
+                            ])
+                            ->columns(2)
                             ->columnSpanFull(),
                     ]),
             ]);

@@ -6,6 +6,8 @@ use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
+use App\Enums\InstitutionalOrganizationType;
+use App\Enums\NigeriaState;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -28,12 +30,14 @@ class FortifyServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void {
+    public function boot(): void
+    {
         $this->configureActions();
         $this->configureViews();
     }
 
-    function configureActions(){
+    public function configureActions()
+    {
         Fortify::createUsersUsing(CreateNewUser::class);
         Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
@@ -58,9 +62,16 @@ class FortifyServiceProvider extends ServiceProvider
             );
         });
     }
-    
-    function configureViews() {
-        Fortify::registerView(fn() => Inertia::render('auth/register'));
-        Fortify::loginView(fn() => Inertia::render('auth/login'));
+
+    public function configureViews()
+    {
+        Fortify::registerView(fn () => Inertia::render('auth/register', [
+            'organizationTypes' => InstitutionalOrganizationType::options(),
+            'countries' => [
+                ['value' => 'NG', 'label' => 'Nigeria'],
+            ],
+            'states' => NigeriaState::options(),
+        ]));
+        Fortify::loginView(fn () => Inertia::render('auth/login'));
     }
 }

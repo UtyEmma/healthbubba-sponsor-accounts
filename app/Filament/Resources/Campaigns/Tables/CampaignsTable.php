@@ -31,6 +31,10 @@ class CampaignsTable
                 ->label('Campaign')
                 ->searchable()
                 ->sortable(),
+            TextColumn::make('status')
+                ->badge()
+                ->formatStateUsing(fn ($record): string => $record->lifecycleStatus()->label())
+                ->sortable(),
             TextColumn::make('slug')
                 ->searchable()
                 ->toggleable(isToggledHiddenByDefault: true),

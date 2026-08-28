@@ -17,6 +17,7 @@ final class CampaignBeneficiaryCapacityResource extends JsonResource
             'total' => $this->total,
             'remaining' => $this->remaining(),
             'canInvite' => $this->canInvite(),
+            'unlimited' => $this->unlimited,
             'unavailableReason' => $this->unavailableReason,
         ];
     }

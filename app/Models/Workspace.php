@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Concerns\HasWallet;
 use App\Enums\AccountTypes;
 use App\Enums\Consultations\AllocationFallback;
+use App\Enums\InstitutionalOrganizationType;
+use App\Enums\NigeriaState;
 use App\Enums\WorkspaceMembers\WorkspaceMemberStatus;
 use App\Models\Consultations\Appointment;
 use App\Models\Consultations\Consultation;
@@ -30,6 +32,11 @@ use Revoltify\Subscriptionify\Models\Feature;
  * @property Carbon|null $onboarded_at
  * @property string|null $logo
  * @property AccountTypes $type
+ * @property InstitutionalOrganizationType|null $organization_type
+ * @property string|null $country_code
+ * @property NigeriaState|null $state_code
+ * @property string|null $official_email
+ * @property string|null $official_phone
  * @property AllocationFallback|null $fallback_channel
  * @property-read EloquentCollection<int, Campaign> $campaigns
  * @property-read Campaign|null $latestCampaign
@@ -46,6 +53,11 @@ class Workspace extends Model implements Subscribable
         'description',
         'onboarded_at',
         'fallback_channel',
+        'organization_type',
+        'country_code',
+        'state_code',
+        'official_email',
+        'official_phone',
     ];
 
     protected $casts = [
@@ -53,13 +65,26 @@ class Workspace extends Model implements Subscribable
         'booth_required' => 'boolean',
         'onboarded_at' => 'datetime',
         'fallback_channel' => AllocationFallback::class,
+        'organization_type' => InstitutionalOrganizationType::class,
+        'state_code' => NigeriaState::class,
     ];
 
     /** @return BelongsToMany<User, $this> */
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class)
-            ->withPivot('id', 'public_id', 'name', 'email', 'role', 'status', 'last_selected_at')
+            ->withPivot(
+                'id',
+                'public_id',
+                'name',
+                'email',
+                'phone',
+                'job_title',
+                'authorization_confirmed_at',
+                'role',
+                'status',
+                'last_selected_at',
+            )
             ->withTimestamps();
     }
 

@@ -45,7 +45,8 @@ final readonly class InviteWorkspaceBeneficiaryAction
 
             if ($target instanceof Campaign) {
                 $this->campaignCapacity->expirePending($target);
-                $capacityExhausted = $this->campaignCapacity->used($target) >= $target->beneficiary_limit;
+                $capacityExhausted = $target->beneficiary_limit !== null
+                    && $this->campaignCapacity->used($target) >= $target->beneficiary_limit;
             } else {
                 $subscription = $this->capacity->lockSubscription($workspace);
                 $this->capacity->expirePending($workspace);

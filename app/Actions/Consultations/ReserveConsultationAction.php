@@ -155,6 +155,10 @@ final readonly class ReserveConsultationAction
                 continue;
             }
 
+            if (! $campaign->isActive()) {
+                continue;
+            }
+
             $limit = (int) CampaignConsultationQuota::query()
                 ->whereBelongsTo($workspace)
                 ->whereBelongsTo($campaign)

@@ -7,6 +7,7 @@ export type * from './consultation';
 export type * from './dashboard';
 export type * from './medical-access';
 export type * from './institutional-onboarding';
+export type * from './institutional-registration';
 export type * from './team';
 export type * from './wallet';
 export type * from './workspace';

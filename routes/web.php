@@ -6,12 +6,19 @@ use App\Http\Controllers\Activity\MarkWorkspaceActivitiesReadController;
 use App\Http\Controllers\Activity\WorkspaceActivityIndexController;
 use App\Http\Controllers\Appointments\ConsultationController;
 use App\Http\Controllers\Appointments\UpdateAllocationFallbackController;
+use App\Http\Controllers\Auth\SendAccountVerificationCodeController;
+use App\Http\Controllers\Auth\ShowAccountVerificationCompletedController;
+use App\Http\Controllers\Auth\ShowAccountVerificationController;
+use App\Http\Controllers\Auth\StoreInstitutionalSponsorRegistrationController;
+use App\Http\Controllers\Auth\UpdatePendingAccountContactController;
+use App\Http\Controllers\Auth\VerifyAccountController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InstitutionalCampaigns\ImportCampaignBeneficiariesController;
 use App\Http\Controllers\InstitutionalCampaigns\PurchaseCampaignConsultationQuotaController;
 use App\Http\Controllers\InstitutionalCampaigns\StoreCampaignBeneficiaryController;
+use App\Http\Controllers\InstitutionalCampaigns\StoreInstitutionalCampaignController;
 use App\Http\Controllers\InstitutionalCampaigns\UpdateCampaignBeneficiaryAccessController;
 use App\Http\Controllers\InstitutionalOnboarding\CompleteInstitutionalOrganizationProfileController;
 use App\Http\Controllers\InstitutionalOnboarding\ShowInstitutionalOrganizationController;
@@ -46,7 +53,7 @@ use App\Http\Controllers\WorkspaceMembers\StoreWorkspaceMemberInvitationControll
 use App\Http\Controllers\WorkspaceMembers\UpdateWorkspaceMemberAccessController as UpdateTeamMemberAccessController;
 use App\Http\Controllers\WorkspaceMembers\UpdateWorkspaceMemberRoleController;
 use App\Http\Controllers\WorkspaceMembers\WorkspaceTeamIndexController;
-use App\Http\Middleware\EnsureInstitutionalOnboardingComplete;
+use App\Http\Middleware\EnsureInstitutionalAccountVerified;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('payments')->name('payments.')->group(function () {
@@ -90,12 +97,34 @@ Route::prefix('team-invitations')->name('team-invitations.')->group(function () 
         ->name('decline');
 });
 
+Route::post('/register/institutional', StoreInstitutionalSponsorRegistrationController::class)
+    ->middleware(['guest', 'throttle:10,1'])
+    ->name('institutional_registration.store');
+
+Route::middleware('auth')
+    ->prefix('account-verification')
+    ->name('account_verification.')
+    ->group(function (): void {
+        Route::get('/', ShowAccountVerificationController::class)->name('show');
+        Route::post('/code', SendAccountVerificationCodeController::class)
+            ->middleware('throttle:5,1')
+            ->name('send');
+        Route::post('/verify', VerifyAccountController::class)
+            ->middleware('throttle:10,1')
+            ->name('verify');
+        Route::patch('/contact', UpdatePendingAccountContactController::class)
+            ->middleware('throttle:5,1')
+            ->name('contact.update');
+        Route::get('/completed', ShowAccountVerificationCompletedController::class)
+            ->name('completed');
+    });
+
 $individualWorkspace = 'workspace.type:'.AccountTypes::INDIVIDUAL->value;
 $businessWorkspace = 'workspace.type:'.AccountTypes::BUSINESS->value;
 $institutionalWorkspace = 'workspace.type:'.AccountTypes::INSTITUTION->value;
 $subscriptionWorkspace = $individualWorkspace.','.AccountTypes::BUSINESS->value;
 
-Route::middleware(['auth', EnsureInstitutionalOnboardingComplete::class])->group(function () use (
+Route::middleware(['auth', EnsureInstitutionalAccountVerified::class])->group(function () use (
     $businessWorkspace,
     $individualWorkspace,
     $institutionalWorkspace,
@@ -203,6 +232,9 @@ Route::middleware(['auth', EnsureInstitutionalOnboardingComplete::class])->group
 
         Route::prefix('campaigns')->group(function (): void {
             Route::get('/', [CampaignController::class, 'index'])->name('campaigns.index');
+            Route::post('/', StoreInstitutionalCampaignController::class)
+                ->middleware('throttle:10,1')
+                ->name('campaigns.store');
             Route::get('/{campaign:slug}', [CampaignController::class, 'show'])->name('campaigns.show');
             Route::post('/{campaign:slug}/beneficiaries', StoreCampaignBeneficiaryController::class)
                 ->middleware('throttle:20,1')

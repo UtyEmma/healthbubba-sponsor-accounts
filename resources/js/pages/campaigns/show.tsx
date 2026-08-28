@@ -249,6 +249,10 @@ function CampaignStatusBadge({
         return <Badge variant="warning">{label}</Badge>;
     }
 
+    if (status === 'PAUSED') {
+        return <Badge variant="warning">{label}</Badge>;
+    }
+
     return <Badge variant="secondary">{label}</Badge>;
 }
 
