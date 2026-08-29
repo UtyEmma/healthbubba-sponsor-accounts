@@ -2,10 +2,15 @@
 
 namespace App\Filament\Resources\Campaigns;
 
+use App\Enums\CampaignBoothStatus;
 use App\Filament\Resources\Campaigns\Pages\CreateCampaign;
 use App\Filament\Resources\Campaigns\Pages\EditCampaign;
 use App\Filament\Resources\Campaigns\Pages\ListCampaigns;
 use App\Filament\Resources\Campaigns\Pages\ViewCampaign;
+use App\Filament\Resources\Campaigns\RelationManagers\BeneficiariesRelationManager;
+use App\Filament\Resources\Campaigns\RelationManagers\BoothsRelationManager;
+use App\Filament\Resources\Campaigns\RelationManagers\ConsultationsRelationManager;
+use App\Filament\Resources\Campaigns\RelationManagers\RecurringCostsRelationManager;
 use App\Filament\Resources\Campaigns\Schemas\CampaignForm;
 use App\Filament\Resources\Campaigns\Schemas\CampaignInfolist;
 use App\Filament\Resources\Campaigns\Tables\CampaignsTable;
@@ -45,7 +50,13 @@ class CampaignResource extends Resource
     {
         return parent::getEloquentQuery()
             ->with('workspace')
-            ->withCount('beneficiaries');
+            ->withCount([
+                'beneficiaries',
+                'booths as active_booths_count' => static fn (Builder $query): Builder => $query
+                    ->where('status', CampaignBoothStatus::Active),
+                'recurringCosts as active_recurring_costs_count' => static fn (Builder $query): Builder => $query
+                    ->where('is_active', true),
+            ]);
     }
 
     public static function form(Schema $schema): Schema
@@ -66,7 +77,10 @@ class CampaignResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            BeneficiariesRelationManager::class,
+            ConsultationsRelationManager::class,
+            BoothsRelationManager::class,
+            RecurringCostsRelationManager::class,
         ];
     }
 

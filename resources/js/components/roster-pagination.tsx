@@ -1,12 +1,12 @@
 import { Link } from '@inertiajs/react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
-import type { PaginatedWorkspaceBeneficiaries } from '@/types';
+import type { Paginator } from '@/types';
 
-export function RosterPagination({
+export function RosterPagination<T>({
     pagination,
 }: {
-    pagination: PaginatedWorkspaceBeneficiaries;
+    pagination: Paginator<T>;
 }) {
     if (pagination.meta.last_page <= 1) {
         return null;

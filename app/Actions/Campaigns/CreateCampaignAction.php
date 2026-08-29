@@ -3,13 +3,18 @@
 namespace App\Actions\Campaigns;
 
 use App\DTOs\Campaigns\CreateCampaignData;
+use App\Enums\CampaignBoothStatus;
+use App\Enums\CampaignRecurringCostCategory;
 use App\Enums\CampaignStatus;
 use App\Enums\Consultations\ConsultationType;
 use App\Enums\Transactions\TransactionFlow;
 use App\Enums\Transactions\TransactionStatus;
 use App\Enums\Transactions\TransactionTypes;
 use App\Models\Campaign;
+use App\Models\CampaignBooth;
 use App\Models\CampaignConsultationQuota;
+use App\Models\CampaignEnrollmentCode;
+use App\Models\CampaignRecurringCost;
 use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Models\Workspace;
@@ -17,6 +22,7 @@ use App\Support\Payments\PaymentReferenceGenerator;
 use App\ValueObjects\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 final readonly class CreateCampaignAction
@@ -67,7 +73,9 @@ final readonly class CreateCampaignAction
             }
 
             $allocationReference = $this->references->generateCampaignAllocation();
+            $boothSetupReference = $data->booth->required ? $this->references->generateBoothCharge() : null;
             $startDate = CarbonImmutable::parse($data->details->startDate);
+            $displayEnrollmentCode = $this->displayEnrollmentCode($data, $workspace->getKey());
             $campaign = $workspace->campaigns()->create([
                 'name' => $data->details->name,
                 'description' => $data->details->description,
@@ -86,6 +94,7 @@ final readonly class CreateCampaignAction
                 'medication_budget' => $data->healthcare->medicationBudget,
                 'laboratory_budget' => $data->healthcare->laboratoryBudget,
                 'allocation_reference' => $allocationReference,
+                'display_enrollment_code' => $displayEnrollmentCode,
                 'launched_at' => now(),
                 'booth_required' => $data->booth->required,
                 'booth_count' => $data->booth->count,
@@ -97,8 +106,28 @@ final readonly class CreateCampaignAction
                 'booth_monthly_unit_fee' => $data->booth->required ? $boothMonthlyFee->toMajorAmount() : null,
             ]);
 
+            CampaignEnrollmentCode::query()->create([
+                'public_id' => (string) Str::ulid(),
+                'campaign_id' => $campaign->getKey(),
+                'created_by_user_id' => $data->user->getKey(),
+                'code' => $displayEnrollmentCode,
+                'enrollment_limit' => max(1, $data->enrollment->estimatedBeneficiaries),
+                'expires_at' => $data->details->endDate,
+            ]);
+
             $this->createQuota($campaign, $workspace, ConsultationType::GeneralPractitioner, $data->healthcare->gpUnits, $gpFee);
             $this->createQuota($campaign, $workspace, ConsultationType::Specialist, $data->healthcare->specialistUnits, $specialistFee);
+
+            if ($data->booth->required && $data->booth->count !== null) {
+                $this->createBooths(
+                    campaign: $campaign,
+                    workspace: $workspace,
+                    data: $data,
+                    setupFee: $boothSetupFee,
+                    monthlyFee: $boothMonthlyFee,
+                    setupReference: (string) $boothSetupReference,
+                );
+            }
 
             $wallet->update([
                 'balance' => (new Money(
@@ -124,7 +153,7 @@ final readonly class CreateCampaignAction
                     workspace: $workspace,
                     campaign: $campaign,
                     amount: $boothSetupTotal,
-                    reference: $this->references->generateBoothCharge(),
+                    reference: (string) $boothSetupReference,
                     type: TransactionTypes::CAMPAIGN_BOOTH_SETUP,
                     description: "Booth setup for {$campaign->name}",
                     userId: (int) $data->user->getKey(),
@@ -135,8 +164,69 @@ final readonly class CreateCampaignAction
                 $workspace->update(['onboarded_at' => now()]);
             }
 
-            return $campaign->load('consultationQuotas');
+            return $campaign->load(['consultationQuotas', 'booths']);
         }, 3);
+    }
+
+    private function displayEnrollmentCode(CreateCampaignData $data, int $workspaceId): string
+    {
+        $prefix = Str::of($data->details->locations)
+            ->before(',')
+            ->slug('-')
+            ->upper()
+            ->limit(18, '')
+            ->toString();
+        $year = CarbonImmutable::parse($data->details->endDate)->format('Y');
+
+        return "{$prefix}-{$year}-{$workspaceId}-".Str::upper(Str::random(4));
+    }
+
+    private function createBooths(
+        Campaign $campaign,
+        Workspace $workspace,
+        CreateCampaignData $data,
+        Money $setupFee,
+        Money $monthlyFee,
+        string $setupReference,
+    ): void {
+        foreach (range(1, (int) $data->booth->count) as $position) {
+            $name = (string) $data->booth->site;
+
+            if ((int) $data->booth->count > 1) {
+                $name .= " {$position}";
+            }
+
+            $booth = CampaignBooth::query()->create([
+                'public_id' => (string) Str::ulid(),
+                'campaign_id' => $campaign->getKey(),
+                'workspace_id' => $workspace->getKey(),
+                'name' => $name,
+                'site' => $data->booth->site,
+                'community' => Str::of($data->details->locations)->before(',')->trim()->toString(),
+                'expected_beneficiaries' => $data->enrollment->estimatedBeneficiaries,
+                'contact_name' => $data->booth->contactName,
+                'contact_phone' => $data->booth->contactPhone,
+                'preferred_deployment_date' => $data->booth->preferredDeploymentDate,
+                'setup_fee' => $setupFee->toMajorAmount(),
+                'monthly_fee' => $monthlyFee->toMajorAmount(),
+                'currency' => $campaign->currency,
+                'status' => CampaignBoothStatus::Requested,
+                'setup_reference' => $setupReference,
+                'setup_paid_at' => now(),
+            ]);
+
+            CampaignRecurringCost::query()->create([
+                'campaign_id' => $campaign->getKey(),
+                'workspace_id' => $workspace->getKey(),
+                'campaign_booth_id' => $booth->getKey(),
+                'name' => 'Booth management & service',
+                'category' => CampaignRecurringCostCategory::BoothService,
+                'monthly_amount' => $monthlyFee->toMajorAmount(),
+                'currency' => $campaign->currency,
+                'starts_on' => $data->booth->preferredDeploymentDate,
+                'is_active' => false,
+            ]);
+        }
     }
 
     private function createQuota(

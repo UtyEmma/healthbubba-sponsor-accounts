@@ -2,6 +2,7 @@
 
 namespace App\Actions\Campaigns;
 
+use App\Enums\CampaignBoothStatus;
 use App\Models\Campaign;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -20,6 +21,20 @@ final class ActivateCampaignBoothAction
             $campaign->update([
                 'booth_activated_at' => $campaign->booth_activated_at ?? now(),
                 'booth_deactivated_at' => null,
+            ]);
+            $now = now();
+            $campaign->booths()->where('status', CampaignBoothStatus::Requested)->update([
+                'status' => CampaignBoothStatus::Active,
+                'activated_at' => $now,
+                'deactivated_at' => null,
+                'updated_at' => $now,
+            ]);
+            $campaign->recurringCosts()->whereNotNull('campaign_booth_id')->update([
+                'is_active' => true,
+                'starts_on' => today()->toDateString(),
+                'ends_on' => null,
+                'deactivated_at' => null,
+                'updated_at' => $now,
             ]);
 
             return $campaign->refresh();

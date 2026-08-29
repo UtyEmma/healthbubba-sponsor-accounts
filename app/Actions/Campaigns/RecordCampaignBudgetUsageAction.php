@@ -3,14 +3,19 @@
 namespace App\Actions\Campaigns;
 
 use App\Enums\CampaignBudgetCategory;
+use App\Enums\CampaignUsageBenefit;
+use App\Enums\CampaignUsageSource;
 use App\Models\Campaign;
-use App\Models\CampaignBudgetUsage;
+use App\Models\CampaignUsageEntry;
+use App\Support\Payments\PaymentReferenceGenerator;
 use App\ValueObjects\Money;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
-final class RecordCampaignBudgetUsageAction
+final readonly class RecordCampaignBudgetUsageAction
 {
+    public function __construct(private PaymentReferenceGenerator $references) {}
+
     /** @param array<string, mixed> $meta */
     public function execute(
         Campaign $campaign,
@@ -18,9 +23,16 @@ final class RecordCampaignBudgetUsageAction
         Money $amount,
         string $reference,
         array $meta = [],
-    ): CampaignBudgetUsage {
-        return DB::transaction(function () use ($campaign, $category, $amount, $reference, $meta): CampaignBudgetUsage {
+    ): CampaignUsageEntry {
+        return DB::transaction(function () use ($campaign, $category, $amount, $reference, $meta): CampaignUsageEntry {
             $campaign = Campaign::query()->whereKey($campaign->getKey())->lockForUpdate()->firstOrFail();
+            $existing = CampaignUsageEntry::query()
+                ->where('source_reference', $reference)
+                ->first();
+
+            if ($existing instanceof CampaignUsageEntry) {
+                return $existing;
+            }
 
             if (! $campaign->isActive()) {
                 throw ValidationException::withMessages(['campaign' => 'This campaign is not active.']);
@@ -33,7 +45,7 @@ final class RecordCampaignBudgetUsageAction
                 $campaign->currency,
             );
             $used = Money::fromMajor(
-                (string) $campaign->budgetUsages()->where('category', $category)->sum('amount'),
+                (string) $campaign->usageEntries()->where('benefit', $category->value)->sum('total_amount'),
                 $campaign->currency,
             );
 
@@ -42,12 +54,14 @@ final class RecordCampaignBudgetUsageAction
                 throw ValidationException::withMessages(['amount' => 'This expense exceeds the remaining campaign budget.']);
             }
 
-            return $campaign->budgetUsages()->create([
+            return $campaign->usageEntries()->create([
                 'workspace_id' => $campaign->workspace_id,
-                'category' => $category,
-                'amount' => $amount->toMajorAmount(),
+                'benefit' => CampaignUsageBenefit::from($category->value),
+                'total_amount' => $amount->toMajorAmount(),
                 'currency' => $amount->currency,
-                'reference' => $reference,
+                'source' => CampaignUsageSource::Provider,
+                'source_reference' => $reference,
+                'reference' => $this->references->generateCampaignUsage(),
                 'occurred_at' => now(),
                 'meta' => $meta,
             ]);

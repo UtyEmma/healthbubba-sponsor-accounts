@@ -5,19 +5,17 @@ namespace App\Http\Controllers;
 use App\DTOs\Campaigns\CampaignCreationConfigurationData;
 use App\Http\Requests\InstitutionalCampaigns\IndexInstitutionalCampaignRequest;
 use App\Http\Requests\InstitutionalCampaigns\ShowInstitutionalCampaignRequest;
-use App\Http\Resources\CampaignBeneficiaryCapacityResource;
-use App\Http\Resources\CampaignConsultationSummaryResource;
 use App\Http\Resources\CampaignCreationConfigurationResource;
+use App\Http\Resources\CampaignDetailResource;
 use App\Http\Resources\CampaignIndexSummaryResource;
 use App\Http\Resources\CampaignResource;
 use App\Http\Resources\ConsultationResource;
 use App\Http\Resources\WorkspaceBeneficiaryResource;
 use App\Http\Resources\WorkspaceResource;
 use App\Models\Campaign;
-use App\Queries\InstitutionalCampaigns\CampaignConsultationSummaryQuery;
+use App\Queries\InstitutionalCampaigns\CampaignDetailQuery;
 use App\Queries\InstitutionalCampaigns\CampaignIndexSummaryQuery;
 use App\Queries\InstitutionalCampaigns\WorkspaceCampaignQuery;
-use App\Services\WorkspaceBeneficiaries\CampaignBeneficiaryCapacityService;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -25,9 +23,8 @@ final readonly class CampaignController
 {
     public function __construct(
         private WorkspaceCampaignQuery $campaigns,
-        private CampaignBeneficiaryCapacityService $capacity,
-        private CampaignConsultationSummaryQuery $consultationSummary,
         private CampaignIndexSummaryQuery $indexSummary,
+        private CampaignDetailQuery $detail,
     ) {}
 
     public function index(IndexInstitutionalCampaignRequest $request): Response
@@ -62,19 +59,18 @@ final readonly class CampaignController
     ): Response {
         $workspace = $request->workspace();
         $campaign = $this->campaigns->prepareForDisplay($campaign);
-        $consultationSummary = $this->consultationSummary->get($campaign, $workspace);
 
         return Inertia::render('campaigns/show', [
             'organization' => new WorkspaceResource($workspace),
             'campaign' => new CampaignResource($campaign),
+            'detail' => new CampaignDetailResource(
+                $this->detail->get($campaign, $workspace),
+            ),
             'beneficiaries' => WorkspaceBeneficiaryResource::collection(
-                $this->campaigns->paginateBeneficiaries($campaign),
-            ),
-            'capacity' => new CampaignBeneficiaryCapacityResource(
-                $this->capacity->summary($campaign),
-            ),
-            'campaignConsultation' => new CampaignConsultationSummaryResource(
-                $consultationSummary,
+                $this->campaigns->paginateBeneficiaries(
+                    $campaign,
+                    $request->string('search')->trim()->value() ?: null,
+                ),
             ),
             'importResult' => $request->session()->get('import_result'),
             'consultations' => ConsultationResource::collection(

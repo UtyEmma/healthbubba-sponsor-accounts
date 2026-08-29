@@ -15,5 +15,8 @@ final readonly class StartWalletFundingData
         public Money $amount,
         public string $callbackUrl,
         public ?PaymentGatewayName $gateway = null,
+        /** @var list<string>|null */
+        public ?array $channels = null,
+        public ?string $fundingMethod = null,
     ) {}
 }

@@ -201,13 +201,13 @@ function SummaryCards({ summary }: { summary: CampaignIndexSummary }) {
                                 <Icon className="size-5" />
                             </span>
                             <div className="min-w-0">
-                                <div className="text-[11px] text-muted-foreground">
+                                <div className="text-sm text-muted-foreground">
                                     {card.label}
                                 </div>
                                 <div className="mt-0.5 truncate text-xl font-semibold">
                                     {card.value}
                                 </div>
-                                <div className="mt-0.5 truncate text-[10px] text-subtle">
+                                <div className="mt-0.5 truncate text-xs text-subtle">
                                     {card.note}
                                 </div>
                             </div>

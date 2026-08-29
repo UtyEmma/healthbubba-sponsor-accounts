@@ -25,6 +25,6 @@ final readonly class StoreCampaignBeneficiaryController
         );
 
         return to_route('campaigns.show', $campaign)
-            ->with('success', 'Beneficiary invitation sent successfully.');
+            ->with('success', 'Beneficiary enrolled successfully.');
     }
 }

@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\Campaigns\Tables;
 
 use App\Enums\AccountTypes;
+use App\Filament\Resources\Campaigns\Actions\CampaignAdminActions;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
@@ -104,6 +106,13 @@ class CampaignsTable
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
+                ActionGroup::make([
+                    CampaignAdminActions::pause(),
+                    CampaignAdminActions::resume(),
+                    CampaignAdminActions::runMonthlyDeductions(),
+                    CampaignAdminActions::deactivateBooths(),
+                    CampaignAdminActions::end(),
+                ])->label('Campaign actions'),
             ]);
     }
 }

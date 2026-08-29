@@ -11,7 +11,19 @@ final class DeactivateCampaignBoothAction
     {
         return DB::transaction(function () use ($campaign): Campaign {
             $campaign = Campaign::query()->whereKey($campaign->getKey())->lockForUpdate()->firstOrFail();
-            $campaign->update(['booth_deactivated_at' => now()]);
+            $now = now();
+            $campaign->update(['booth_deactivated_at' => $now]);
+            $campaign->booths()->whereNull('deactivated_at')->update([
+                'status' => 'inactive',
+                'deactivated_at' => $now,
+                'updated_at' => $now,
+            ]);
+            $campaign->recurringCosts()->whereNotNull('campaign_booth_id')->where('is_active', true)->update([
+                'is_active' => false,
+                'ends_on' => today()->toDateString(),
+                'deactivated_at' => $now,
+                'updated_at' => $now,
+            ]);
 
             return $campaign->refresh();
         });

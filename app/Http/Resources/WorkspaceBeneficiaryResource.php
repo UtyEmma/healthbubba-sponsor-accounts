@@ -25,6 +25,7 @@ final class WorkspaceBeneficiaryResource extends JsonResource
             'name' => trim("{$this->first_name} {$this->last_name}"),
             'email' => $this->email,
             'phone' => $this->phone,
+            'community' => $this->community,
             'department' => $this->department,
             'employeeId' => $this->employee_id,
             'status' => $this->status->value,

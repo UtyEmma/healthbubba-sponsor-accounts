@@ -48,6 +48,7 @@ final readonly class StartWalletFundingAction
                 'email' => $data->user->email,
                 'workspace_id' => $data->workspace->getKey(),
                 'purpose' => PaymentPurpose::WALLET_TOP_UP->value,
+                'funding_method' => $data->fundingMethod,
             ],
         ]);
 
@@ -66,6 +67,7 @@ final readonly class StartWalletFundingAction
                     reference: $payment->reference,
                     callbackUrl: $data->callbackUrl,
                     metadata: $metadata,
+                    channels: $data->channels,
                 ),
                 $gateway,
             );

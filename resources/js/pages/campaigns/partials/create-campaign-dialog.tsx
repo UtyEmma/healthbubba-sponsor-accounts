@@ -146,7 +146,7 @@ export function CreateCampaignDialog({
             <DialogContent
                 showCloseButton={false}
                 overlayClassName="bg-black/50"
-                className="max-h-[calc(100dvh-2rem)] w-[672px] max-w-[calc(100%-2rem)] overflow-y-auto rounded-xl bg-white shadow-2xl ring-1 ring-black/10 sm:max-w-[672px]"
+                className="max-h-[calc(100dvh-2rem)] max-w-[calc(100%-4rem)] overflow-y-auto rounded-xl bg-white shadow-2xl ring-1 ring-black/10 sm:max-w-4xl"
             >
                 <DialogHeader className="gap-1 border-0 px-5 pt-5 pb-0 sm:px-6 sm:pt-6">
                     <DialogTitle className="text-xl leading-6 font-semibold text-foreground">
@@ -251,7 +251,7 @@ function WizardProgress({ step }: { step: number }) {
                         />
                         <div
                             className={cn(
-                                'mt-2 truncate text-[11px] text-muted-foreground',
+                                'mt-2 truncate text-sm text-muted-foreground',
                                 position === step && 'text-foreground',
                             )}
                         >
@@ -672,7 +672,7 @@ function SummaryStep({
         <div className="space-y-3">
             <div className="rounded-lg border px-4 py-3">
                 <h3 className="font-semibold">{data.name}</h3>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="mt-1 text-sm text-muted-foreground">
                     {data.locations} · {data.estimated_beneficiaries} estimated
                     beneficiaries ·{' '}
                     {data.enrollment_method === 'upload'

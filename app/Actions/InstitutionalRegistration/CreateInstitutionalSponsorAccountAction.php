@@ -37,6 +37,12 @@ final readonly class CreateInstitutionalSponsorAccountAction
                 'official_phone' => $data->officialPhone,
             ]);
 
+            $startsOn = now()->startOfDay();
+            $workspace->fundingProgram()->create([
+                'name' => 'Community Health Program '.$startsOn->year,
+                'starts_on' => $startsOn->toDateString(),
+                'ends_on' => $startsOn->copy()->addYearNoOverflow()->toDateString(),
+            ]);
             $workspace->members()->create([
                 'public_id' => (string) Str::ulid(),
                 'user_id' => $user->getKey(),

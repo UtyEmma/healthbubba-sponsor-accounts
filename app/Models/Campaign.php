@@ -4,12 +4,17 @@ namespace App\Models;
 
 use App\Enums\CampaignEnrollmentMethod;
 use App\Enums\CampaignStatus;
+use App\Enums\InstitutionalCoverageExpiry;
+use App\Enums\InstitutionalCoverageType;
+use App\Enums\InstitutionalPaymentPreference;
 use App\Enums\WorkspaceBeneficiaries\WorkspaceBeneficiaryStatus;
+use App\Models\Consultations\Consultation;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -35,8 +40,15 @@ use Illuminate\Support\Str;
  * @property string $medication_budget
  * @property string $laboratory_budget
  * @property string|null $allocation_reference
+ * @property string|null $display_enrollment_code
  * @property string $returned_amount
  * @property CampaignStatus $status
+ * @property InstitutionalCoverageType|null $coverage_type_override
+ * @property int|null $gp_limit_per_beneficiary_override
+ * @property int|null $specialist_limit_per_beneficiary_override
+ * @property int|null $daily_consultation_limit_override
+ * @property InstitutionalCoverageExpiry|null $coverage_expiry_override
+ * @property InstitutionalPaymentPreference|null $payment_preference_override
  * @property int|null $booth_count
  * @property Carbon|null $booth_preferred_deployment_date
  * @property string|null $booth_site
@@ -59,6 +71,9 @@ use Illuminate\Support\Str;
  * @property-read Collection<int, CampaignConsultationQuota> $consultationQuotas
  * @property-read Collection<int, CampaignBudgetUsage> $budgetUsages
  * @property-read Collection<int, CampaignBoothCharge> $boothCharges
+ * @property-read Collection<int, Consultation> $consultations
+ * @property int $active_booths_count
+ * @property int $active_recurring_costs_count
  */
 final class Campaign extends Model
 {
@@ -93,6 +108,7 @@ final class Campaign extends Model
         'medication_budget',
         'laboratory_budget',
         'allocation_reference',
+        'display_enrollment_code',
         'returned_amount',
         'launched_at',
         'paused_at',
@@ -110,6 +126,12 @@ final class Campaign extends Model
         'start_date',
         'end_date',
         'status',
+        'coverage_type_override',
+        'gp_limit_per_beneficiary_override',
+        'specialist_limit_per_beneficiary_override',
+        'daily_consultation_limit_override',
+        'coverage_expiry_override',
+        'payment_preference_override',
     ];
 
     /** @return BelongsTo<Workspace, $this> */
@@ -149,6 +171,52 @@ final class Campaign extends Model
     public function boothCharges(): HasMany
     {
         return $this->hasMany(CampaignBoothCharge::class);
+    }
+
+    /** @return HasMany<CampaignUsageEntry, $this> */
+    public function usageEntries(): HasMany
+    {
+        return $this->hasMany(CampaignUsageEntry::class);
+    }
+
+    /** @return HasMany<CampaignBooth, $this> */
+    public function booths(): HasMany
+    {
+        return $this->hasMany(CampaignBooth::class);
+    }
+
+    /** @return HasMany<CampaignRecurringCost, $this> */
+    public function recurringCosts(): HasMany
+    {
+        return $this->hasMany(CampaignRecurringCost::class);
+    }
+
+    /** @return HasMany<CampaignBeneficiaryImport, $this> */
+    public function beneficiaryImports(): HasMany
+    {
+        return $this->hasMany(CampaignBeneficiaryImport::class);
+    }
+
+    /** @return HasMany<CampaignEnrollmentCode, $this> */
+    public function enrollmentCodes(): HasMany
+    {
+        return $this->hasMany(CampaignEnrollmentCode::class);
+    }
+
+    /** @return HasManyThrough<Consultation, WorkspaceBeneficiary, $this> */
+    public function consultations(): HasManyThrough
+    {
+        $workspaceBeneficiary = new WorkspaceBeneficiary;
+
+        return $this->hasManyThrough(
+            Consultation::class,
+            WorkspaceBeneficiary::class,
+            'relatable_id',
+            'workspace_beneficiary_id',
+        )->where(
+            $workspaceBeneficiary->qualifyColumn('relatable_type'),
+            $this->getMorphClass(),
+        );
     }
 
     public function getRouteKeyName(): string
@@ -191,6 +259,12 @@ final class Campaign extends Model
             'estimated_beneficiaries' => 'integer',
             'enrollment_method' => CampaignEnrollmentMethod::class,
             'status' => CampaignStatus::class,
+            'coverage_type_override' => InstitutionalCoverageType::class,
+            'gp_limit_per_beneficiary_override' => 'integer',
+            'specialist_limit_per_beneficiary_override' => 'integer',
+            'daily_consultation_limit_override' => 'integer',
+            'coverage_expiry_override' => InstitutionalCoverageExpiry::class,
+            'payment_preference_override' => InstitutionalPaymentPreference::class,
             'gp_fee' => 'decimal:2',
             'specialist_fee' => 'decimal:2',
             'medication_budget' => 'decimal:2',

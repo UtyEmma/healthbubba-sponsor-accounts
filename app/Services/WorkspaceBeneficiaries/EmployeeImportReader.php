@@ -23,14 +23,17 @@ final class EmployeeImportReader
         'phone',
     ];
 
-    public function read(UploadedFile $file, bool $requiresEmployeeFields = true): ParsedEmployeeImport
-    {
+    public function read(
+        UploadedFile $file,
+        bool $requiresEmployeeFields = true,
+        bool $requiresCommunity = false,
+    ): ParsedEmployeeImport {
         $reader = $this->readerFor($file);
 
         try {
             $reader->open($file->getRealPath());
 
-            return $this->readFirstSheet($reader, $requiresEmployeeFields);
+            return $this->readFirstSheet($reader, $requiresEmployeeFields, $requiresCommunity);
         } catch (ValidationException $exception) {
             throw $exception;
         } catch (Throwable) {
@@ -42,9 +45,34 @@ final class EmployeeImportReader
         }
     }
 
+    public function readPasted(
+        string $rows,
+        bool $requiresEmployeeFields = true,
+        bool $requiresCommunity = false,
+    ): ParsedEmployeeImport {
+        $path = tempnam(sys_get_temp_dir(), 'campaign-import-');
+
+        if ($path === false) {
+            throw ValidationException::withMessages(['rows' => 'The pasted rows could not be prepared for import.']);
+        }
+
+        try {
+            file_put_contents($path, $rows);
+
+            return $this->read(
+                new UploadedFile($path, 'pasted.csv', 'text/csv', null, true),
+                $requiresEmployeeFields,
+                $requiresCommunity,
+            );
+        } finally {
+            @unlink($path);
+        }
+    }
+
     private function readFirstSheet(
         CsvReader|XlsxReader $reader,
         bool $requiresEmployeeFields,
+        bool $requiresCommunity,
     ): ParsedEmployeeImport {
         foreach ($reader->getSheetIterator() as $sheet) {
             $headers = null;
@@ -63,12 +91,20 @@ final class EmployeeImportReader
                     }
 
                     $headers = array_map(
-                        static fn (string $header): string => Str::snake(mb_strtolower(trim($header))),
+                        static fn (string $header): string => match (Str::snake(mb_strtolower(trim($header)))) {
+                            'firstname' => 'first_name',
+                            'lastname' => 'last_name',
+                            default => Str::snake(mb_strtolower(trim($header))),
+                        },
                         $values,
                     );
                     $requiredHeaders = $requiresEmployeeFields
                         ? [...self::REQUIRED_HEADERS, 'department']
                         : self::REQUIRED_HEADERS;
+
+                    if ($requiresCommunity) {
+                        $requiredHeaders[] = 'community';
+                    }
                     $missing = array_values(array_diff($requiredHeaders, $headers));
 
                     if ($missing !== []) {
@@ -101,6 +137,9 @@ final class EmployeeImportReader
                         ? ['required', 'string', 'max:120']
                         : ['nullable', 'string', 'max:120'],
                     'employee_id' => ['nullable', 'string', 'max:32', 'regex:/^[A-Za-z0-9_-]+$/'],
+                    'community' => $requiresCommunity
+                        ? ['required', 'string', 'max:255']
+                        : ['nullable', 'string', 'max:255'],
                 ]);
 
                 $rowErrors = array_values($validator->errors()->all());
@@ -114,7 +153,12 @@ final class EmployeeImportReader
                 }
 
                 if ($rowErrors !== []) {
-                    $errors[] = new ImportRowError($rowNumber, $rowErrors);
+                    $errors[] = new ImportRowError(
+                        row: $rowNumber,
+                        errors: $rowErrors,
+                        identifier: (string) ($data['email'] ?: $data['phone'] ?? ''),
+                        code: str_contains(mb_strtolower(implode(' ', $rowErrors)), 'email') ? 'BAD_EMAIL' : 'INVALID_ROW',
+                    );
 
                     continue;
                 }

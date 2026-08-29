@@ -55,7 +55,9 @@ final class PaymentCallbackController extends Controller
     private function destination(Payment $payment): string
     {
         if ($payment->purpose === PaymentPurpose::WALLET_TOP_UP) {
-            return 'wallet.index';
+            return $payment->workspace->type === AccountTypes::INSTITUTION
+                ? 'funding.index'
+                : 'wallet.index';
         }
 
         return $payment->workspace->type === AccountTypes::BUSINESS

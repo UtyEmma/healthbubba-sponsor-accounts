@@ -2,11 +2,17 @@
 
 namespace App\Http\Requests\Payments;
 
+use App\Enums\AccountTypes;
 use App\Enums\Payments\PaymentGatewayName;
 use Illuminate\Validation\Rule;
 
 final class StoreWalletPaymentRequest extends AuthorizedWorkspacePaymentRequest
 {
+    public function authorize(): bool
+    {
+        return parent::authorize() && $this->workspace()->type !== AccountTypes::INSTITUTION;
+    }
+
     /** @return array<string, list<mixed>> */
     public function rules(): array
     {

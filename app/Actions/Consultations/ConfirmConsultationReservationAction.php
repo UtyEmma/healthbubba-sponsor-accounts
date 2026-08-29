@@ -3,14 +3,23 @@
 namespace App\Actions\Consultations;
 
 use App\Enums\Appointments\AppointmentStatus;
+use App\Enums\CampaignUsageBenefit;
+use App\Enums\CampaignUsageSource;
 use App\Enums\Consultations\ConsultationReservationStatus;
+use App\Models\Campaign;
+use App\Models\CampaignUsageEntry;
 use App\Models\Consultations\Appointment;
 use App\Models\Consultations\Consultation;
+use App\Models\WorkspaceBeneficiary;
+use App\Support\Payments\PaymentReferenceGenerator;
+use App\ValueObjects\Money;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 final class ConfirmConsultationReservationAction
 {
+    public function __construct(private readonly PaymentReferenceGenerator $references) {}
+
     public function execute(Consultation $reservation, int $appointmentId): Consultation
     {
         $appointment = Appointment::query()
@@ -97,8 +106,51 @@ final class ConfirmConsultationReservationAction
                 ]);
             }
 
+            $this->recordCampaignUsage($locked);
+
             return $locked->refresh();
         });
+    }
+
+    private function recordCampaignUsage(Consultation $consultation): void
+    {
+        $membership = WorkspaceBeneficiary::query()->find($consultation->workspace_beneficiary_id);
+
+        if (! $membership instanceof WorkspaceBeneficiary
+            || $membership->relatable_type !== (new Campaign)->getMorphClass()) {
+            return;
+        }
+
+        $campaign = Campaign::query()->find($membership->relatable_id);
+
+        if (! $campaign instanceof Campaign) {
+            return;
+        }
+
+        $benefit = CampaignUsageBenefit::from($consultation->consultation_type->value);
+        $fee = Money::fromMajor(
+            $benefit === CampaignUsageBenefit::GeneralPractitioner
+                ? ($campaign->gp_fee ?? '0.00')
+                : ($campaign->specialist_fee ?? '0.00'),
+            $campaign->currency,
+        );
+
+        CampaignUsageEntry::query()->firstOrCreate(
+            ['source_reference' => "consultation:{$consultation->getKey()}"],
+            [
+                'campaign_id' => $campaign->getKey(),
+                'workspace_id' => $campaign->workspace_id,
+                'workspace_beneficiary_id' => $membership->getKey(),
+                'benefit' => $benefit,
+                'quantity' => 1,
+                'unit_amount' => $fee->toMajorAmount(),
+                'total_amount' => $fee->toMajorAmount(),
+                'currency' => $fee->currency,
+                'source' => CampaignUsageSource::Provider,
+                'reference' => $this->references->generateCampaignUsage(),
+                'occurred_at' => now(),
+            ],
+        );
     }
 
     private function validateAppointment(Consultation $reservation, Appointment $appointment): void

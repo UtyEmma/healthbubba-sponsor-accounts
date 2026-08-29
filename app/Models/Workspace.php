@@ -40,6 +40,7 @@ use Revoltify\Subscriptionify\Models\Feature;
  * @property AllocationFallback|null $fallback_channel
  * @property-read EloquentCollection<int, Campaign> $campaigns
  * @property-read Campaign|null $latestCampaign
+ * @property-read InstitutionalFundingProgram|null $fundingProgram
  * @property-read EloquentCollection<int, Beneficiary> $patients
  */
 class Workspace extends Model implements Subscribable
@@ -122,6 +123,12 @@ class Workspace extends Model implements Subscribable
     public function latestCampaign(): HasOne
     {
         return $this->hasOne(Campaign::class)->latestOfMany();
+    }
+
+    /** @return HasOne<InstitutionalFundingProgram, $this> */
+    public function fundingProgram(): HasOne
+    {
+        return $this->hasOne(InstitutionalFundingProgram::class);
     }
 
     /** @return HasMany<MedicalAccessRequest, $this> */

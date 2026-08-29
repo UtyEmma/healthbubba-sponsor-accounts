@@ -4,13 +4,14 @@ namespace App\Actions\Campaigns;
 
 use App\Enums\CampaignStatus;
 use App\Models\Campaign;
+use App\Models\CampaignRecurringCost;
 
 final readonly class ProcessCampaignLifecycleAction
 {
     public function __construct(
         private EndCampaignAction $endCampaign,
         private ReconcileCampaignRefundAction $refund,
-        private BillCampaignBoothAction $billBooth,
+        private BillCampaignRecurringCostAction $billRecurringCost,
     ) {}
 
     public function execute(): int
@@ -35,12 +36,14 @@ final readonly class ProcessCampaignLifecycleAction
                 $this->refund->execute($campaign);
             });
 
-        Campaign::query()
-            ->whereNotNull('booth_activated_at')
-            ->whereNull('booth_deactivated_at')
-            ->whereNull('ended_at')
-            ->eachById(function (Campaign $campaign) use (&$processed): void {
-                if ($this->billBooth->execute($campaign)) {
+        CampaignRecurringCost::query()
+            ->where('is_active', true)
+            ->whereDate('starts_on', '<=', today())
+            ->where(function ($query): void {
+                $query->whereNull('ends_on')->orWhereDate('ends_on', '>=', today());
+            })
+            ->eachById(function (CampaignRecurringCost $cost) use (&$processed): void {
+                if ($this->billRecurringCost->execute($cost)) {
                     $processed++;
                 }
             });

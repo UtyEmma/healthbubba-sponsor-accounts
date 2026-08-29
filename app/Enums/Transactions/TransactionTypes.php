@@ -13,4 +13,5 @@ enum TransactionTypes: string
     case CAMPAIGN_REFUND = 'campaign_refund';
     case CAMPAIGN_BOOTH_SETUP = 'campaign_booth_setup';
     case CAMPAIGN_BOOTH_SERVICE = 'campaign_booth_service';
+    case CAMPAIGN_OPERATING_COST = 'campaign_operating_cost';
 }

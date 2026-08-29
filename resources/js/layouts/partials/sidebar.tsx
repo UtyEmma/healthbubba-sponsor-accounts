@@ -30,6 +30,7 @@ import beneficiaries from '@/routes/beneficiaries';
 import business from '@/routes/business';
 import campaigns from '@/routes/campaigns';
 import consultations from '@/routes/consultations';
+import funding from '@/routes/funding';
 import institutional, { notifications } from '@/routes/institutional';
 import medical_access from '@/routes/medical_access';
 import plans from '@/routes/plans';
@@ -58,7 +59,7 @@ function Navigation() {
                 {
                     label: 'Funding',
                     icon: WalletSidebarIcon,
-                    href: wallet.index(),
+                    href: funding.index(),
                 },
                 {
                     label: 'Campaigns',
@@ -68,21 +69,22 @@ function Navigation() {
                 {
                     label: 'Beneficiaries',
                     icon: BeneficiariesSidebarIcon,
+                    href: institutional.beneficiaries.index(),
                 },
                 {
                     label: 'Consultations',
                     icon: ConsultationsSidebarIcon,
-                    href: institutional.consultations(),
+                    href: institutional.consultations.index(),
                 },
                 {
                     label: 'Reports',
                     icon: BarChart3Icon,
-                    href: institutional.reports(),
+                    href: institutional.reports.index(),
                 },
                 {
                     label: 'Enrollment Codes',
                     icon: TicketIcon,
-                    href: institutional.enrollment_codes(),
+                    href: institutional.enrollment_codes.index(),
                 },
                 {
                     label: 'Referrals',

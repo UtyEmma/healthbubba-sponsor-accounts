@@ -58,6 +58,63 @@ export interface CampaignBooth {
     deactivatedAt: string | null;
 }
 
+export type CampaignDetailBoothStatus = 'requested' | 'active' | 'inactive';
+
+export interface CampaignDetailBooth {
+    id: string;
+    name: string;
+    site: string;
+    community: string;
+    expectedBeneficiaries: number | null;
+    contactName: string;
+    contactPhone: string;
+    preferredDeploymentDate: string;
+    setupFee: string;
+    monthlyFee: string;
+    currency: string;
+    status: CampaignDetailBoothStatus;
+    statusLabel: string;
+    setupPaidAt: string | null;
+    activatedAt: string | null;
+    deactivatedAt: string | null;
+    paidThrough: string | null;
+    nextDeduction: string | null;
+    paidPeriods: number;
+    enrolledOnSite?: number;
+}
+
+export interface CampaignLedgerEntry {
+    id: string;
+    date: string | null;
+    type: string;
+    label: string;
+    benefit: string;
+    beneficiary: string | null;
+    quantity: number | null;
+    amount: string;
+}
+
+export interface CampaignDetail {
+    capabilities: {
+        pause: boolean;
+        resume: boolean;
+        end: boolean;
+        allocate: boolean;
+        recordUsage: boolean;
+        enroll: boolean;
+        addBooths: boolean;
+    };
+    counts: {
+        enrollment: number;
+        booths: number;
+        usage: number;
+    };
+    configuration: CampaignCreationConfiguration;
+    enrollmentCode: string | null;
+    booths: CampaignDetailBooth[];
+    ledger: CampaignLedgerEntry[];
+}
+
 export type CampaignBeneficiaryCapacity = WorkspaceCapacity;
 
 export interface Campaign {
@@ -163,9 +220,8 @@ export interface InstitutionalCampaignIndexPageProps {
 export interface InstitutionalCampaignShowPageProps {
     organization: Workspace;
     campaign: Campaign;
+    detail: CampaignDetail;
     beneficiaries: PaginatedWorkspaceBeneficiaries;
-    capacity: CampaignBeneficiaryCapacity;
-    campaignConsultation: CampaignConsultationSummary;
     consultations: PaginatedConsultations;
     importResult: EmployeeImportResult | null;
 }

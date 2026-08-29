@@ -42,8 +42,7 @@ final readonly class ReconcileCampaignRefundAction
                 ->selectRaw('consultation_type, status, COUNT(*) AS aggregate')
                 ->groupBy('consultation_type', 'status')
                 ->get();
-            $spent = $this->consultationValue($campaign, $usageCounts, ConsultationReservationStatus::Confirmed)
-                ->add(Money::fromMajor((string) $campaign->budgetUsages()->sum('amount'), $campaign->currency));
+            $spent = Money::fromMajor((string) $campaign->usageEntries()->sum('total_amount'), $campaign->currency);
             $encumbered = $this->consultationValue($campaign, $usageCounts, ConsultationReservationStatus::Reserved);
             $refundableMinor = max(
                 0,

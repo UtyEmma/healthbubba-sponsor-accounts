@@ -38,4 +38,14 @@ final class PaymentReferenceGenerator
     {
         return 'BTH-'.Str::upper((string) Str::ulid());
     }
+
+    public function generateCampaignUsage(): string
+    {
+        return 'USG-'.Str::upper((string) Str::ulid());
+    }
+
+    public function generateRecurringCostCharge(): string
+    {
+        return 'RUN-'.Str::upper((string) Str::ulid());
+    }
 }

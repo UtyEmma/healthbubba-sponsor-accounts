@@ -9,17 +9,19 @@ use App\Enums\AccountTypes;
 use App\Enums\Consultations\ConsultationAllocationScope;
 use App\Enums\Consultations\ConsultationReservationStatus;
 use App\Enums\Consultations\ConsultationType;
+use App\Enums\InstitutionalCoverageType;
 use App\Enums\WorkspaceBeneficiaries\WorkspaceBeneficiaryStatus;
 use App\Models\Campaign;
 use App\Models\CampaignConsultationQuota;
 use App\Models\Consultations\Consultation;
 use App\Models\Doctor;
+use App\Models\InstitutionalFundingProgram;
 use App\Models\Subscription;
 use App\Models\Workspace;
 use App\Models\WorkspaceBeneficiary;
 use App\Services\Consultations\ConsultationCoverageService;
 use App\Services\Consultations\ConsultationTypeResolver;
-use Carbon\CarbonImmutable;
+use App\Services\Funding\InstitutionalCoverageRulesResolver;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -28,6 +30,7 @@ final readonly class ReserveConsultationAction
     public function __construct(
         private ConsultationCoverageService $coverage,
         private ConsultationTypeResolver $types,
+        private InstitutionalCoverageRulesResolver $institutionalRules,
     ) {}
 
     public function execute(ConsultationEligibilityData $data): ConsultationEligibilityResult
@@ -117,6 +120,15 @@ final readonly class ReserveConsultationAction
         ConsultationEligibilityData $data,
         ConsultationType $type,
     ): ConsultationEligibilityResult {
+        $program = InstitutionalFundingProgram::query()
+            ->whereBelongsTo($workspace)
+            ->lockForUpdate()
+            ->first();
+
+        if (! $program instanceof InstitutionalFundingProgram) {
+            return ConsultationEligibilityResult::unavailable('feature_unavailable', $type);
+        }
+
         $beneficiaries = WorkspaceBeneficiary::query()
             ->whereBelongsTo($workspace)
             ->where('relatable_type', (new Campaign)->getMorphClass())
@@ -144,6 +156,16 @@ final readonly class ReserveConsultationAction
             return ConsultationEligibilityResult::unavailable('patient_not_eligible', $type);
         }
 
+        $dailyUsage = Consultation::query()
+            ->whereBelongsTo($workspace)
+            ->where('beneficiary_id', $data->patientId)
+            ->whereIn('status', [
+                ConsultationReservationStatus::Reserved,
+                ConsultationReservationStatus::Confirmed,
+            ])
+            ->whereBetween('reserved_at', [now()->startOfDay(), now()->endOfDay()])
+            ->count();
+
         foreach ($beneficiaries as $workspaceBeneficiary) {
             $campaign = Campaign::query()
                 ->whereBelongsTo($workspace)
@@ -156,6 +178,12 @@ final readonly class ReserveConsultationAction
             }
 
             if (! $campaign->isActive()) {
+                continue;
+            }
+
+            $rules = $this->institutionalRules->resolve($campaign, $program);
+
+            if ($dailyUsage >= $rules->dailyConsultationLimit) {
                 continue;
             }
 
@@ -178,20 +206,39 @@ final readonly class ReserveConsultationAction
                 continue;
             }
 
+            if ($rules->coverageType === InstitutionalCoverageType::PerBeneficiary) {
+                $beneficiaryUsage = Consultation::query()
+                    ->whereBelongsTo($workspace)
+                    ->where('beneficiary_id', $data->patientId)
+                    ->whereIn('workspace_beneficiary_id', $campaign->beneficiaries()
+                        ->where('beneficiary_id', $data->patientId)
+                        ->select('id'))
+                    ->where('consultation_type', $type)
+                    ->whereIn('status', [
+                        ConsultationReservationStatus::Reserved,
+                        ConsultationReservationStatus::Confirmed,
+                    ])
+                    ->whereBetween('reserved_at', [$rules->periodStart, $rules->periodEnd])
+                    ->count();
+
+                if ($beneficiaryUsage >= $this->institutionalRules->beneficiaryLimit($rules, $type)) {
+                    continue;
+                }
+            }
+
             $allocation = new ConsultationAllocation(
                 subscriptionId: null,
                 planId: null,
                 planName: $campaign->name,
                 type: $type,
                 featureSlug: $this->campaignFeatureSlug($type),
-                scope: ConsultationAllocationScope::Shared,
+                scope: $rules->coverageType === InstitutionalCoverageType::SharedPool
+                    ? ConsultationAllocationScope::Shared
+                    : ConsultationAllocationScope::PerEmployee,
                 workspaceBeneficiaryId: (int) $workspaceBeneficiary->getKey(),
                 limit: $limit,
-                periodStart: $campaign->start_date?->toImmutable()->startOfDay()
-                    ?? $campaign->created_at?->toImmutable()->startOfDay()
-                    ?? CarbonImmutable::now()->startOfDay(),
-                periodEnd: $campaign->end_date?->toImmutable()->endOfDay()
-                    ?? CarbonImmutable::create(2037, 12, 31, 23, 59, 59),
+                periodStart: $rules->periodStart,
+                periodEnd: $rules->periodEnd,
             );
             $reservation = $this->createReservation(
                 $workspace,

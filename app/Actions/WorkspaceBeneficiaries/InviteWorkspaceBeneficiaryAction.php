@@ -7,6 +7,7 @@ use App\DTOs\Activity\WorkspaceActivityData;
 use App\DTOs\WorkspaceBeneficiaries\InviteWorkspaceBeneficiaryData;
 use App\Enums\AccountTypes;
 use App\Enums\Activity\WorkspaceActivityType;
+use App\Enums\CampaignStatus;
 use App\Enums\WorkspaceBeneficiaries\WorkspaceBeneficiaryStatus;
 use App\Models\Campaign;
 use App\Models\User;
@@ -41,9 +42,26 @@ final readonly class InviteWorkspaceBeneficiaryAction
         $beneficiaryId = $this->beneficiaries->idsByEmail([$data->email])->get($data->email);
 
         $invitation = DB::transaction(function () use ($workspace, $inviter, $data, $beneficiaryId, $relatable): WorkspaceBeneficiary {
+            Workspace::query()->whereKey($workspace->getKey())->lockForUpdate()->firstOrFail();
             $target = $this->lockTarget($workspace, $relatable);
 
             if ($target instanceof Campaign) {
+                if ($target->lifecycleStatus() === CampaignStatus::COMPLETED) {
+                    throw ValidationException::withMessages([
+                        'campaign' => 'Beneficiaries cannot be enrolled into an ended campaign.',
+                    ]);
+                }
+
+                $communities = collect(explode(',', (string) $target->location))
+                    ->map(static fn (string $community): string => mb_strtolower(trim($community)))
+                    ->filter();
+
+                if ($data->community === null || ! $communities->contains(mb_strtolower($data->community))) {
+                    throw ValidationException::withMessages([
+                        'community' => 'The community must be one of this campaign’s locations.',
+                    ]);
+                }
+
                 $this->campaignCapacity->expirePending($target);
                 $capacityExhausted = $target->beneficiary_limit !== null
                     && $this->campaignCapacity->used($target) >= $target->beneficiary_limit;
@@ -60,6 +78,23 @@ final readonly class InviteWorkspaceBeneficiaryAction
                 ->where('email', $data->email)
                 ->lockForUpdate()
                 ->first();
+
+            if ($target instanceof Campaign) {
+                $alreadyEnrolledElsewhere = WorkspaceBeneficiary::query()
+                    ->whereBelongsTo($workspace)
+                    ->where('relatable_type', $target->getMorphClass())
+                    ->where('relatable_id', '!=', $target->getKey())
+                    ->where('email', $data->email)
+                    ->consumingCapacity()
+                    ->lockForUpdate()
+                    ->exists();
+
+                if ($alreadyEnrolledElsewhere) {
+                    throw ValidationException::withMessages([
+                        'email' => 'This beneficiary is already enrolled in another campaign in this workspace.',
+                    ]);
+                }
+            }
 
             if (in_array($existing?->status, [
                 WorkspaceBeneficiaryStatus::Active,
@@ -108,14 +143,17 @@ final readonly class InviteWorkspaceBeneficiaryAction
                 'last_name' => $data->lastName,
                 'email' => $data->email,
                 'phone' => $data->phone,
+                'community' => $target instanceof Campaign ? ($data->community ?? $target->location) : null,
                 'department' => $workspace->type === AccountTypes::BUSINESS ? $data->department : null,
                 'employee_id' => $employeeId,
-                'status' => WorkspaceBeneficiaryStatus::Pending,
+                'status' => $target instanceof Campaign
+                    ? WorkspaceBeneficiaryStatus::Active
+                    : WorkspaceBeneficiaryStatus::Pending,
                 'source' => $data->source,
                 'invitation_version' => $existing === null ? 1 : $existing->invitation_version + 1,
                 'invited_at' => $now,
-                'expires_at' => $now->copy()->addDay(),
-                'accepted_at' => null,
+                'expires_at' => $target instanceof Campaign ? $now : $now->copy()->addDay(),
+                'accepted_at' => $target instanceof Campaign ? $now : null,
                 'declined_at' => null,
                 'cancelled_at' => null,
                 'suspended_at' => null,
@@ -136,7 +174,9 @@ final readonly class InviteWorkspaceBeneficiaryAction
             return $invitation;
         });
 
-        $this->sendInvitation->execute($invitation);
+        if (! $relatable instanceof Campaign) {
+            $this->sendInvitation->execute($invitation);
+        }
 
         return $invitation;
     }

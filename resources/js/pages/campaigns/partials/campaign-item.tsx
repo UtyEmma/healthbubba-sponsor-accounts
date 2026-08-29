@@ -114,7 +114,7 @@ export default function CampaignItem({ campaign }: { campaign: Campaign }) {
                     />
                 </div>
 
-                <div className="mt-4 grid gap-x-5 gap-y-3 border-t pt-4 lg:grid-cols-2">
+                <div className="mt-4 grid gap-5 border-t pt-4 lg:grid-cols-2">
                     {gp.units > 0 && (
                         <ConsultationProgress
                             label="GP consultations"
@@ -141,7 +141,7 @@ export default function CampaignItem({ campaign }: { campaign: Campaign }) {
                     )}
                 </div>
 
-                <p className="mt-4 text-xs text-subtle">
+                <p className="mt-4 text-sm text-subtle">
                     {financial.utilizationPercentage}% of allocation utilized
                     {remainingMessage && ` · ${remainingMessage} remaining`}
                 </p>
@@ -161,8 +161,8 @@ function FinancialCell({
 }) {
     return (
         <div className="rounded-xl border px-3 py-3">
-            <div className="text-[11px] text-muted-foreground">{label}</div>
-            <div className={cn('mt-1 text-sm font-semibold', valueClassName)}>
+            <div className="text-sm text-muted-foreground">{label}</div>
+            <div className={cn('mt-1 font-semibold', valueClassName)}>
                 {value}
             </div>
         </div>
@@ -218,9 +218,9 @@ function ProgressRow({
 }) {
     return (
         <div>
-            <div className="mb-2 flex items-center justify-between gap-4 text-xs">
-                <span>{label}</span>
-                <span className="text-muted-foreground">{value}</span>
+            <div className="mb-2 flex items-center justify-between gap-4 text-sm">
+                <span className='font-medium'>{label}</span>
+                <span className="text-muted-foreground ">{value}</span>
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                 <div

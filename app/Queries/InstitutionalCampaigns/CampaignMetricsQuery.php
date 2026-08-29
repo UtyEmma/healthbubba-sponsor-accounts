@@ -6,8 +6,8 @@ use App\Enums\CampaignBudgetCategory;
 use App\Enums\Consultations\ConsultationReservationStatus;
 use App\Enums\Consultations\ConsultationType;
 use App\Models\Campaign;
-use App\Models\CampaignBudgetUsage;
 use App\Models\CampaignConsultationQuota;
+use App\Models\CampaignUsageEntry;
 use App\Models\Consultations\Consultation;
 use App\ValueObjects\Money;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -30,10 +30,10 @@ final class CampaignMetricsQuery
             ->groupBy('campaign_id', 'consultation_type')
             ->get()
             ->groupBy('campaign_id');
-        $budgets = CampaignBudgetUsage::query()
+        $usages = CampaignUsageEntry::query()
             ->whereIn('campaign_id', $campaignIds)
-            ->selectRaw('campaign_id, category, SUM(amount) AS used')
-            ->groupBy('campaign_id', 'category')
+            ->selectRaw('campaign_id, benefit, SUM(COALESCE(quantity, 0)) AS units_used, SUM(total_amount) AS used')
+            ->groupBy('campaign_id', 'benefit')
             ->get()
             ->groupBy('campaign_id');
         $consultations = Consultation::query()
@@ -57,7 +57,7 @@ final class CampaignMetricsQuery
             $campaign->setAttribute('financial_metrics', $this->metrics(
                 campaign: $campaign,
                 quotas: $quotas->get($campaign->getKey(), collect()),
-                budgets: $budgets->get($campaign->getKey(), collect()),
+                usages: $usages->get($campaign->getKey(), collect()),
                 consultations: $consultations->get($campaign->getKey(), collect()),
             ));
         }
@@ -65,20 +65,20 @@ final class CampaignMetricsQuery
 
     /**
      * @param  Collection<int, CampaignConsultationQuota>  $quotas
-     * @param  Collection<int, CampaignBudgetUsage>  $budgets
+     * @param  Collection<int, CampaignUsageEntry>  $usages
      * @param  Collection<int, Consultation>  $consultations
      * @return array<string, mixed>
      */
     private function metrics(
         Campaign $campaign,
         Collection $quotas,
-        Collection $budgets,
+        Collection $usages,
         Collection $consultations,
     ): array {
-        $gp = $this->consultationMetrics($campaign, ConsultationType::GeneralPractitioner, $quotas, $consultations);
-        $specialist = $this->consultationMetrics($campaign, ConsultationType::Specialist, $quotas, $consultations);
-        $medication = $this->budgetMetrics($campaign, CampaignBudgetCategory::Medication, $budgets);
-        $laboratory = $this->budgetMetrics($campaign, CampaignBudgetCategory::Laboratory, $budgets);
+        $gp = $this->consultationMetrics($campaign, ConsultationType::GeneralPractitioner, $quotas, $usages, $consultations);
+        $specialist = $this->consultationMetrics($campaign, ConsultationType::Specialist, $quotas, $usages, $consultations);
+        $medication = $this->budgetMetrics($campaign, CampaignBudgetCategory::Medication, $usages);
+        $laboratory = $this->budgetMetrics($campaign, CampaignBudgetCategory::Laboratory, $usages);
         $allocatedMinor = $gp['allocated_minor'] + $specialist['allocated_minor']
             + $medication['allocated_minor'] + $laboratory['allocated_minor'];
         $utilizedMinor = $gp['utilized_minor'] + $specialist['utilized_minor']
@@ -128,6 +128,7 @@ final class CampaignMetricsQuery
 
     /**
      * @param  Collection<int, CampaignConsultationQuota>  $quotas
+     * @param  Collection<int, CampaignUsageEntry>  $usages
      * @param  Collection<int, Consultation>  $consultations
      * @return array{units: int, confirmed: int, reserved: int, remaining: int, unitFee: string, allocated: string, allocated_minor: int, utilized_minor: int}
      */
@@ -135,14 +136,15 @@ final class CampaignMetricsQuery
         Campaign $campaign,
         ConsultationType $type,
         Collection $quotas,
+        Collection $usages,
         Collection $consultations,
     ): array {
         $quota = $quotas->first(fn (CampaignConsultationQuota $row): bool => $row->consultation_type === $type);
         $units = (int) $quota?->getAttribute('units');
         $unitFee = Money::fromMajor((string) ($quota?->getAttribute('unit_fee') ?? '0.00'), $campaign->currency);
-        $confirmed = (int) $consultations
-            ->first(fn (Consultation $row): bool => $row->consultation_type === $type && $row->status === ConsultationReservationStatus::Confirmed)
-            ?->getAttribute('aggregate');
+        $confirmed = (int) $usages
+            ->first(fn (CampaignUsageEntry $row): bool => $row->benefit->value === $type->value)
+            ?->getAttribute('units_used');
         $reserved = (int) $consultations
             ->first(fn (Consultation $row): bool => $row->consultation_type === $type && $row->status === ConsultationReservationStatus::Reserved)
             ?->getAttribute('aggregate');
@@ -160,7 +162,7 @@ final class CampaignMetricsQuery
     }
 
     /**
-     * @param  Collection<int, CampaignBudgetUsage>  $budgets
+     * @param  Collection<int, CampaignUsageEntry>  $budgets
      * @return array{allocated: string, used: string, remaining: string, allocated_minor: int, used_minor: int}
      */
     private function budgetMetrics(
@@ -175,7 +177,7 @@ final class CampaignMetricsQuery
             $campaign->currency,
         );
         $used = Money::fromMajor(
-            (string) ($budgets->first(fn (CampaignBudgetUsage $row): bool => $row->category === $category)?->getAttribute('used') ?? '0.00'),
+            (string) ($budgets->first(fn (CampaignUsageEntry $row): bool => $row->benefit->value === $category->value)?->getAttribute('used') ?? '0.00'),
             $campaign->currency,
         );
 

@@ -47,10 +47,19 @@ final readonly class WorkspaceCampaignQuery
     }
 
     /** @return LengthAwarePaginator<int, WorkspaceBeneficiary> */
-    public function paginateBeneficiaries(Campaign $campaign): LengthAwarePaginator
+    public function paginateBeneficiaries(Campaign $campaign, ?string $search = null): LengthAwarePaginator
     {
         return $campaign->beneficiaries()
             ->with('relatable')
+            ->when($search !== null && $search !== '', static function (Builder $query) use ($search): void {
+                $query->where(function (Builder $query) use ($search): void {
+                    $query->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%")
+                        ->orWhere('community', 'like', "%{$search}%");
+                });
+            })
             ->latest('id')
             ->paginate(
                 perPage: 10,
