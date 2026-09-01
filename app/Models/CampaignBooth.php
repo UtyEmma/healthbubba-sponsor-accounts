@@ -28,6 +28,8 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $activated_at
  * @property Carbon|null $deactivated_at
  * @property Carbon|null $paid_through
+ * @property Carbon|null $billing_grace_ends_on
+ * @property Carbon|null $billing_suspended_at
  * @property Carbon|null $last_billed_at
  */
 final class CampaignBooth extends Model
@@ -38,7 +40,8 @@ final class CampaignBooth extends Model
         'expected_beneficiaries', 'contact_name', 'contact_phone',
         'preferred_deployment_date', 'setup_fee', 'monthly_fee', 'currency',
         'status', 'setup_reference', 'setup_paid_at', 'activated_at',
-        'deactivated_at', 'paid_through', 'last_billed_at',
+        'deactivated_at', 'paid_through', 'billing_grace_ends_on',
+        'billing_suspended_at', 'last_billed_at',
     ];
 
     protected $attributes = ['status' => CampaignBoothStatus::Requested->value, 'currency' => 'NGN'];
@@ -79,6 +82,8 @@ final class CampaignBooth extends Model
             'activated_at' => 'datetime',
             'deactivated_at' => 'datetime',
             'paid_through' => 'date',
+            'billing_grace_ends_on' => 'date',
+            'billing_suspended_at' => 'datetime',
             'last_billed_at' => 'datetime',
         ];
     }

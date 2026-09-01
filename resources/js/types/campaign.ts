@@ -58,7 +58,8 @@ export interface CampaignBooth {
     deactivatedAt: string | null;
 }
 
-export type CampaignDetailBoothStatus = 'requested' | 'active' | 'inactive';
+export type CampaignDetailBoothStatus =
+    'requested' | 'active' | 'grace_period' | 'suspended' | 'inactive';
 
 export interface CampaignDetailBooth {
     id: string;
@@ -79,6 +80,9 @@ export interface CampaignDetailBooth {
     deactivatedAt: string | null;
     paidThrough: string | null;
     nextDeduction: string | null;
+    billingGraceEndsOn: string | null;
+    billingSuspendedAt: string | null;
+    outstandingAmount: string | null;
     paidPeriods: number;
     enrolledOnSite?: number;
 }

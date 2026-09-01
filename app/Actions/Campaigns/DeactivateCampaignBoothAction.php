@@ -16,6 +16,7 @@ final class DeactivateCampaignBoothAction
             $campaign->booths()->whereNull('deactivated_at')->update([
                 'status' => 'inactive',
                 'deactivated_at' => $now,
+                'billing_grace_ends_on' => null,
                 'updated_at' => $now,
             ]);
             $campaign->recurringCosts()->whereNotNull('campaign_booth_id')->where('is_active', true)->update([

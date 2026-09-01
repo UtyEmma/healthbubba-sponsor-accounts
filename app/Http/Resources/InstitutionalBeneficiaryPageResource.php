@@ -11,8 +11,12 @@ final class InstitutionalBeneficiaryPageResource extends JsonResource
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
+        $beneficiaries = InstitutionalBeneficiaryResource::collection(
+            $this->resource['beneficiaries'],
+        )->response()->getData(true);
+
         return [
-            'beneficiaries' => InstitutionalBeneficiaryResource::collection($this->resource['beneficiaries']),
+            'beneficiaries' => $beneficiaries,
             'counts' => $this->resource['counts'],
             'campaigns' => $this->resource['campaigns']->map(static fn (Campaign $campaign): array => [
                 'name' => $campaign->name,

@@ -36,15 +36,15 @@ final class InstitutionalBeneficiaryQuery
                     ->select('id'));
             })
             ->when($status !== null, fn (Builder $query) => $query->whereRaw(<<<'SQL'
-CASE
-    WHEN status = 'pending' THEN 'invited'
-    WHEN status = 'suspended' THEN 'suspended'
-    WHEN status IN ('revoked', 'declined', 'cancelled', 'expired') THEN 'inactive'
-    WHEN status = 'active' AND source IN ('manual', 'import') AND beneficiary_id IS NULL THEN 'added'
-    WHEN status = 'active' AND (beneficiary_id IS NOT NULL OR source = 'enrollment_code') THEN 'registered'
-    ELSE 'active'
-END = ?
-SQL, [$status->value]))
+                CASE
+                    WHEN status = 'pending' THEN 'invited'
+                    WHEN status = 'suspended' THEN 'suspended'
+                    WHEN status IN ('revoked', 'declined', 'cancelled', 'expired') THEN 'inactive'
+                    WHEN status = 'active' AND source IN ('manual', 'import') AND beneficiary_id IS NULL THEN 'added'
+                    WHEN status = 'active' AND (beneficiary_id IS NOT NULL OR source = 'enrollment_code') THEN 'registered'
+                    ELSE 'active'
+                END = ?
+                SQL, [$status->value]))
             ->latest('id');
 
         $beneficiaries = $query->paginate(10)->withQueryString();

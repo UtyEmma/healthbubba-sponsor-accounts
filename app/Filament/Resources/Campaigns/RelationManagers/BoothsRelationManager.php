@@ -55,7 +55,11 @@ final class BoothsRelationManager extends RelationManager
                 Action::make('deactivate')
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->visible(static fn (CampaignBooth $record): bool => $record->status === CampaignBoothStatus::Active)
+                    ->visible(static fn (CampaignBooth $record): bool => in_array($record->status, [
+                        CampaignBoothStatus::Active,
+                        CampaignBoothStatus::GracePeriod,
+                        CampaignBoothStatus::Suspended,
+                    ], true))
                     ->action(static function (
                         CampaignBooth $record,
                         DeactivateCampaignBoothRecordAction $deactivate,
@@ -70,7 +74,11 @@ final class BoothsRelationManager extends RelationManager
                 Action::make('runMonthlyDeduction')
                     ->label('Run monthly deduction')
                     ->requiresConfirmation()
-                    ->visible(static fn (CampaignBooth $record): bool => $record->status === CampaignBoothStatus::Active)
+                    ->visible(static fn (CampaignBooth $record): bool => in_array($record->status, [
+                        CampaignBoothStatus::Active,
+                        CampaignBoothStatus::GracePeriod,
+                        CampaignBoothStatus::Suspended,
+                    ], true))
                     ->action(static function (
                         CampaignBooth $record,
                         RunCampaignBoothMonthlyDeductionAction $runDeduction,

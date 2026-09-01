@@ -69,7 +69,11 @@ final class CampaignAdminActions
                 $deactivate->execute($record);
                 $record->refresh()->loadCount([
                     'booths as active_booths_count' => static fn (Builder $query): Builder => $query
-                        ->where('status', CampaignBoothStatus::Active),
+                        ->whereIn('status', [
+                            CampaignBoothStatus::Active,
+                            CampaignBoothStatus::GracePeriod,
+                            CampaignBoothStatus::Suspended,
+                        ]),
                 ]);
 
                 Notification::make()

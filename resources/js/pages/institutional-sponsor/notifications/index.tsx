@@ -14,6 +14,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 import { institutionalNavigation } from '../partials/institutional-navigation';
+import { DashboardLayout } from '@/layouts/dashboard';
 
 const initialNotifications = [
     {
@@ -60,10 +61,7 @@ export default function InstitutionalNotificationsPage() {
     return (
         <>
             <Head title="Notifications" />
-            <BusinessPortalShell
-                navigation={institutionalNavigation}
-                navigationLabel="Institutional sponsor navigation"
-            >
+            <DashboardLayout >
                 <div className="mx-auto w-full max-w-6xl">
                     <PageHeader
                         title="Notifications"
@@ -134,7 +132,7 @@ export default function InstitutionalNotificationsPage() {
                         </CardContent>
                     </Card>
                 </div>
-            </BusinessPortalShell>
+            </DashboardLayout>
         </>
     );
 }

@@ -38,7 +38,12 @@ final readonly class ProcessCampaignLifecycleAction
 
         CampaignRecurringCost::query()
             ->where('is_active', true)
-            ->whereDate('starts_on', '<=', today())
+            ->where(function ($query): void {
+                $query->whereDate('next_charge_on', '<=', today())
+                    ->orWhere(function ($query): void {
+                        $query->whereNull('next_charge_on')->whereDate('starts_on', '<=', today());
+                    });
+            })
             ->where(function ($query): void {
                 $query->whereNull('ends_on')->orWhereDate('ends_on', '>=', today());
             })

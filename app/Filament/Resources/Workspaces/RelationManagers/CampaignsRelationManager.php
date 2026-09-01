@@ -37,7 +37,11 @@ class CampaignsRelationManager extends RelationManager
         return CampaignsTable::configure($table, includeWorkspace: false)
             ->modifyQueryUsing(static fn (Builder $query): Builder => $query->withCount([
                 'booths as active_booths_count' => static fn (Builder $query): Builder => $query
-                    ->where('status', CampaignBoothStatus::Active),
+                    ->whereIn('status', [
+                        CampaignBoothStatus::Active,
+                        CampaignBoothStatus::GracePeriod,
+                        CampaignBoothStatus::Suspended,
+                    ]),
                 'recurringCosts as active_recurring_costs_count' => static fn (Builder $query): Builder => $query
                     ->where('is_active', true),
             ]))

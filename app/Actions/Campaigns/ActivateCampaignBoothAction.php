@@ -27,11 +27,14 @@ final class ActivateCampaignBoothAction
                 'status' => CampaignBoothStatus::Active,
                 'activated_at' => $now,
                 'deactivated_at' => null,
+                'billing_grace_ends_on' => null,
+                'billing_suspended_at' => null,
                 'updated_at' => $now,
             ]);
             $campaign->recurringCosts()->whereNotNull('campaign_booth_id')->update([
                 'is_active' => true,
                 'starts_on' => today()->toDateString(),
+                'next_charge_on' => today()->toDateString(),
                 'ends_on' => null,
                 'deactivated_at' => null,
                 'updated_at' => $now,

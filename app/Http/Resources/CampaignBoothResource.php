@@ -21,8 +21,11 @@ final class CampaignBoothResource extends JsonResource
         $paidCharges = $serviceCost?->relationLoaded('charges') === true
             ? $serviceCost->charges->where('status', CampaignBoothChargeStatus::Paid)
             : collect();
-        $nextDeduction = $this->status->value === 'active' && $serviceCost?->starts_on !== null
-            ? $serviceCost->starts_on->copy()->addMonthsNoOverflow($paidCharges->count())
+        $pendingCharge = $serviceCost?->relationLoaded('charges') === true
+            ? $serviceCost->charges->firstWhere('status', CampaignBoothChargeStatus::Pending)
+            : null;
+        $nextDeduction = in_array($this->status->value, ['active', 'grace_period', 'suspended'], true)
+            ? $serviceCost?->next_charge_on
             : null;
 
         return [
@@ -44,6 +47,9 @@ final class CampaignBoothResource extends JsonResource
             'deactivatedAt' => $this->deactivated_at?->toISOString(),
             'paidThrough' => $this->paid_through?->toDateString(),
             'nextDeduction' => $nextDeduction?->toDateString(),
+            'billingGraceEndsOn' => $this->billing_grace_ends_on?->toDateString(),
+            'billingSuspendedAt' => $this->billing_suspended_at?->toISOString(),
+            'outstandingAmount' => $pendingCharge?->amount,
             'paidPeriods' => $paidCharges->count(),
             'enrolledOnSite' => $this->whenCounted('beneficiaries'),
         ];

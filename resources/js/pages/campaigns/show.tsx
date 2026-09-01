@@ -705,6 +705,9 @@ function BoothsTab({
     onAdd: () => void;
 }) {
     const active = detail.booths.filter((booth) => booth.status === 'active');
+    const operational = detail.booths.filter((booth) =>
+        ['active', 'grace_period'].includes(booth.status),
+    );
     const monthly = active.reduce(
         (total, booth) => total + Number(booth.monthlyFee),
         0,
@@ -720,7 +723,7 @@ function BoothsTab({
                 <MiniMetric
                     icon={Store}
                     label="Active booths"
-                    value={String(active.length)}
+                    value={String(operational.length)}
                     note={`${detail.booths.filter((booth) => booth.status === 'requested').length} awaiting deployment`}
                 />
                 <MiniMetric
@@ -846,9 +849,13 @@ function BoothCard({
                                 variant={
                                     booth.status === 'active'
                                         ? 'success'
-                                        : booth.status === 'requested'
+                                        : booth.status === 'grace_period'
                                           ? 'warning'
-                                          : 'secondary'
+                                          : booth.status === 'suspended'
+                                            ? 'destructive'
+                                            : booth.status === 'requested'
+                                              ? 'warning'
+                                              : 'secondary'
                                 }
                             >
                                 {booth.statusLabel}
@@ -898,17 +905,28 @@ function BoothCard({
                         value={`${booth.enrolledOnSite ?? 0} / ${booth.expectedBeneficiaries ?? '—'}`}
                     />
                 </div>
-                {canManage && booth.status === 'active' && (
-                    <div className="mt-4 flex flex-wrap gap-2 border-t pt-3">
-                        <Button variant="outline" onClick={bill}>
-                            <CreditCard className="size-4" />
-                            Run monthly deduction
-                        </Button>
-                        <Button variant="outline" onClick={deactivate}>
-                            <CircleSlash className="size-4" />
-                            Request deactivation
-                        </Button>
-                    </div>
+                {canManage &&
+                    ['active', 'grace_period', 'suspended'].includes(
+                        booth.status,
+                    ) && (
+                        <div className="mt-4 flex flex-wrap gap-2 border-t pt-3">
+                            <Button variant="outline" onClick={bill}>
+                                <CreditCard className="size-4" />
+                                Run monthly deduction
+                            </Button>
+                            <Button variant="outline" onClick={deactivate}>
+                                <CircleSlash className="size-4" />
+                                Request deactivation
+                            </Button>
+                        </div>
+                    )}
+                {booth.outstandingAmount && (
+                    <p className="mt-3 text-sm font-medium text-destructive">
+                        {money(booth.outstandingAmount)} outstanding
+                        {booth.billingGraceEndsOn
+                            ? ` · grace ends ${formatDate(booth.billingGraceEndsOn)}`
+                            : ''}
+                    </p>
                 )}
                 <p className="mt-3 text-xs text-subtle">
                     {booth.paidPeriods} monthly service fees charged to date.

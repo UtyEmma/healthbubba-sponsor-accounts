@@ -3,10 +3,12 @@
 namespace App\Actions\Campaigns;
 
 use App\Enums\CampaignBoothChargeStatus;
+use App\Enums\CampaignBoothStatus;
 use App\Enums\CampaignRecurringCostCategory;
 use App\Enums\Transactions\TransactionFlow;
 use App\Enums\Transactions\TransactionStatus;
 use App\Enums\Transactions\TransactionTypes;
+use App\Models\CampaignBooth;
 use App\Models\CampaignRecurringCost;
 use App\Models\CampaignRecurringCostCharge;
 use App\Models\Transaction;
@@ -25,15 +27,43 @@ final readonly class BillCampaignRecurringCostAction
         return DB::transaction(function () use ($cost): bool {
             $cost = CampaignRecurringCost::query()->whereKey($cost->getKey())->lockForUpdate()->firstOrFail();
             $campaign = $cost->campaign()->with('workspace')->lockForUpdate()->firstOrFail();
+            $booth = $cost->campaign_booth_id === null
+                ? null
+                : CampaignBooth::query()->whereKey($cost->campaign_booth_id)->lockForUpdate()->firstOrFail();
 
             if (! $cost->is_active || $campaign->ended_at !== null || $cost->deactivated_at !== null) {
                 return false;
             }
 
-            $paidCount = $cost->charges()->where('status', CampaignBoothChargeStatus::Paid)->count();
-            $pending = $cost->charges()->where('status', CampaignBoothChargeStatus::Pending)->oldest('service_period')->first();
+            $pending = $cost->charges()
+                ->where('status', CampaignBoothChargeStatus::Pending)
+                ->oldest('service_period')
+                ->lockForUpdate()
+                ->first();
+            $isSuspendedBooth = $booth?->status === CampaignBoothStatus::Suspended;
+
+            if ($isSuspendedBooth && ! $pending instanceof CampaignRecurringCostCharge) {
+                return false;
+            }
+
             $servicePeriod = $pending?->service_period?->toImmutable()
-                ?? $cost->starts_on->toImmutable()->addMonthsNoOverflow($paidCount);
+                ?? $cost->next_charge_on?->toImmutable()
+                ?? $cost->starts_on->toImmutable();
+
+            if (! $pending instanceof CampaignRecurringCostCharge) {
+                $paidPeriods = $cost->charges()
+                    ->where('status', CampaignBoothChargeStatus::Paid)
+                    ->pluck('service_period')
+                    ->map(static fn (mixed $period): string => CarbonImmutable::parse((string) $period)->toDateString());
+
+                while ($paidPeriods->contains($servicePeriod->toDateString())) {
+                    $servicePeriod = $servicePeriod->addMonthNoOverflow();
+                }
+
+                if ($cost->next_charge_on?->toDateString() !== $servicePeriod->toDateString()) {
+                    $cost->update(['next_charge_on' => $servicePeriod->toDateString()]);
+                }
+            }
 
             if ($servicePeriod->isAfter(CarbonImmutable::today())
                 || ($cost->ends_on !== null && $servicePeriod->isAfter($cost->ends_on))) {
@@ -60,16 +90,40 @@ final readonly class BillCampaignRecurringCostAction
             if ($balance->currency !== $amount->currency || $balance->amountInMinorUnits < $amount->amountInMinorUnits) {
                 $charge->update(['attempted_at' => now()]);
 
+                if ($booth instanceof CampaignBooth && $cost->category === CampaignRecurringCostCategory::BoothService) {
+                    $graceEndsOn = $servicePeriod->addDays((int) config('campaigns.booth_billing_grace_days', 7));
+                    $suspended = CarbonImmutable::today()->greaterThanOrEqualTo($graceEndsOn);
+                    $booth->update([
+                        'status' => $suspended ? CampaignBoothStatus::Suspended : CampaignBoothStatus::GracePeriod,
+                        'billing_grace_ends_on' => $graceEndsOn->toDateString(),
+                        'billing_suspended_at' => $suspended ? ($booth->billing_suspended_at ?? now()) : null,
+                    ]);
+                    $cost->update(['next_charge_on' => $servicePeriod->toDateString()]);
+                }
+
                 return false;
             }
 
             $reference = $charge->reference ?? $this->references->generateRecurringCostCharge();
             $wallet->update(['balance' => (new Money($balance->amountInMinorUnits - $amount->amountInMinorUnits, $balance->currency))->toMajorAmount()]);
             $charge->update(['status' => CampaignBoothChargeStatus::Paid, 'reference' => $reference, 'attempted_at' => now(), 'paid_at' => now()]);
-            $cost->booth()->update([
-                'last_billed_at' => now(),
-                'paid_through' => $servicePeriod->addMonthNoOverflow()->subDay()->toDateString(),
-            ]);
+            $recovery = $booth?->status === CampaignBoothStatus::Suspended
+                || ($booth?->billing_grace_ends_on !== null
+                    && CarbonImmutable::today()->greaterThanOrEqualTo($booth->billing_grace_ends_on));
+            $nextChargeOn = $recovery
+                ? CarbonImmutable::today()->addMonthNoOverflow()
+                : $servicePeriod->addMonthNoOverflow();
+            $cost->update(['next_charge_on' => $nextChargeOn->toDateString()]);
+
+            if ($booth instanceof CampaignBooth) {
+                $booth->update([
+                    'status' => CampaignBoothStatus::Active,
+                    'last_billed_at' => now(),
+                    'paid_through' => $nextChargeOn->subDay()->toDateString(),
+                    'billing_grace_ends_on' => null,
+                    'billing_suspended_at' => null,
+                ]);
+            }
 
             Transaction::query()->create([
                 'owner_type' => $campaign->workspace->getMorphClass(),
