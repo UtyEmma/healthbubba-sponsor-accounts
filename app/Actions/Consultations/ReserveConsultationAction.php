@@ -6,6 +6,7 @@ use App\DTOs\Consultations\ConsultationAllocation;
 use App\DTOs\Consultations\ConsultationEligibilityData;
 use App\DTOs\Consultations\ConsultationEligibilityResult;
 use App\Enums\AccountTypes;
+use App\Enums\CampaignUsageBenefit;
 use App\Enums\Consultations\ConsultationAllocationScope;
 use App\Enums\Consultations\ConsultationReservationStatus;
 use App\Enums\Consultations\ConsultationType;
@@ -13,6 +14,7 @@ use App\Enums\InstitutionalCoverageType;
 use App\Enums\WorkspaceBeneficiaries\WorkspaceBeneficiaryStatus;
 use App\Models\Campaign;
 use App\Models\CampaignConsultationQuota;
+use App\Models\CampaignUsageEntry;
 use App\Models\Consultations\Consultation;
 use App\Models\Doctor;
 use App\Models\InstitutionalFundingProgram;
@@ -156,15 +158,25 @@ final readonly class ReserveConsultationAction
             return ConsultationEligibilityResult::unavailable('patient_not_eligible', $type);
         }
 
-        $dailyUsage = Consultation::query()
+        $dailyReserved = Consultation::query()
             ->whereBelongsTo($workspace)
             ->where('beneficiary_id', $data->patientId)
-            ->whereIn('status', [
-                ConsultationReservationStatus::Reserved,
-                ConsultationReservationStatus::Confirmed,
-            ])
+            ->where('status', ConsultationReservationStatus::Reserved)
             ->whereBetween('reserved_at', [now()->startOfDay(), now()->endOfDay()])
             ->count();
+        $dailyUsed = (int) CampaignUsageEntry::query()
+            ->whereBelongsTo($workspace)
+            ->whereIn('workspace_beneficiary_id', WorkspaceBeneficiary::query()
+                ->whereBelongsTo($workspace)
+                ->where('beneficiary_id', $data->patientId)
+                ->select('id'))
+            ->whereIn('benefit', [
+                CampaignUsageBenefit::GeneralPractitioner,
+                CampaignUsageBenefit::Specialist,
+            ])
+            ->whereBetween('occurred_at', [now()->startOfDay(), now()->endOfDay()])
+            ->sum('quantity');
+        $dailyUsage = $dailyReserved + $dailyUsed;
 
         foreach ($beneficiaries as $workspaceBeneficiary) {
             $campaign = Campaign::query()
@@ -192,36 +204,43 @@ final readonly class ReserveConsultationAction
                 ->whereBelongsTo($campaign)
                 ->where('consultation_type', $type)
                 ->sum('quantity');
-            $usage = Consultation::query()
+            $benefit = CampaignUsageBenefit::from($type->value);
+            $used = (int) CampaignUsageEntry::query()
+                ->whereBelongsTo($campaign)
+                ->where('benefit', $benefit)
+                ->sum('quantity');
+            $reserved = Consultation::query()
                 ->whereBelongsTo($workspace)
                 ->whereIn('workspace_beneficiary_id', $campaign->beneficiaries()->select('id'))
                 ->where('consultation_type', $type)
-                ->whereIn('status', [
-                    ConsultationReservationStatus::Reserved,
-                    ConsultationReservationStatus::Confirmed,
-                ])
+                ->where('status', ConsultationReservationStatus::Reserved)
                 ->count();
 
-            if ($limit <= $usage) {
+            if ($limit <= $used + $reserved) {
                 continue;
             }
 
             if ($rules->coverageType === InstitutionalCoverageType::PerBeneficiary) {
-                $beneficiaryUsage = Consultation::query()
+                $beneficiaryMembershipIds = $campaign->beneficiaries()
+                    ->where('beneficiary_id', $data->patientId)
+                    ->select('id');
+                $beneficiaryUsed = (int) CampaignUsageEntry::query()
+                    ->whereBelongsTo($campaign)
+                    ->whereIn('workspace_beneficiary_id', clone $beneficiaryMembershipIds)
+                    ->where('benefit', $benefit)
+                    ->whereBetween('occurred_at', [$rules->periodStart, $rules->periodEnd])
+                    ->sum('quantity');
+                $beneficiaryReserved = Consultation::query()
                     ->whereBelongsTo($workspace)
                     ->where('beneficiary_id', $data->patientId)
-                    ->whereIn('workspace_beneficiary_id', $campaign->beneficiaries()
-                        ->where('beneficiary_id', $data->patientId)
-                        ->select('id'))
+                    ->whereIn('workspace_beneficiary_id', $beneficiaryMembershipIds)
                     ->where('consultation_type', $type)
-                    ->whereIn('status', [
-                        ConsultationReservationStatus::Reserved,
-                        ConsultationReservationStatus::Confirmed,
-                    ])
+                    ->where('status', ConsultationReservationStatus::Reserved)
                     ->whereBetween('reserved_at', [$rules->periodStart, $rules->periodEnd])
                     ->count();
 
-                if ($beneficiaryUsage >= $this->institutionalRules->beneficiaryLimit($rules, $type)) {
+                if ($beneficiaryUsed + $beneficiaryReserved
+                    >= $this->institutionalRules->beneficiaryLimit($rules, $type)) {
                     continue;
                 }
             }

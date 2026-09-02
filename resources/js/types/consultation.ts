@@ -143,3 +143,68 @@ export interface ConsultationEligibilityResponse {
         reservation: ConsultationReservation | null;
     };
 }
+
+export type ConsultationSponsorshipUnavailableReason =
+    | 'no_active_subscription'
+    | 'feature_unavailable'
+    | 'no_funding_program'
+    | 'no_active_campaign'
+    | 'daily_limit_reached'
+    | 'per_beneficiary_limit_reached'
+    | 'allocation_exhausted';
+
+export interface ConsultationTypeAvailability {
+    value: ConsultationType;
+    label: string;
+    available: boolean;
+    reason: ConsultationSponsorshipUnavailableReason | null;
+    coverageName: string | null;
+    allocatedUnits: number | null;
+    usedUnits: number;
+    reservedUnits: number;
+    remainingUnits: number | null;
+    periodStartsAt: string | null;
+    periodEndsAt: string | null;
+}
+
+export interface ConsultationSponsorAvailability {
+    id: number;
+    name: string;
+    type: {
+        value: 'individual' | 'business' | 'institution';
+        label: string;
+    };
+    consultationTypes: ConsultationTypeAvailability[];
+}
+
+export interface PatientConsultationSponsorshipResponse {
+    patientId: number;
+    sponsors: ConsultationSponsorAvailability[];
+}
+
+export interface RecordConsultationUsagePayload {
+    appointment_id: number;
+    sponsor_id: number;
+}
+
+export interface ConsultationUsageResponse {
+    recorded: true;
+    usageReference: string;
+    appointmentId: number;
+    patientId: number;
+    doctorId: number;
+    sponsor: {
+        id: number;
+        name: string;
+        type: {
+            value: 'individual' | 'business' | 'institution';
+            label: string;
+        };
+    };
+    consultationType: {
+        value: ConsultationType;
+        label: string;
+    };
+    coverageName: string;
+    recordedAt: string | null;
+}
