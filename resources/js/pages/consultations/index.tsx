@@ -49,7 +49,7 @@ export default function ConsultationsIndex({
             <div className="mx-auto w-full max-w-6xl py-2 sm:py-4">
                 <PageHeader
                     title="Sponsored consultations"
-                    description="Track appointments funded from your workspace's GP and Specialist consultation allocations."
+                    description="Track appointments funded from your workspace's Scheduled and Instant consultation allocations."
                     action={managementAction}
                 />
 

@@ -15,13 +15,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select } from '@/components/ui/select';
 import type {
     FundingConfiguration,
     FundingSummary,
@@ -103,9 +97,7 @@ export function FundAccountDialog({
                 </Field>
                 <Field label="Funding method">
                     <Select value="bank_transfer" disabled>
-                        <SelectTrigger className="w-full">
-                            <SelectValue>Bank transfer</SelectValue>
-                        </SelectTrigger>
+                        <option value="bank_transfer">Bank transfer</option>
                     </Select>
                 </Field>
                 <div className="flex items-center justify-between rounded-lg border border-border bg-muted/40 px-3 py-3 text-sm">
@@ -178,31 +170,24 @@ export function EditCoverageRulesDialog({
                 <Field label="Coverage type" error={form.errors.coverage_type}>
                     <Select
                         value={form.data.coverage_type}
-                        onValueChange={(value) =>
+                        onChange={(event) =>
                             form.setData(
                                 'coverage_type',
-                                value as InstitutionalCoverageType,
+                                event.currentTarget
+                                    .value as InstitutionalCoverageType,
                             )
                         }
                     >
-                        <SelectTrigger className="w-full">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {configuration.coverageTypes.map((option) => (
-                                <SelectItem
-                                    key={option.value}
-                                    value={option.value}
-                                >
-                                    {option.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
+                        {configuration.coverageTypes.map((option) => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
                     </Select>
                 </Field>
                 <div className="grid gap-4 sm:grid-cols-2">
                     <Field
-                        label="GP limit / beneficiary"
+                        label="Scheduled consultation limit / beneficiary"
                         error={form.errors.gp_limit_per_beneficiary}
                     >
                         <Input
@@ -218,7 +203,7 @@ export function EditCoverageRulesDialog({
                         />
                     </Field>
                     <Field
-                        label="Specialist limit / beneficiary"
+                        label="Instant consultation limit / beneficiary"
                         error={form.errors.specialist_limit_per_beneficiary}
                     >
                         <Input
@@ -253,26 +238,19 @@ export function EditCoverageRulesDialog({
                 <Field label="Expiry" error={form.errors.expiry_cadence}>
                     <Select
                         value={form.data.expiry_cadence}
-                        onValueChange={(value) =>
+                        onChange={(event) =>
                             form.setData(
                                 'expiry_cadence',
-                                value as InstitutionalCoverageExpiry,
+                                event.currentTarget
+                                    .value as InstitutionalCoverageExpiry,
                             )
                         }
                     >
-                        <SelectTrigger className="w-full">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {configuration.expiryCadences.map((option) => (
-                                <SelectItem
-                                    key={option.value}
-                                    value={option.value}
-                                >
-                                    {option.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
+                        {configuration.expiryCadences.map((option) => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
                     </Select>
                 </Field>
                 <Field
@@ -281,26 +259,19 @@ export function EditCoverageRulesDialog({
                 >
                     <Select
                         value={form.data.payment_preference}
-                        onValueChange={(value) =>
+                        onChange={(event) =>
                             form.setData(
                                 'payment_preference',
-                                value as InstitutionalPaymentPreference,
+                                event.currentTarget
+                                    .value as InstitutionalPaymentPreference,
                             )
                         }
                     >
-                        <SelectTrigger className="w-full">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {configuration.paymentPreferences.map((option) => (
-                                <SelectItem
-                                    key={option.value}
-                                    value={option.value}
-                                >
-                                    {option.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
+                        {configuration.paymentPreferences.map((option) => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
                     </Select>
                 </Field>
             </div>

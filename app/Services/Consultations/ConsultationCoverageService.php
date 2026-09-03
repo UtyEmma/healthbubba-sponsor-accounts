@@ -283,7 +283,7 @@ final readonly class ConsultationCoverageService
                 capacityLabel: $capacityLabel,
                 capacityUnit: $capacityUnit,
                 capacityUnitPlural: $capacityUnitPlural,
-                reason: 'GP and Specialist per-seat consultation features must be configured for this plan.',
+                reason: 'Scheduled and Instant per-seat consultation features must be configured for this plan.',
                 includedCapacity: $includedCapacity,
                 currentCapacity: $currentCapacity,
                 maximumCapacity: $maximumCapacity,
@@ -329,7 +329,7 @@ final readonly class ConsultationCoverageService
                     capacityLabel: $capacityLabel,
                     capacityUnit: $capacityUnit,
                     capacityUnitPlural: $capacityUnitPlural,
-                    reason: 'GP and Specialist consultation features must be configured for this individual plan.',
+                    reason: 'Scheduled and Instant consultation features must be configured for this individual plan.',
                     includedCapacity: $includedCapacity,
                     currentCapacity: $currentCapacity,
                     maximumCapacity: $maximumCapacity,
@@ -391,8 +391,8 @@ final readonly class ConsultationCoverageService
         }
 
         $description = $workspace->type === AccountTypes::BUSINESS
-            ? "Each extra employee seat adds +{$gpPerCapacity} GP and +{$specialistPerCapacity} specialist consultations to the workspace total; employee allowances remain separate."
-            : "Each extra beneficiary adds +{$gpPerCapacity} GP and +{$specialistPerCapacity} specialist consultations to the shared pool.";
+            ? "Each extra employee seat adds +{$gpPerCapacity} scheduled and +{$specialistPerCapacity} instant consultations to the workspace total; employee allowances remain separate."
+            : "Each extra beneficiary adds +{$gpPerCapacity} scheduled and +{$specialistPerCapacity} instant consultations to the shared pool.";
 
         return new ConsultationAllocationScaling(
             available: true,

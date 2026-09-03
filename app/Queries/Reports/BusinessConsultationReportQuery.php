@@ -32,7 +32,7 @@ final readonly class BusinessConsultationReportQuery
             ->firstWhere('type', ConsultationType::GeneralPractitioner->value);
         $unavailableReason = is_array($gpAllocation)
             ? data_get($gpAllocation, 'unavailableReason')
-            : 'GP consultation coverage is unavailable.';
+            : 'Scheduled consultation coverage is unavailable.';
         $remaining = is_array($gpAllocation)
             ? data_get($gpAllocation, 'remaining')
             : 0;

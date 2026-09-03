@@ -342,7 +342,7 @@ function AllocationTab({
 
     const rows = [
         {
-            label: 'GP consultations',
+            label: 'Scheduled consultations',
             note: `${money(financial.consultations.gp.unitFee)} each`,
             allocated: financial.consultations.gp.units,
             used: financial.consultations.gp.confirmed,
@@ -353,7 +353,7 @@ function AllocationTab({
             ),
         },
         {
-            label: 'Specialist consultations',
+            label: 'Instant consultations',
             note: `${money(financial.consultations.specialist.unitFee)} each`,
             allocated: financial.consultations.specialist.units,
             used: financial.consultations.specialist.confirmed,
@@ -434,13 +434,13 @@ function AllocationTab({
             </Card>
             <div className="grid gap-3 sm:grid-cols-2">
                 <ProgressCard
-                    label="GP consultations"
+                    label="Scheduled consultations"
                     text={`${financial.consultations.gp.remaining} / ${financial.consultations.gp.units} left`}
                     remaining={financial.consultations.gp.remaining}
                     allocated={financial.consultations.gp.units}
                 />
                 <ProgressCard
-                    label="Specialist consultations"
+                    label="Instant consultations"
                     text={`${financial.consultations.specialist.remaining} / ${financial.consultations.specialist.units} left`}
                     remaining={financial.consultations.specialist.remaining}
                     allocated={financial.consultations.specialist.units}

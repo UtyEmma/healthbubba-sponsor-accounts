@@ -12,8 +12,8 @@ enum CampaignUsageBenefit: string
     public function label(): string
     {
         return match ($this) {
-            self::GeneralPractitioner => 'GP consultation',
-            self::Specialist => 'Specialist consultation',
+            self::GeneralPractitioner => 'Scheduled consultation',
+            self::Specialist => 'Instant consultation',
             self::Medication => 'Medication',
             self::Laboratory => 'Laboratory',
         };

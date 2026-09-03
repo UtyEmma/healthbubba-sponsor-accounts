@@ -27,7 +27,7 @@ export function ReportOverview({
                 tone="green"
             />
             <BusinessMetricCard
-                label="GP consults left"
+                label="Scheduled consultations left"
                 value={gpConsultations}
                 icon={StethoscopeIcon}
                 tone="blue"

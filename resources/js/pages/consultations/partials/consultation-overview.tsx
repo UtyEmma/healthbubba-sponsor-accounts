@@ -63,8 +63,10 @@ export function ConsultationOverview({
                                 <TableHead className="pl-8">
                                     {scaling.capacityLabel}
                                 </TableHead>
-                                <TableHead>GP pool</TableHead>
-                                <TableHead>Specialist pool</TableHead>
+                                <TableHead>
+                                    Scheduled consultation pool
+                                </TableHead>
+                                <TableHead>Instant consultation pool</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -80,13 +82,13 @@ export function ConsultationOverview({
                                         <TableCell className="h-12 text-muted-foreground">
                                             {formatQuotaBreakdown(
                                                 step.gp,
-                                                'GP',
+                                                'scheduled',
                                             )}
                                         </TableCell>
                                         <TableCell className="h-12 text-muted-foreground">
                                             {formatQuotaBreakdown(
                                                 step.specialist,
-                                                'specialist',
+                                                'instant',
                                             )}
                                         </TableCell>
                                     </TableRow>

@@ -40,7 +40,7 @@ const benefits: GettingStartedItem[] = [
     {
         title: 'See a doctor in minutes',
         description:
-            'On-demand GP and specialist video consults — no queues, no clinics.',
+            'Scheduled and instant video consultations — no queues, no clinics.',
         icon: 'empty-benefit-doctor.svg',
     },
     {
@@ -77,7 +77,7 @@ export default function EmptyState() {
                                 </h2>
                                 <p className="pt-2 text-sm leading-[21px] text-muted-foreground sm:text-base">
                                     Choose a plan and your family can start
-                                    booking GP and specialist consultations
+                                    booking scheduled and instant consultations
                                     today — while every beneficiary keeps full
                                     control of their own records.
                                 </p>

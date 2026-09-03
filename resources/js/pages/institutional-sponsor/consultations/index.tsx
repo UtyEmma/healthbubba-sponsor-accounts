@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/page-header';
 import { RosterPagination } from '@/components/roster-pagination';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { Select } from '@/components/ui/select';
 import {
     Table,
     TableBody,
@@ -60,8 +61,8 @@ export default function InstitutionalConsultationsPage({
                                     funding.
                                 </p>
                             </div>
-                            <select
-                                className="h-10 rounded-control border border-input bg-background px-3 text-sm sm:w-40"
+                            <Select
+                                containerClassName="sm:w-40"
                                 value={filters.campaign ?? ''}
                                 onChange={(event) =>
                                     router.get(
@@ -84,7 +85,7 @@ export default function InstitutionalConsultationsPage({
                                         {campaign.name}
                                     </option>
                                 ))}
-                            </select>
+                            </Select>
                         </div>
                         <div className="overflow-x-auto">
                             <Table className="min-w-[820px]">

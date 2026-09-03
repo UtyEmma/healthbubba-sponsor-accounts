@@ -25,6 +25,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import {
     Table,
     TableBody,
@@ -156,8 +157,7 @@ export default function InstitutionalBeneficiariesPage({
                                         setSearch(event.target.value)
                                     }
                                 />
-                                <select
-                                    className="h-10 rounded-control border border-input bg-background px-3 text-sm"
+                                <Select
                                     value={filters.campaign ?? ''}
                                     onChange={(event) =>
                                         visit({ campaign: event.target.value })
@@ -172,9 +172,8 @@ export default function InstitutionalBeneficiariesPage({
                                             {campaign.name}
                                         </option>
                                     ))}
-                                </select>
-                                <select
-                                    className="h-10 rounded-control border border-input bg-background px-3 text-sm"
+                                </Select>
+                                <Select
                                     value={filters.status ?? ''}
                                     onChange={(event) =>
                                         visit({ status: event.target.value })
@@ -190,7 +189,7 @@ export default function InstitutionalBeneficiariesPage({
                                             {capitalize(status)}
                                         </option>
                                     ))}
-                                </select>
+                                </Select>
                             </div>
                         </div>
                         <div className="overflow-x-auto">
@@ -351,8 +350,7 @@ function AddBeneficiaryDialog({
                 </DialogHeader>
                 <div className="grid gap-3 px-6 pb-5 sm:grid-cols-2">
                     <Field label="Campaign" error={form.errors.campaign} wide>
-                        <select
-                            className="h-10 rounded-control border border-input bg-background px-3 text-sm"
+                        <Select
                             value={form.data.campaign}
                             onChange={(event) => {
                                 const campaign = campaigns.find(
@@ -376,7 +374,7 @@ function AddBeneficiaryDialog({
                                     {campaign.name}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </Field>
                     <Field label="First name" error={form.errors.first_name}>
                         <Input
@@ -480,8 +478,7 @@ function ImportBeneficiariesDialog({
                 </DialogHeader>
                 <div className="space-y-4 px-6 pb-5">
                     <Field label="Campaign" error={form.errors.campaign}>
-                        <select
-                            className="h-10 rounded-control border border-input bg-background px-3 text-sm"
+                        <Select
                             value={form.data.campaign}
                             onChange={(event) =>
                                 form.setData('campaign', event.target.value)
@@ -495,7 +492,7 @@ function ImportBeneficiariesDialog({
                                     {campaign.name}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </Field>
                     <button
                         type="button"

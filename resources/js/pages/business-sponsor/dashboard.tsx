@@ -63,7 +63,7 @@ export default function BusinessDashboard({ dashboard }: DashboardPageProps) {
                             icon={WalletCardsIcon}
                         />
                         <BusinessMetricCard
-                            label="GP consults left"
+                            label="Scheduled consultations left"
                             value={
                                 gpAllocation?.remaining === null
                                     ? '∞'

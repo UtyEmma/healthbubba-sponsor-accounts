@@ -5,11 +5,11 @@ import { Card, CardContent } from '@/components/ui/card';
 const questions = [
     {
         question: 'How is coverage allocated to each employee?',
-        answer: 'Unlike family plans, corporate coverage is isolated per employee. Each seat gets its own monthly allotment (2 GP on Business Basic; 3 GP + 1 specialist on Business Premium). One employee can never consume another employee’s unused consultations.',
+        answer: 'Unlike family plans, corporate coverage is isolated per employee. Each seat gets its own monthly allotment (2 scheduled consultations on Business Basic; 3 scheduled consultations + 1 instant consultation on Business Premium). One employee can never consume another employee’s unused consultations.',
     },
     {
         question: 'Do unused consultations roll over?',
-        answer: 'No. All unused GP and specialist allocations expire and reset to zero at 00:00 on your monthly renewal date.',
+        answer: 'No. All unused scheduled and instant consultation allocations expire and reset to zero at 00:00 on your monthly renewal date.',
     },
     {
         question: 'What happens when I upgrade or downgrade the plan?',

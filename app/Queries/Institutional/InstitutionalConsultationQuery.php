@@ -86,7 +86,7 @@ final readonly class InstitutionalConsultationQuery
                     'slug' => $campaign->slug,
                 ] : null,
                 type: $type->value,
-                typeLabel: $type->value === 'gp' ? 'GP' : 'Specialist',
+                typeLabel: $type->label(),
                 status: match ($appointment->status) {
                     AppointmentStatus::Upcoming => 'scheduled',
                     AppointmentStatus::Completed => 'completed',

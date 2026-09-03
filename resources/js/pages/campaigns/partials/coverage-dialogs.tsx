@@ -11,13 +11,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select } from '@/components/ui/select';
 
 type CoverageDialogProps = {
     open: boolean;
@@ -52,14 +46,9 @@ export function RenewCoverageDialog({
                 <div className="grid gap-4 px-6 py-4">
                     <FormGroup label="Renewal term">
                         <Select defaultValue="12">
-                            <SelectTrigger className="w-full">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="6">6 months</SelectItem>
-                                <SelectItem value="12">12 months</SelectItem>
-                                <SelectItem value="24">24 months</SelectItem>
-                            </SelectContent>
+                            <option value="6">6 months</option>
+                            <option value="12">12 months</option>
+                            <option value="24">24 months</option>
                         </Select>
                     </FormGroup>
                     <FormGroup label="End Date">
@@ -81,7 +70,9 @@ export function TopUpCoverageDialog({
         event.preventDefault();
         const data = new FormData(event.currentTarget);
         const units = Number(data.get('units'));
-        const service = String(data.get('service') || 'GP consultations');
+        const service = String(
+            data.get('service') || 'Scheduled consultations',
+        );
         onComplete(`${units} ${service} units added.`);
     }
 
@@ -95,14 +86,13 @@ export function TopUpCoverageDialog({
             <form onSubmit={submit}>
                 <div className="grid gap-4 px-6 py-4">
                     <FormGroup label="Service type">
-                        <select
+                        <Select
                             name="service"
-                            defaultValue="GP consultations"
-                            className="h-10 w-full rounded-control border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+                            defaultValue="Scheduled consultations"
                         >
-                            <option>GP consultations</option>
-                            <option>Specialist consultations</option>
-                        </select>
+                            <option>Scheduled consultations</option>
+                            <option>Instant consultations</option>
+                        </Select>
                     </FormGroup>
                     <FormGroup label="Units to add">
                         <Input
@@ -141,23 +131,16 @@ export function UpgradeCoverageDialog({
                 <div className="grid gap-4 px-6 py-4">
                     <FormGroup label="Coverage model">
                         <Select defaultValue="shared">
-                            <SelectTrigger className="w-full">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="shared">
-                                    Shared coverage pool
-                                </SelectItem>
-                                <SelectItem value="allocated">
-                                    Per-beneficiary allocation
-                                </SelectItem>
-                            </SelectContent>
+                            <option value="shared">Shared coverage pool</option>
+                            <option value="allocated">
+                                Per-beneficiary allocation
+                            </option>
                         </Select>
                     </FormGroup>
-                    <FormGroup label="GP limit / beneficiary">
+                    <FormGroup label="Scheduled consultation limit / beneficiary">
                         <Input type="number" min="1" step="1" required />
                     </FormGroup>
-                    <FormGroup label="Specialist limit / beneficiary">
+                    <FormGroup label="Instant consultation limit / beneficiary">
                         <Input type="number" min="1" step="1" required />
                     </FormGroup>
                 </div>

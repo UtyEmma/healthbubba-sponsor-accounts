@@ -2,8 +2,8 @@
 
 namespace App\Enums\Subscriptions;
 
-enum Features:string {
-
+enum Features: string
+{
     case ON_DEMAND_CONSULTATIONS = 'on-demand-consultations';
     case SCHEDULED_APPOINTMENTS = 'scheduled-appointments';
     case BENEFICIARIES_INCLUDED = 'beneficiaries-included';
@@ -28,20 +28,21 @@ enum Features:string {
     case COVERAGE_RULES = 'coverage-rules';
     case COVERAGE_REPORTING = 'coverage-reporting';
 
-    public function label(): string {
+    public function label(): string
+    {
         return match ($this) {
             self::ON_DEMAND_CONSULTATIONS => 'On-Demand Consultations',
-            self::SCHEDULED_APPOINTMENTS => 'Scheduled Appointments',
+            self::SCHEDULED_APPOINTMENTS => 'Instant Consultations',
             self::BENEFICIARIES_INCLUDED => 'Included Beneficiaries',
             self::MAXIMUM_BENEFICIARIES => 'Maximum Beneficiaries',
-            self::GP_CONSULTATIONS => 'GP Consultations',
-            self::SPECIALIST_CONSULTATIONS => 'Specialist Consultations',
+            self::GP_CONSULTATIONS => 'Scheduled Consultations',
+            self::SPECIALIST_CONSULTATIONS => 'Instant Consultations',
             self::FOLLOW_UP_TRACKING => 'Follow-Up Tracking',
             self::PRIORITY_SUPPORT => 'Priority Support',
             self::DEDICATED_COORDINATOR => 'Dedicated Coordinator',
             self::CHRONIC_DISEASE_MONITORING => 'Chronic Disease Monitoring',
-            self::GP_CONSULTATIONS_PER_SEAT => 'GP Consultations per seat',
-            self::SPECIALIST_CONSULTATIONS_PER_SEAT => 'Specialist Consultations per seat',
+            self::GP_CONSULTATIONS_PER_SEAT => 'Scheduled Consultations per seat',
+            self::SPECIALIST_CONSULTATIONS_PER_SEAT => 'Instant Consultations per seat',
             self::EMPLOYEE_SEAT_MANAGEMENT => 'Employee Seat Management',
             self::BULK_HR_UPLOAD_AND_LIST_EXPORT => 'Bulk HR Upload and List Export',
             self::ACTIVITY_AND_COVERAGE_LOGS => 'Activity and Coverage Logs',
@@ -57,7 +58,8 @@ enum Features:string {
     }
 
     /** @return array<string, string> */
-    public static function options(): array {
+    public static function options(): array
+    {
         return collect(self::cases())
             ->mapWithKeys(fn (self $feature): array => [$feature->value => $feature->label()])
             ->all();

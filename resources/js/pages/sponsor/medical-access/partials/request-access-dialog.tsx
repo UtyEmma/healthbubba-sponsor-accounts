@@ -14,13 +14,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import type {
     MedicalAccessBeneficiary,
@@ -102,7 +96,7 @@ export function RequestAccessDialog({
                                     label="Beneficiary"
                                     placeholder="Select beneficiary"
                                     value={beneficiary}
-                                    onValueChange={setBeneficiary}
+                                    onChange={setBeneficiary}
                                     options={beneficiaries.map((item) => ({
                                         value: item.publicId,
                                         label: `${item.name} (${item.email})`,
@@ -114,7 +108,7 @@ export function RequestAccessDialog({
                                     label="Data type"
                                     placeholder="Select data type"
                                     value={dataType}
-                                    onValueChange={setDataType}
+                                    onChange={setDataType}
                                     options={dataTypes}
                                     error={errors.data_type}
                                     disabled={processing}
@@ -180,7 +174,7 @@ function SelectField({
     label,
     placeholder,
     value,
-    onValueChange,
+    onChange,
     options,
     error,
     disabled,
@@ -188,7 +182,7 @@ function SelectField({
     label: string;
     placeholder: string;
     value: string | null;
-    onValueChange: (value: string | null) => void;
+    onChange: (value: string | null) => void;
     options: Array<{ value: string; label: string }>;
     error?: string;
     disabled: boolean;
@@ -199,24 +193,22 @@ function SelectField({
         <label className="grid gap-1.5 text-[13px] leading-[18px] font-medium">
             {label}
             <Select
-                value={value}
-                onValueChange={onValueChange}
+                value={value ?? ''}
+                onChange={(event) =>
+                    onChange(event.currentTarget.value || null)
+                }
                 disabled={disabled}
+                aria-invalid={Boolean(error)}
+                aria-describedby={error ? errorId : undefined}
             >
-                <SelectTrigger
-                    className="h-10 w-full"
-                    aria-invalid={Boolean(error)}
-                    aria-describedby={error ? errorId : undefined}
-                >
-                    <SelectValue placeholder={placeholder} />
-                </SelectTrigger>
-                <SelectContent>
-                    {options.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
+                <option value="" disabled>
+                    {placeholder}
+                </option>
+                {options.map((option) => (
+                    <option key={option.value} value={option.value}>
+                        {option.label}
+                    </option>
+                ))}
             </Select>
             {error && (
                 <span

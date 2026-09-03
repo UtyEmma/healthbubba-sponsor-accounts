@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select } from '@/components/ui/select';
 import campaigns from '@/routes/campaigns';
 import type { Campaign } from '@/types';
 
@@ -83,7 +84,7 @@ export function PurchaseQuotaCard({ campaign }: { campaign: Campaign }) {
                             <Label htmlFor="consultation_type">
                                 Consultation type
                             </Label>
-                            <select
+                            <Select
                                 id="consultation_type"
                                 name="consultation_type"
                                 value={data.consultation_type}
@@ -93,22 +94,21 @@ export function PurchaseQuotaCard({ campaign }: { campaign: Campaign }) {
                                         event.target.value,
                                     )
                                 }
-                                className="h-10 w-full rounded-control border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
                             >
                                 <option value="">Select type</option>
                                 <option value="gp">
-                                    GP Consultation
+                                    Scheduled Consultation
                                     {gpFee > 0
                                         ? ` (${formatter.format(gpFee)}/unit)`
                                         : ''}
                                 </option>
                                 <option value="specialist">
-                                    Specialist Consultation
+                                    Instant Consultation
                                     {specialistFee > 0
                                         ? ` (${formatter.format(specialistFee)}/unit)`
                                         : ''}
                                 </option>
-                            </select>
+                            </Select>
                             {errors.consultation_type && (
                                 <p className="text-xs text-destructive">
                                     {errors.consultation_type}

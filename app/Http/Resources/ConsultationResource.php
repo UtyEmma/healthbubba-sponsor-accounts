@@ -3,9 +3,9 @@
 namespace App\Http\Resources;
 
 use App\DTOs\Consultations\ConsultationViewData;
-use App\Enums\Consultations\ConsultationType;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Str;
 
 final class ConsultationResource extends JsonResource
 {
@@ -46,7 +46,7 @@ final class ConsultationResource extends JsonResource
                 'featureSlug' => $consultation->featureSlug,
                 'planName' => $consultation->planName,
                 'scope' => $consultation->scope->value,
-                'label' => sprintf('1 %s from %s', $consultation->type === ConsultationType::GeneralPractitioner ? 'GP consultation' : 'Specialist consultation', $planName),
+                'label' => sprintf('1 %s from %s', Str::lower($consultation->type->label()), $planName),
             ],
             'createdAt' => $appointment->created_at?->toISOString(),
         ];
