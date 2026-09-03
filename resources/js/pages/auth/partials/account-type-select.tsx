@@ -49,7 +49,7 @@ export function AccountTypeSelect({
                         aria-pressed={selected}
                         onClick={() => onChange(option.value)}
                         className={cn(
-                            'flex w-full items-center gap-3 rounded-lg border bg-background p-4 text-left transition-colors',
+                            'flex w-full items-center gap-3 rounded-2xl border bg-background p-4 text-left transition-colors',
                             'hover:border-secondary/50 hover:bg-secondary/5 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
                             compact && 'sm:flex-col sm:items-start',
                             selected &&
@@ -58,7 +58,7 @@ export function AccountTypeSelect({
                     >
                         <span className={cn([
                             "flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground",
-                            selected && "text-secondary bg-white"
+                            selected && "text-white bg-secondary"
                         ])}>
                             <Icon className="size-5" aria-hidden="true" />
                         </span>

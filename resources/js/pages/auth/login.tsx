@@ -203,7 +203,7 @@ export default function Login({
                     </Button>
 
                     <p className="text-center text-sm text-muted-foreground">
-                        Don&apos;t have this account type?{' '}
+                        Don&apos;t have an account?{' '}
                         <Link
                             href={registrationUrl}
                             className="font-medium text-primary hover:underline"

@@ -712,7 +712,7 @@ export default function Register({
 
                 {step !== 'member-choice' && step !== 'setup' && (
                     <p className="mt-4 text-center text-sm text-muted-foreground">
-                        Already have this account type?{' '}
+                        Already have an account ?{' '}
                         <Link
                             href={loginUrl}
                             className="font-medium text-primary"
