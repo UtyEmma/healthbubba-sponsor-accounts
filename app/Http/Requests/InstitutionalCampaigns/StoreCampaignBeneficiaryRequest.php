@@ -51,6 +51,7 @@ final class StoreCampaignBeneficiaryRequest extends AuthorizedInstitutionalWorks
             'last_name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'string', 'email:rfc', 'max:255'],
             'phone' => ['required', 'string', 'max:32'],
+            'community' => ['required', 'string', 'max:255'],
         ];
     }
 
@@ -61,6 +62,7 @@ final class StoreCampaignBeneficiaryRequest extends AuthorizedInstitutionalWorks
             'last_name' => $this->string('last_name')->squish()->toString(),
             'email' => $this->string('email')->trim()->lower()->toString(),
             'phone' => $this->string('phone')->squish()->toString(),
+            'community' => $this->string('community')->squish()->toString(),
         ]);
     }
 

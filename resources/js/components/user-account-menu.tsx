@@ -23,7 +23,7 @@ import workspaces from '@/routes/workspaces';
 import Avatar from './avatar';
 
 export function UserAccountMenu() {
-    const { auth, workspaceOptions } = usePage().props;
+    const { auth, workspace, workspaceOptions } = usePage().props;
     const [logoutOpen, setLogoutOpen] = useState(false);
 
     return (
@@ -40,10 +40,19 @@ export function UserAccountMenu() {
                 >
                     <Avatar title={auth.user.name} />
 
-                    <span className="hidden text-sm font-medium sm:inline">
-                        {auth.user.name}
+                    <span className="hidden text-left sm:block">
+                        <span className="block text-xs font-medium">
+                            {auth.user.name}
+                        </span>
+                        {workspace.type === 'institution' && (
+                            <span className="block text-[10px] text-muted-foreground">
+                                Institutional Sponsor
+                            </span>
+                        )}
                     </span>
-                    <ChevronsUpDownIcon className="size-4 text-muted-foreground" />
+                    {workspace.type !== 'institution' && (
+                        <ChevronsUpDownIcon className="size-4 text-muted-foreground" />
+                    )}
                 </DropdownMenuTrigger>
 
                 <DropdownMenuContent

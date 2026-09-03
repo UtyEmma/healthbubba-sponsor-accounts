@@ -8,6 +8,7 @@ final readonly class CapacitySummary
         public int $used,
         public int $total,
         public ?string $unavailableReason = null,
+        public bool $unlimited = false,
     ) {}
 
     public function remaining(): int
@@ -17,6 +18,7 @@ final readonly class CapacitySummary
 
     public function canInvite(): bool
     {
-        return $this->unavailableReason === null && $this->remaining() > 0;
+        return $this->unavailableReason === null
+            && ($this->unlimited || $this->remaining() > 0);
     }
 }

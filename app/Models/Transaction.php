@@ -8,6 +8,7 @@ use App\Enums\Transactions\TransactionTypes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -19,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property TransactionStatus $status
  * @property TransactionFlow $flow
  * @property array<string, mixed>|null $meta
+ * @property Carbon|null $created_at
  * @property-read Payment|null $payment
  * @property-read Model $owner
  * @property-read Model $transactable

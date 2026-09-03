@@ -1,5 +1,12 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BarChart3Icon, BellIcon, UsersRoundIcon } from 'lucide-react';
+import {
+    BarChart3Icon,
+    BellIcon,
+    HandHeartIcon,
+    SettingsIcon,
+    TicketIcon,
+    UsersRoundIcon,
+} from 'lucide-react';
 import { useMemo } from 'react';
 
 import { BrandMark } from '@/components/brand-mark';
@@ -15,18 +22,20 @@ import {
     TeamSidebarIcon,
     WalletSidebarIcon,
 } from '@/components/sidebar-icons';
+import { cn } from '@/lib/utils';
 import { home } from '@/routes';
+import accountSettings from '@/routes/account_settings';
 import activity_log from '@/routes/activity_log';
 import beneficiaries from '@/routes/beneficiaries';
 import business from '@/routes/business';
+import campaigns from '@/routes/campaigns';
 import consultations from '@/routes/consultations';
+import funding from '@/routes/funding';
 import institutional, { notifications } from '@/routes/institutional';
 import medical_access from '@/routes/medical_access';
 import plans from '@/routes/plans';
 import team from '@/routes/team';
 import wallet from '@/routes/wallet';
-import campaigns from '@/routes/campaigns';
-import { cn } from '@/lib/utils';
 
 type NavigationItem = {
     label: string;
@@ -40,17 +49,68 @@ function Navigation() {
     const { workspace, workspacePermissions } = usePage().props;
 
     const navigation = useMemo(() => {
+        if (workspace.type === 'institution') {
+            return [
+                {
+                    label: 'Dashboard',
+                    icon: DashboardSidebarIcon,
+                    href: home(),
+                },
+                {
+                    label: 'Funding',
+                    icon: WalletSidebarIcon,
+                    href: funding.index(),
+                },
+                {
+                    label: 'Campaigns',
+                    icon: CampaignSidebarIcon,
+                    href: campaigns.index(),
+                },
+                {
+                    label: 'Beneficiaries',
+                    icon: BeneficiariesSidebarIcon,
+                    href: institutional.beneficiaries.index(),
+                },
+                {
+                    label: 'Consultations',
+                    icon: ConsultationsSidebarIcon,
+                    href: institutional.consultations.index(),
+                },
+                {
+                    label: 'Reports',
+                    icon: BarChart3Icon,
+                    href: institutional.reports.index(),
+                },
+                {
+                    label: 'Enrollment Codes',
+                    icon: TicketIcon,
+                    href: institutional.enrollment_codes.index(),
+                },
+                {
+                    label: 'Referrals',
+                    icon: HandHeartIcon,
+                },
+                {
+                    label: 'Team',
+                    icon: TeamSidebarIcon,
+                    href: institutional.team(),
+                },
+                {
+                    label: 'Notifications',
+                    icon: BellIcon,
+                    href: notifications(),
+                },
+                {
+                    label: 'Settings',
+                    icon: SettingsIcon,
+                    href: accountSettings.index(),
+                },
+            ] satisfies NavigationItem[];
+        }
+
         const navigation: NavigationItem[] = [
             { label: 'Dashboard', icon: DashboardSidebarIcon, href: home() },
         ];
-
-        if (workspace.type == 'institution') {
-            navigation.push({
-                label: 'Campaigns',
-                icon: CampaignSidebarIcon,
-                href: campaigns.index(),
-            });
-        }
 
         if (workspace.type == 'individual') {
             navigation.push(
@@ -90,14 +150,6 @@ function Navigation() {
             );
         }
 
-        if (workspace.type == 'institution') {
-            navigation.push({
-                label: 'Reports',
-                icon: BarChart3Icon,
-                href: institutional.reports(),
-            });
-        }
-
         navigation.push({
             label: 'Wallet',
             icon: WalletSidebarIcon,
@@ -120,14 +172,6 @@ function Navigation() {
             icon: TeamSidebarIcon,
             href: team.index(),
         });
-
-        if (workspace.type == 'institution') {
-            navigation.push({
-                label: 'Notifications',
-                icon: BellIcon,
-                href: notifications(),
-            });
-        }
 
         if (['individual', 'business'].includes(workspace.type)) {
             navigation.push({
@@ -158,12 +202,12 @@ function Navigation() {
                                 <Link
                                     href={item.href}
                                     aria-current={isActive ? 'page' : undefined}
-                                    className={
-                                        cn('min-h-10',
+                                    className={cn(
+                                        'min-h-10',
                                         isActive
-                                            ? 'flex  items-center gap-3 rounded-md bg-accent px-2 text-sm font-medium text-secondary'
-                                            : 'flex items-center gap-3 rounded-md px-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-secondary')
-                                    }
+                                            ? 'flex items-center gap-3 rounded-md bg-accent px-2 text-sm font-medium text-secondary'
+                                            : 'flex items-center gap-3 rounded-md px-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-secondary',
+                                    )}
                                 >
                                     <Icon className="size-[18px] shrink-0" />
                                     {item.label}

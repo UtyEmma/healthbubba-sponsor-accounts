@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 
 function Tabs({
   className,
-  orientation = "horizontal",
+  orientation = "vertical",
   ...props
 }: TabsPrimitive.Root.Props) {
   return (

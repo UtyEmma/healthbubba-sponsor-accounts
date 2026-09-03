@@ -27,3 +27,8 @@ Schedule::command('workspace-members:expire-invitations')
     ->everyMinute()
     ->withoutOverlapping()
     ->onOneServer();
+
+Schedule::command('campaigns:process-lifecycle')
+    ->dailyAt('00:10')
+    ->withoutOverlapping()
+    ->onOneServer();

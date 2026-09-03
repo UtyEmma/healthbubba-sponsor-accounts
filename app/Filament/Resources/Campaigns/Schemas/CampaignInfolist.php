@@ -20,6 +20,9 @@ class CampaignInfolist
                         TextEntry::make('name')
                             ->label('Campaign'),
                         TextEntry::make('slug'),
+                        TextEntry::make('status')
+                            ->formatStateUsing(fn ($record): string => $record->lifecycleStatus()->label()),
+                        TextEntry::make('description')->columnSpanFull(),
                         TextEntry::make('beneficiaries_count')
                             ->label('Beneficiaries')
                             ->numeric(),
@@ -48,6 +51,9 @@ class CampaignInfolist
                             ->label('Specialist fee')
                             ->prefix('₦')
                             ->placeholder('Not set'),
+                        TextEntry::make('medication_budget')->prefix('₦'),
+                        TextEntry::make('laboratory_budget')->prefix('₦'),
+                        TextEntry::make('returned_amount')->prefix('₦'),
                     ])
                     ->columns(2),
                 Section::make('Location')

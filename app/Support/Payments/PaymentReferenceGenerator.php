@@ -23,4 +23,29 @@ final class PaymentReferenceGenerator
     {
         return 'QUO-'.Str::upper((string) Str::ulid());
     }
+
+    public function generateCampaignAllocation(): string
+    {
+        return 'CAM-'.Str::upper((string) Str::ulid());
+    }
+
+    public function generateCampaignRefund(): string
+    {
+        return 'REF-'.Str::upper((string) Str::ulid());
+    }
+
+    public function generateBoothCharge(): string
+    {
+        return 'BTH-'.Str::upper((string) Str::ulid());
+    }
+
+    public function generateCampaignUsage(): string
+    {
+        return 'USG-'.Str::upper((string) Str::ulid());
+    }
+
+    public function generateRecurringCostCharge(): string
+    {
+        return 'RUN-'.Str::upper((string) Str::ulid());
+    }
 }

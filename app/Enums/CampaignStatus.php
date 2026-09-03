@@ -6,6 +6,7 @@ enum CampaignStatus: string
 {
     case PENDING = 'PENDING';
     case IN_PROGRESS = 'IN_PROGRESS';
+    case PAUSED = 'PAUSED';
     case COMPLETED = 'COMPLETED';
 
     public function label(): string
@@ -13,7 +14,8 @@ enum CampaignStatus: string
         return match ($this) {
             self::PENDING => 'Upcoming',
             self::IN_PROGRESS => 'Active',
-            self::COMPLETED => 'Completed',
+            self::PAUSED => 'Paused',
+            self::COMPLETED => 'Ended',
         };
     }
 }

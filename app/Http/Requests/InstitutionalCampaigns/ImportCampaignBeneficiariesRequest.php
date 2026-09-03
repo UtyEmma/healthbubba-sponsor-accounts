@@ -9,6 +9,7 @@ use App\Http\Requests\InstitutionalOnboarding\AuthorizedInstitutionalWorkspaceRe
 use App\Models\Campaign;
 use App\Models\User;
 use App\Models\WorkspaceMember;
+use Illuminate\Validation\Rule;
 
 final class ImportCampaignBeneficiariesRequest extends AuthorizedInstitutionalWorkspaceRequest
 {
@@ -47,12 +48,21 @@ final class ImportCampaignBeneficiariesRequest extends AuthorizedInstitutionalWo
     {
         return [
             'file' => [
-                'required',
+                Rule::requiredIf(! filled($this->input('rows'))),
+                'nullable',
                 'file',
                 'max:10240',
                 'mimes:csv,xlsx',
                 'mimetypes:text/csv,text/plain,application/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/zip',
             ],
+            'rows' => [Rule::requiredIf(! $this->hasFile('file')), 'nullable', 'string', 'max:1000000'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->input('rows'))) {
+            $this->merge(['rows' => trim((string) $this->input('rows'))]);
+        }
     }
 }

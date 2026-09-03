@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Campaigns\Pages;
 
+use App\Filament\Resources\Campaigns\Actions\CampaignAdminActions;
 use App\Filament\Resources\Campaigns\CampaignResource;
 use Filament\Actions\ViewAction;
 use Filament\Resources\Pages\EditRecord;
@@ -16,6 +17,11 @@ class EditCampaign extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            CampaignAdminActions::pause(),
+            CampaignAdminActions::resume(),
+            CampaignAdminActions::runMonthlyDeductions(),
+            CampaignAdminActions::deactivateBooths(),
+            CampaignAdminActions::end(),
             ViewAction::make(),
         ];
     }

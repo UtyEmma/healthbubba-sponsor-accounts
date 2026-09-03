@@ -6,6 +6,7 @@ use App\Actions\WorkspaceBeneficiaries\ImportCampaignBeneficiariesAction;
 use App\Http\Requests\InstitutionalCampaigns\ImportCampaignBeneficiariesRequest;
 use App\Models\Campaign;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\UploadedFile;
 
 final readonly class ImportCampaignBeneficiariesController
 {
@@ -17,18 +18,20 @@ final readonly class ImportCampaignBeneficiariesController
         ImportCampaignBeneficiariesRequest $request,
         Campaign $campaign,
     ): RedirectResponse {
-        $file = $request->file('file');
-        abort_if($file === null, 422);
+        $uploaded = $request->file('file');
+        $source = $uploaded instanceof UploadedFile
+            ? $uploaded
+            : (string) $request->validated('rows');
 
         $result = $this->import->execute(
             $request->workspace(),
             $campaign,
             $request->onboardingUser(),
-            $file,
+            $source,
         );
 
         return to_route('campaigns.show', $campaign)
-            ->with('success', "Imported {$result->imported} beneficiary invitation(s).")
+            ->with('success', "Enrolled {$result->imported} beneficiary record(s).")
             ->with('import_result', $result->toArray());
     }
 }

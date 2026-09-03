@@ -20,7 +20,10 @@ final class UserResource extends JsonResource
             'id' => (int) $this->getKey(),
             'name' => $this->name,
             'email' => $this->email,
+            'phone' => $this->phone,
             'email_verified_at' => $this->email_verified_at?->toISOString(),
+            'phone_verified_at' => $this->phone_verified_at?->toISOString(),
+            'account_verified_at' => $this->account_verified_at?->toISOString(),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

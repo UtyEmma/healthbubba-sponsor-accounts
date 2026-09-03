@@ -17,6 +17,9 @@ use Illuminate\Support\Carbon;
  * @property int|null $invited_by_user_id
  * @property string $name
  * @property string $email
+ * @property string|null $phone
+ * @property string|null $job_title
+ * @property Carbon|null $authorization_confirmed_at
  * @property WorkspaceMemberRole $role
  * @property WorkspaceMemberStatus $status
  * @property int $invitation_version
@@ -36,7 +39,8 @@ final class WorkspaceMember extends Model
 
     /** @var list<string> */
     protected $fillable = [
-        'public_id', 'workspace_id', 'user_id', 'invited_by_user_id', 'name', 'email',
+        'public_id', 'workspace_id', 'user_id', 'invited_by_user_id', 'name', 'email', 'phone',
+        'job_title', 'authorization_confirmed_at',
         'role', 'status', 'invitation_version', 'invited_at', 'expires_at', 'accepted_at',
         'declined_at', 'cancelled_at', 'disabled_at', 'last_selected_at',
     ];
@@ -104,6 +108,7 @@ final class WorkspaceMember extends Model
             'invited_at' => 'datetime', 'expires_at' => 'datetime', 'accepted_at' => 'datetime',
             'declined_at' => 'datetime', 'cancelled_at' => 'datetime', 'disabled_at' => 'datetime',
             'last_selected_at' => 'datetime',
+            'authorization_confirmed_at' => 'datetime',
         ];
     }
 }

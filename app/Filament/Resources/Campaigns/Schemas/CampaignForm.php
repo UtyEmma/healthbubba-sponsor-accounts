@@ -3,6 +3,9 @@
 namespace App\Filament\Resources\Campaigns\Schemas;
 
 use App\Enums\AccountTypes;
+use App\Enums\InstitutionalCoverageExpiry;
+use App\Enums\InstitutionalCoverageType;
+use App\Enums\InstitutionalPaymentPreference;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -48,6 +51,10 @@ class CampaignForm
                 ->label('Campaign')
                 ->required()
                 ->maxLength(255),
+            Textarea::make('description')
+                ->rows(3)
+                ->maxLength(2000)
+                ->columnSpanFull(),
             TextInput::make('slug')
                 ->helperText('Used in sponsor-facing campaign URLs. Leave blank to generate it from the campaign name.')
                 ->maxLength(255)
@@ -95,8 +102,11 @@ class CampaignForm
                                     ->integer()
                                     ->minValue(1)
                                     ->maxValue(100000)
-                                    ->default(100)
-                                    ->required(),
+                                    ->nullable(),
+                                TextInput::make('estimated_beneficiaries')
+                                    ->numeric()
+                                    ->integer()
+                                    ->minValue(1),
                                 Toggle::make('booth_required')
                                     ->label('Booth required')
                                     ->helperText('Indicates whether HealthBubba support should arrange a booth for this campaign.')
@@ -122,6 +132,49 @@ class CampaignForm
                                     ->prefix('₦')
                                     ->default(config('campaigns.default_specialist_fee', 0)),
                             ])
+                            ->columnSpanFull(),
+                        Section::make('Healthcare budgets')
+                            ->schema([
+                                TextInput::make('medication_budget')->numeric()->prefix('₦'),
+                                TextInput::make('laboratory_budget')->numeric()->prefix('₦'),
+                            ])
+                            ->columnSpanFull(),
+                        Section::make('Coverage rule overrides')
+                            ->description('Leave fields empty to inherit the institutional funding program defaults.')
+                            ->schema([
+                                Select::make('coverage_type_override')
+                                    ->options(collect(InstitutionalCoverageType::cases())
+                                        ->mapWithKeys(fn (InstitutionalCoverageType $type): array => [$type->value => $type->label()])
+                                        ->all())
+                                    ->nullable(),
+                                TextInput::make('gp_limit_per_beneficiary_override')
+                                    ->numeric()->integer()->minValue(1)->nullable(),
+                                TextInput::make('specialist_limit_per_beneficiary_override')
+                                    ->numeric()->integer()->minValue(1)->nullable(),
+                                TextInput::make('daily_consultation_limit_override')
+                                    ->numeric()->integer()->minValue(1)->nullable(),
+                                Select::make('coverage_expiry_override')
+                                    ->options([InstitutionalCoverageExpiry::Annual->value => InstitutionalCoverageExpiry::Annual->label()])
+                                    ->nullable(),
+                                Select::make('payment_preference_override')
+                                    ->options(collect(InstitutionalPaymentPreference::cases())
+                                        ->mapWithKeys(fn (InstitutionalPaymentPreference $preference): array => [$preference->value => $preference->label()])
+                                        ->all())
+                                    ->nullable(),
+                            ])
+                            ->columns(2)
+                            ->collapsible()
+                            ->collapsed()
+                            ->columnSpanFull(),
+                        Section::make('Booth deployment')
+                            ->schema([
+                                TextInput::make('booth_count')->numeric()->integer()->minValue(1),
+                                DatePicker::make('booth_preferred_deployment_date'),
+                                TextInput::make('booth_site'),
+                                TextInput::make('booth_contact_name'),
+                                TextInput::make('booth_contact_phone'),
+                            ])
+                            ->columns(2)
                             ->columnSpanFull(),
                     ]),
             ]);

@@ -8,6 +8,9 @@ export interface WorkspaceTeamMember {
     id: string;
     name: string;
     email: string;
+    phone: string | null;
+    jobTitle: string | null;
+    authorizationConfirmedAt: string | null;
     role: WorkspaceMemberRole;
     roleLabel: string;
     status: WorkspaceMemberStatus;

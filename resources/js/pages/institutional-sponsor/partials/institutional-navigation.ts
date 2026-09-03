@@ -3,12 +3,16 @@ import {
     BellIcon,
     LayoutGridIcon,
     MegaphoneIcon,
+    StethoscopeIcon,
+    TicketIcon,
     UserRoundCheckIcon,
     UsersRoundIcon,
+    WalletIcon,
 } from 'lucide-react';
 
 import type { PortalNavigationItem } from '@/components/business-portal-shell';
 import campaigns from '@/routes/campaigns';
+import funding from '@/routes/funding';
 import institutional from '@/routes/institutional';
 
 export const institutionalNavigation: PortalNavigationItem[] = [
@@ -18,16 +22,35 @@ export const institutionalNavigation: PortalNavigationItem[] = [
         href: institutional.dashboard().url,
     },
 
-    { label: 'Beneficiaries', icon: UsersRoundIcon },
+    {
+        label: 'Funding',
+        icon: WalletIcon,
+        href: funding.index().url,
+    },
     {
         label: 'Campaigns',
         icon: MegaphoneIcon,
         href: campaigns.index().url,
     },
     {
+        label: 'Beneficiaries',
+        icon: UsersRoundIcon,
+        href: institutional.beneficiaries.index().url,
+    },
+    {
+        label: 'Consultations',
+        icon: StethoscopeIcon,
+        href: institutional.consultations.index().url,
+    },
+    {
         label: 'Reports',
         icon: BarChart3Icon,
-        href: institutional.reports().url,
+        href: institutional.reports.index().url,
+    },
+    {
+        label: 'Enrollment Codes',
+        icon: TicketIcon,
+        href: institutional.enrollment_codes.index().url,
     },
     {
         label: 'Team',

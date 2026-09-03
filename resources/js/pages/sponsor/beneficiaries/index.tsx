@@ -24,7 +24,7 @@ export default function BeneficiariesIndex({
                         description="Invite and manage the people covered by your sponsorship."
                         action={
                             workspacePermissions.canManage ? (
-                                <AddBeneficiaryDialog capacity={capacity} />
+                                <AddBeneficiaryDialog />
                             ) : undefined
                         }
                     />

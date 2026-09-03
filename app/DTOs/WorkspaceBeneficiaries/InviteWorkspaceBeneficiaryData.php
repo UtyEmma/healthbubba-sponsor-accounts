@@ -13,6 +13,7 @@ final readonly class InviteWorkspaceBeneficiaryData
         public string $phone,
         public ?string $department,
         public ?string $employeeId,
+        public ?string $community,
         public WorkspaceBeneficiarySource $source = WorkspaceBeneficiarySource::Manual,
     ) {}
 
@@ -26,6 +27,7 @@ final readonly class InviteWorkspaceBeneficiaryData
             phone: trim((string) $data['phone']),
             department: filled($data['department'] ?? null) ? trim((string) $data['department']) : null,
             employeeId: filled($data['employee_id'] ?? null) ? mb_strtoupper(trim((string) $data['employee_id'])) : null,
+            community: filled($data['community'] ?? null) ? trim((string) $data['community']) : null,
             source: $source,
         );
     }

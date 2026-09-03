@@ -16,6 +16,8 @@ abstract class AuthorizedInstitutionalWorkspaceRequest extends FormRequest
 {
     protected bool $ownerOnly = false;
 
+    protected bool $manageOnly = false;
+
     public function authorize(): bool
     {
         $user = $this->user();
@@ -39,7 +41,8 @@ abstract class AuthorizedInstitutionalWorkspaceRequest extends FormRequest
             ->first();
 
         return $membership instanceof WorkspaceMember
-            && (! $this->ownerOnly || $membership->isOwner());
+            && (! $this->ownerOnly || $membership->isOwner())
+            && (! $this->manageOnly || $membership->role->canManage());
     }
 
     /** @return array<string, mixed> */

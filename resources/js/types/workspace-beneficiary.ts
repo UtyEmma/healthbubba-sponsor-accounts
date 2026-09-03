@@ -9,7 +9,8 @@ export type WorkspaceBeneficiaryStatus =
 
 export type WorkspaceBeneficiaryAccessAction = 'suspend' | 'restore' | 'revoke';
 
-export type WorkspaceBeneficiarySource = 'manual' | 'import';
+export type WorkspaceBeneficiarySource =
+    'manual' | 'import' | 'booth' | 'enrollment_code';
 
 export type WorkspaceBeneficiaryRelatable =
     | {
@@ -34,6 +35,7 @@ export interface WorkspaceBeneficiary {
     name: string;
     email: string;
     phone: string;
+    community: string | null;
     department: string | null;
     employeeId: string | null;
     status: WorkspaceBeneficiaryStatus;
@@ -79,6 +81,7 @@ export interface WorkspaceCapacity {
     total: number;
     remaining: number;
     canInvite: boolean;
+    unlimited?: boolean;
     unavailableReason: string | null;
 }
 
@@ -88,9 +91,17 @@ export interface WorkspaceBeneficiaryCounts {
 }
 
 export interface EmployeeImportResult {
+    id: string | null;
+    processed: number;
     imported: number;
     skipped: number;
-    errors: Array<{ row: number; errors: string[] }>;
+    errors: Array<{
+        row: number;
+        identifier: string | null;
+        code: string;
+        message: string;
+        errors: string[];
+    }>;
 }
 
 export interface WorkspaceBeneficiaryPageProps {

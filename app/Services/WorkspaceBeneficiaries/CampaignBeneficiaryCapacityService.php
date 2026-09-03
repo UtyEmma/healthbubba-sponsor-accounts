@@ -13,9 +13,12 @@ final readonly class CampaignBeneficiaryCapacityService
     {
         $this->expirePending($campaign);
 
+        $used = $this->used($campaign);
+
         return new CapacitySummary(
-            used: $this->used($campaign),
-            total: max(0, $campaign->beneficiary_limit),
+            used: $used,
+            total: max($used, $campaign->beneficiary_limit ?? $campaign->estimated_beneficiaries ?? 0),
+            unlimited: $campaign->beneficiary_limit === null,
         );
     }
 

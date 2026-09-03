@@ -25,16 +25,19 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string $name
  * @property string $email
+ * @property string|null $phone
  * @property AccountTypes|null $type
  * @property Roles $role
  * @property Status $status
  * @property Carbon|null $email_verified_at
+ * @property Carbon|null $phone_verified_at
+ * @property Carbon|null $account_verified_at
  * @property string $password
  * @property string|null $remember_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password', 'type', 'role'])]
+#[Fillable(['name', 'email', 'phone', 'password', 'type', 'role', 'account_verified_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser
 {
@@ -56,6 +59,8 @@ class User extends Authenticatable implements FilamentUser
             'role' => Roles::class,
             'type' => AccountTypes::class,
             'email_verified_at' => 'datetime',
+            'phone_verified_at' => 'datetime',
+            'account_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -71,7 +76,18 @@ class User extends Authenticatable implements FilamentUser
     public function workspaces(): BelongsToMany
     {
         return $this->belongsToMany(Workspace::class)
-            ->withPivot('id', 'public_id', 'name', 'email', 'role', 'status', 'last_selected_at')
+            ->withPivot(
+                'id',
+                'public_id',
+                'name',
+                'email',
+                'phone',
+                'job_title',
+                'authorization_confirmed_at',
+                'role',
+                'status',
+                'last_selected_at',
+            )
             ->withTimestamps();
     }
 
@@ -79,6 +95,22 @@ class User extends Authenticatable implements FilamentUser
     public function workspaceMemberships(): HasMany
     {
         return $this->hasMany(WorkspaceMember::class);
+    }
+
+    /** @return HasMany<AccountVerificationChallenge, $this> */
+    public function verificationChallenges(): HasMany
+    {
+        return $this->hasMany(AccountVerificationChallenge::class);
+    }
+
+    public function routeNotificationForTermii(): ?string
+    {
+        return $this->phone;
+    }
+
+    public function hasVerifiedAccount(): bool
+    {
+        return $this->account_verified_at !== null;
     }
 
     /** @return HasMany<Payment, $this> */

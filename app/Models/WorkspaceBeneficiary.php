@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\WorkspaceBeneficiaries\WorkspaceBeneficiarySource;
 use App\Enums\WorkspaceBeneficiaries\WorkspaceBeneficiaryStatus;
+use App\Models\Consultations\Consultation;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -55,6 +56,8 @@ final class WorkspaceBeneficiary extends Model
         'last_name',
         'email',
         'phone',
+        'community',
+        'campaign_booth_id',
         'department',
         'employee_id',
         'status',
@@ -100,10 +103,22 @@ final class WorkspaceBeneficiary extends Model
         return $this->belongsTo(Beneficiary::class, 'beneficiary_id');
     }
 
+    /** @return BelongsTo<CampaignBooth, $this> */
+    public function campaignBooth(): BelongsTo
+    {
+        return $this->belongsTo(CampaignBooth::class);
+    }
+
     /** @return HasMany<MedicalAccessRequest, $this> */
     public function medicalAccessRequests(): HasMany
     {
         return $this->hasMany(MedicalAccessRequest::class);
+    }
+
+    /** @return HasMany<Consultation, $this> */
+    public function consultations(): HasMany
+    {
+        return $this->hasMany(Consultation::class);
     }
 
     /**
