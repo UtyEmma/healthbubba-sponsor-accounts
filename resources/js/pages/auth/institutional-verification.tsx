@@ -78,7 +78,11 @@ export default function InstitutionalVerification({
     return (
         <>
             <Head title="Verify your Institutional Sponsor Account" />
-            <InstitutionalRegistrationShell step={3} stepLabel="Verify account">
+            <InstitutionalRegistrationShell
+                step={5}
+                totalSteps={6}
+                stepLabel="Verify account"
+            >
                 <div className="pt-5">
                     <h2 className="text-2xl leading-8 font-semibold tracking-[-.025em]">
                         Verify your account

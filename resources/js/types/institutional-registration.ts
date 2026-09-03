@@ -7,6 +7,8 @@ export interface InstitutionalRegistrationPageProps {
     organizationTypes: RegistrationOption[];
     countries: RegistrationOption[];
     states: RegistrationOption[];
+    initialAccountType: AccountType | null;
+    initialEmail: string;
 }
 
 export type VerificationChannel = 'email' | 'sms';
@@ -26,3 +28,4 @@ export interface AccountVerificationPageProps {
         challenge: AccountVerificationChallenge | null;
     };
 }
+import type { AccountType } from './billing';

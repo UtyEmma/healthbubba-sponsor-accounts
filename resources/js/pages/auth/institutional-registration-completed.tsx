@@ -20,7 +20,8 @@ export default function InstitutionalRegistrationCompleted() {
         <>
             <Head title="Institutional Sponsor Account Ready" />
             <InstitutionalRegistrationShell
-                step={4}
+                step={6}
+                totalSteps={6}
                 stepLabel="Account created"
                 showIntroduction={false}
                 contentClassName="sm:mt-3"

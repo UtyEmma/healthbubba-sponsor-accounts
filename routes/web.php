@@ -6,10 +6,13 @@ use App\Http\Controllers\Activity\MarkWorkspaceActivitiesReadController;
 use App\Http\Controllers\Activity\WorkspaceActivityIndexController;
 use App\Http\Controllers\Appointments\ConsultationController;
 use App\Http\Controllers\Appointments\UpdateAllocationFallbackController;
+use App\Http\Controllers\Auth\AuthenticateAccountSetupController;
+use App\Http\Controllers\Auth\CheckAccountAvailabilityController;
 use App\Http\Controllers\Auth\SendAccountVerificationCodeController;
 use App\Http\Controllers\Auth\ShowAccountVerificationCompletedController;
 use App\Http\Controllers\Auth\ShowAccountVerificationController;
 use App\Http\Controllers\Auth\StoreInstitutionalSponsorRegistrationController;
+use App\Http\Controllers\Auth\StoreOwnedWorkspaceController;
 use App\Http\Controllers\Auth\UpdatePendingAccountContactController;
 use App\Http\Controllers\Auth\VerifyAccountController;
 use App\Http\Controllers\BillingController;
@@ -76,6 +79,18 @@ use App\Http\Controllers\WorkspaceMembers\UpdateWorkspaceMemberRoleController;
 use App\Http\Controllers\WorkspaceMembers\WorkspaceTeamIndexController;
 use App\Http\Middleware\EnsureInstitutionalAccountVerified;
 use Illuminate\Support\Facades\Route;
+
+Route::post('/auth/account-availability', CheckAccountAvailabilityController::class)
+    ->middleware(['guest', 'throttle:account-availability'])
+    ->name('auth.account-availability');
+
+Route::post('/auth/account-setup/authenticate', AuthenticateAccountSetupController::class)
+    ->middleware(['guest', 'throttle:account-setup'])
+    ->name('auth.account-setup.authenticate');
+
+Route::post('/auth/account-setup/workspace', StoreOwnedWorkspaceController::class)
+    ->middleware(['auth', 'throttle:account-setup'])
+    ->name('auth.account-setup.workspace');
 
 Route::prefix('payments')->name('payments.')->group(function () {
     Route::get('/callback', PaymentCallbackController::class)

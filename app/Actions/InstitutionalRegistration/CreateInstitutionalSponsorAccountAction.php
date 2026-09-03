@@ -2,19 +2,19 @@
 
 namespace App\Actions\InstitutionalRegistration;
 
+use App\Actions\Workspaces\CreateNewWorkspace;
 use App\DTOs\InstitutionalRegistration\InstitutionalSponsorAccount;
 use App\DTOs\InstitutionalRegistration\InstitutionalSponsorRegistrationData;
+use App\DTOs\Workspaces\CreateWorkspaceData;
 use App\Enums\AccountTypes;
-use App\Enums\WorkspaceMembers\WorkspaceMemberRole;
-use App\Enums\WorkspaceMembers\WorkspaceMemberStatus;
 use App\Models\User;
-use App\Models\Workspace;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 final readonly class CreateInstitutionalSponsorAccountAction
 {
+    public function __construct(private CreateNewWorkspace $createWorkspace) {}
+
     public function execute(InstitutionalSponsorRegistrationData $data): InstitutionalSponsorAccount
     {
         return DB::transaction(function () use ($data): InstitutionalSponsorAccount {
@@ -27,35 +27,18 @@ final readonly class CreateInstitutionalSponsorAccountAction
                 'account_verified_at' => null,
             ]);
 
-            $workspace = Workspace::query()->create([
-                'name' => $data->organizationName,
-                'type' => AccountTypes::INSTITUTION,
-                'organization_type' => $data->organizationType,
-                'country_code' => $data->countryCode,
-                'state_code' => $data->state,
-                'official_email' => $data->officialEmail,
-                'official_phone' => $data->officialPhone,
-            ]);
-
-            $startsOn = now()->startOfDay();
-            $workspace->fundingProgram()->create([
-                'name' => 'Community Health Program '.$startsOn->year,
-                'starts_on' => $startsOn->toDateString(),
-                'ends_on' => $startsOn->copy()->addYearNoOverflow()->toDateString(),
-            ]);
-            $workspace->members()->create([
-                'public_id' => (string) Str::ulid(),
-                'user_id' => $user->getKey(),
-                'name' => $data->ownerName,
-                'email' => $data->ownerEmail,
-                'phone' => $data->ownerPhone,
-                'job_title' => $data->jobTitle,
-                'role' => WorkspaceMemberRole::Owner,
-                'status' => WorkspaceMemberStatus::Active,
-                'authorization_confirmed_at' => now(),
-                'accepted_at' => now(),
-                'last_selected_at' => now(),
-            ]);
+            $workspace = $this->createWorkspace->execute($user, new CreateWorkspaceData(
+                name: $data->organizationName,
+                accountType: AccountTypes::INSTITUTION,
+                organizationType: $data->organizationType,
+                countryCode: $data->countryCode,
+                state: $data->state,
+                officialEmail: $data->officialEmail,
+                officialPhone: $data->officialPhone,
+                memberPhone: $data->ownerPhone,
+                memberJobTitle: $data->jobTitle,
+                authorizationConfirmed: true,
+            ));
 
             return new InstitutionalSponsorAccount($user, $workspace);
         });

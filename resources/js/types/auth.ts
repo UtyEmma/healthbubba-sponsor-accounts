@@ -1,3 +1,4 @@
+import type { AccountType } from './billing';
 import type { Wallet } from './wallet';
 
 export type User = {
@@ -18,3 +19,25 @@ export type User = {
 export type Auth = {
     user: User;
 };
+
+export type AccountAvailabilityStatus =
+    | 'new_identity'
+    | 'existing_identity'
+    | 'owned_workspace'
+    | 'member_workspace';
+
+export interface AccountAvailability {
+    status: AccountAvailabilityStatus;
+    canLogin: boolean;
+    canSetup: boolean;
+}
+
+export interface AccountSetupAuthentication {
+    canLogin: boolean;
+    loginRedirect: string | null;
+}
+
+export interface AuthEntryPageProps {
+    initialAccountType: AccountType | null;
+    initialEmail: string;
+}

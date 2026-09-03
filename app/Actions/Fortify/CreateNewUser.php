@@ -3,6 +3,7 @@
 namespace App\Actions\Fortify;
 
 use App\Actions\Workspaces\CreateNewWorkspace;
+use App\DTOs\Workspaces\CreateWorkspaceData;
 use App\Enums\AccountTypes;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -53,7 +54,7 @@ class CreateNewUser implements CreatesNewUsers
                     AccountTypes::BUSINESS->value,
                 ]),
             ],
-            'password' => $this->passwordRules(),
+            'password' => [...$this->passwordRules(), 'confirmed'],
         ])->validate();
 
         return DB::transaction(function () use ($input): User {
@@ -70,10 +71,11 @@ class CreateNewUser implements CreatesNewUsers
                 ? "{$user->name}'s Workspace"
                 : Str::squish($input['organization_name']);
 
-            $this->createWorkspace->execute($user, [
-                'name' => $workspaceName,
-                'type' => $accountType,
-            ]);
+            $this->createWorkspace->execute($user, new CreateWorkspaceData(
+                name: $workspaceName,
+                accountType: $accountType,
+                memberPhone: $user->phone,
+            ));
 
             return $user;
         });

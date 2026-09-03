@@ -4,7 +4,8 @@ import { BrandMark } from '@/components/brand-mark';
 import { cn } from '@/lib/utils';
 
 interface InstitutionalRegistrationShellProps {
-    step: 1 | 2 | 3 | 4;
+    step: number;
+    totalSteps?: number;
     stepLabel: string;
     children: ReactNode;
     showIntroduction?: boolean;
@@ -13,6 +14,7 @@ interface InstitutionalRegistrationShellProps {
 
 export function InstitutionalRegistrationShell({
     step,
+    totalSteps = 4,
     stepLabel,
     children,
     showIntroduction = true,
@@ -48,10 +50,16 @@ export function InstitutionalRegistrationShell({
                     )}
                 >
                     <div
-                        className="grid grid-cols-4 gap-1.5"
-                        aria-label={`Step ${step} of 4`}
+                        className="grid gap-1.5"
+                        style={{
+                            gridTemplateColumns: `repeat(${totalSteps}, minmax(0, 1fr))`,
+                        }}
+                        aria-label={`Step ${step} of ${totalSteps}`}
                     >
-                        {[1, 2, 3, 4].map((segment) => (
+                        {Array.from(
+                            { length: totalSteps },
+                            (_, index) => index + 1,
+                        ).map((segment) => (
                             <span
                                 key={segment}
                                 className={cn(
@@ -67,7 +75,7 @@ export function InstitutionalRegistrationShell({
                     </div>
 
                     <p className="mt-2 text-xs leading-4 text-muted-foreground">
-                        Step {step} of 4 — {stepLabel}
+                        Step {step} of {totalSteps} — {stepLabel}
                     </p>
 
                     {children}

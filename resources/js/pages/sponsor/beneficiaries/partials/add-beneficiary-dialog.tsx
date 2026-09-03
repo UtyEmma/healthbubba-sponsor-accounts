@@ -16,8 +16,6 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import type { WorkspaceCapacity } from '@/types';
-
 export function AddBeneficiaryDialog({
     form,
 }: {
