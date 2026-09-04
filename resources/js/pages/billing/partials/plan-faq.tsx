@@ -13,7 +13,11 @@ const questions = [
     },
     {
         question: 'What happens when I upgrade or downgrade the plan?',
-        answer: 'Upgrades between tiers are processed instantly with a pro-rata adjustment. Downgrades don’t take effect mid-cycle — they’re staged and apply at the next billing cycle to protect already-consumed allocations.',
+        answer: 'Upgrades take effect immediately after a prorated payment. Eligible downgrades also take effect immediately, with no charge or refund; a downgrade is blocked when current capacity or consultation usage exceeds the target limits.',
+    },
+    {
+        question: 'How are subscription payments collected?',
+        answer: 'You can pay with your Wallet or Paystack. Renewals try the Wallet first and use a saved reusable Paystack authorization only when the Wallet balance is insufficient.',
     },
     {
         question: 'Can I cancel anytime?',

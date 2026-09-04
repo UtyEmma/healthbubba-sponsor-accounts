@@ -13,18 +13,26 @@ use App\Enums\Activity\WorkspaceActivityType;
 use App\Enums\CapacityPurchases\CapacityPurchaseStatus;
 use App\Enums\Payments\PaymentPurpose;
 use App\Enums\Payments\PaymentStatus;
+use App\Enums\Payments\SubscriptionPaymentSource;
 use App\Enums\Subscriptions\PlanChangeDirection;
+use App\Enums\Transactions\TransactionFlow;
+use App\Enums\Transactions\TransactionStatus;
+use App\Enums\Transactions\TransactionTypes;
 use App\Exceptions\Payments\CheckoutUnavailable;
 use App\Exceptions\Payments\PaymentException;
 use App\Models\CapacityPurchase;
 use App\Models\Payment;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Models\Transaction;
+use App\Models\Wallet;
 use App\Payments\PaymentService;
 use App\Services\Activity\WorkspaceActivityLogger;
 use App\Services\Payments\PlanChangePricingService;
+use App\Services\Payments\PlanChangeEligibilityService;
 use App\Support\Payments\PaymentReferenceGenerator;
 use Illuminate\Support\Facades\DB;
+use App\ValueObjects\Money;
 use Revoltify\Subscriptionify\Enums\SubscriptionStatus;
 
 final readonly class StartPlanChangeAction
@@ -35,6 +43,7 @@ final readonly class StartPlanChangeAction
         private PaymentReferenceGenerator $references,
         private FailPaymentAction $failPayment,
         private WorkspaceActivityLogger $activities,
+        private PlanChangeEligibilityService $eligibility,
     ) {}
 
     public function execute(StartPlanChangeData $data): PlanChangeResult
@@ -50,24 +59,28 @@ final readonly class StartPlanChangeAction
 
                 $this->ensurePlanCanReplaceSubscription($data, $subscription, $targetPlan);
                 $this->ensureNoConflictingOperations($subscription);
-                $quote = $this->pricing->quote($subscription, $targetPlan);
+                $direction = $this->pricing->direction($subscription, $targetPlan);
+                $quoteSubscription = $subscription;
 
-                if ($quote->direction === PlanChangeDirection::DOWNGRADE) {
-                    if ($this->scheduleDowngrade($subscription, $targetPlan, $quote)) {
-                        $this->activities->record($data->workspace, new WorkspaceActivityData(
-                            type: WorkspaceActivityType::PlanDowngradeScheduled,
-                            title: "Scheduled downgrade to {$targetPlan->name}",
-                            actor: WorkspaceActivityActor::user($data->user),
-                            subjectType: 'subscription',
-                            subjectId: $subscription->getKey(),
-                            subjectName: $targetPlan->name,
-                            description: 'The plan change will take effect at the next billing cycle.',
-                            context: [
-                                'plan_name' => $targetPlan->name,
-                                'effective_at' => $quote->effectiveAt->toISOString(),
-                            ],
-                        ));
+                if ($direction === PlanChangeDirection::DOWNGRADE) {
+                    $eligibility = $this->eligibility->assess($data->workspace, $subscription, $targetPlan);
+
+                    if (! $eligibility->available()) {
+                        throw new CheckoutUnavailable(implode(' ', $eligibility->violations));
                     }
+
+                    $quoteSubscription = clone $subscription;
+                    $quoteSubscription->setAttribute('capacity_count', $eligibility->targetCapacityCount);
+                    $quote = $this->pricing->quote($quoteSubscription, $targetPlan);
+                    $this->applyDowngrade($data, $subscription, $targetPlan, $quote, $eligibility->targetCapacityCount);
+
+                    return [$quote, null, false];
+                }
+
+                $quote = $this->pricing->quote($quoteSubscription, $targetPlan);
+
+                if ($data->paymentSource === SubscriptionPaymentSource::WALLET) {
+                    $this->payUpgradeFromWallet($data, $subscription, $targetPlan, $quote);
 
                     return [$quote, null, false];
                 }
@@ -103,7 +116,11 @@ final readonly class StartPlanChangeAction
                         'additional_capacity' => $quote->additionalCapacity,
                         'current_renewal_minor' => $quote->currentRenewal->amountInMinorUnits,
                         'target_renewal_minor' => $quote->targetRenewal->amountInMinorUnits,
-                        'term_ends_at' => $quote->effectiveAt->toISOString(),
+                        'current_base_minor' => $quote->currentBasePrice->amountInMinorUnits,
+                        'target_base_minor' => $quote->targetBasePrice->amountInMinorUnits,
+                        'quoted_at' => $quote->quotedAt->toISOString(),
+                        'term_ends_at' => $subscription->ends_at?->toISOString(),
+                        'payment_source' => SubscriptionPaymentSource::PAYSTACK->value,
                     ],
                 ]);
                 $payment->update([
@@ -217,32 +234,116 @@ final readonly class StartPlanChangeAction
         }
     }
 
-    private function scheduleDowngrade(
+    private function applyDowngrade(
+        StartPlanChangeData $data,
         Subscription $subscription,
         Plan $targetPlan,
         PlanChangeQuote $quote,
-    ): bool {
-        if (! $subscription->auto_renew
-            || $subscription->payment_method_id === null
-            || $subscription->gateway === null) {
-            throw new CheckoutUnavailable('Automatic renewal must be active before scheduling a downgrade.');
-        }
-
+        int $targetCapacityCount,
+    ): void {
         if ($this->unresolvedUpgradePayment($subscription) instanceof Payment) {
             throw new CheckoutUnavailable('A plan upgrade payment is already in progress.');
         }
 
-        if ((int) $subscription->scheduled_plan_id === (int) $targetPlan->getKey()
-            && $subscription->scheduled_plan_change_at?->equalTo($quote->effectiveAt) === true) {
-            return false;
-        }
-
         $subscription->update([
-            'scheduled_plan_id' => $targetPlan->getKey(),
-            'scheduled_plan_change_at' => $quote->effectiveAt,
+            'plan_id' => $targetPlan->getKey(),
+            'capacity_count' => $targetCapacityCount,
+            'scheduled_plan_id' => null,
+            'scheduled_plan_change_at' => null,
         ]);
 
-        return true;
+        $this->activities->record($data->workspace, new WorkspaceActivityData(
+            type: WorkspaceActivityType::PlanDowngradeApplied,
+            title: "Downgraded to {$targetPlan->name}",
+            actor: WorkspaceActivityActor::user($data->user),
+            subjectType: 'subscription',
+            subjectId: $subscription->getKey(),
+            subjectName: $targetPlan->name,
+            description: 'The plan changed immediately without an additional charge or refund.',
+            context: [
+                'plan_name' => $targetPlan->name,
+                'effective_at' => $quote->effectiveAt->toISOString(),
+                'capacity_count' => $targetCapacityCount,
+            ],
+        ));
+    }
+
+    private function payUpgradeFromWallet(
+        StartPlanChangeData $data,
+        Subscription $subscription,
+        Plan $targetPlan,
+        PlanChangeQuote $quote,
+    ): void {
+        if ($this->unresolvedUpgradePayment($subscription) instanceof Payment) {
+            throw new CheckoutUnavailable('A plan upgrade payment is already in progress.');
+        }
+
+        $wallet = $data->workspace->wallet()->firstOrCreate([], [
+            'balance' => '0.00',
+            'currency' => $quote->amountDueNow->currency,
+        ]);
+        $wallet = Wallet::query()->whereKey($wallet->getKey())->lockForUpdate()->firstOrFail();
+
+        if ($wallet->currency !== $quote->amountDueNow->currency) {
+            throw new CheckoutUnavailable('The wallet currency does not match this payment.');
+        }
+
+        $balance = Money::fromMajor($wallet->balance, $wallet->currency);
+
+        if ($balance->amountInMinorUnits < $quote->amountDueNow->amountInMinorUnits) {
+            throw new CheckoutUnavailable('Your wallet balance is insufficient. Choose Paystack to continue.');
+        }
+
+        $fromPlanId = (int) $subscription->plan_id;
+
+        $wallet->update([
+            'balance' => (new Money(
+                $balance->amountInMinorUnits - $quote->amountDueNow->amountInMinorUnits,
+                $balance->currency,
+            ))->toMajorAmount(),
+        ]);
+        $subscription->update([
+            'plan_id' => $targetPlan->getKey(),
+            'capacity_count' => $quote->targetCapacityCount,
+            'scheduled_plan_id' => null,
+            'scheduled_plan_change_at' => null,
+        ]);
+
+        Transaction::query()->create([
+            'payment_id' => null,
+            'owner_type' => $data->workspace->getMorphClass(),
+            'owner_id' => $data->workspace->getKey(),
+            'transactable_type' => $subscription->getMorphClass(),
+            'transactable_id' => $subscription->getKey(),
+            'amount' => $quote->amountDueNow->toMajorAmount(),
+            'currency' => $quote->amountDueNow->currency,
+            'reference' => $this->references->generate(PaymentPurpose::PLAN_UPGRADE),
+            'type' => TransactionTypes::PLAN_CHANGE,
+            'status' => TransactionStatus::COMPLETED,
+            'flow' => TransactionFlow::DEBIT,
+            'meta' => [
+                'description' => 'Prorated plan upgrade',
+                'payment_source' => SubscriptionPaymentSource::WALLET->value,
+                'from_plan_id' => $fromPlanId,
+                'to_plan_id' => $targetPlan->getKey(),
+            ],
+        ]);
+
+        $this->activities->record($data->workspace, new WorkspaceActivityData(
+            type: WorkspaceActivityType::PlanUpgradeCompleted,
+            title: "Upgraded to {$targetPlan->name}",
+            actor: WorkspaceActivityActor::user($data->user),
+            subjectType: 'subscription',
+            subjectId: $subscription->getKey(),
+            subjectName: $targetPlan->name,
+            description: 'The prorated upgrade was paid from the workspace wallet.',
+            context: [
+                'plan_name' => $targetPlan->name,
+                'from_plan_id' => $fromPlanId,
+                'amount_minor' => $quote->amountDueNow->amountInMinorUnits,
+                'currency' => $quote->amountDueNow->currency,
+            ],
+        ));
     }
 
     private function unresolvedUpgradePayment(Subscription $subscription): ?Payment
@@ -277,7 +378,11 @@ final readonly class StartPlanChangeAction
                 !== $quote->targetRenewal->amountInMinorUnits
             || (int) ($payment->metadata['capacity_count'] ?? 0)
                 !== $quote->targetCapacityCount
-            || (string) ($payment->metadata['term_ends_at'] ?? '') !== $quote->effectiveAt->toISOString()) {
+            || (int) ($payment->metadata['current_base_minor'] ?? 0)
+                !== $quote->currentBasePrice->amountInMinorUnits
+            || (int) ($payment->metadata['target_base_minor'] ?? 0)
+                !== $quote->targetBasePrice->amountInMinorUnits
+            || (string) ($payment->metadata['term_ends_at'] ?? '') !== $quote->termEndsAt->toISOString()) {
             throw new CheckoutUnavailable('A different plan upgrade is already in progress.');
         }
     }

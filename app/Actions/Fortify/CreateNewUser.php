@@ -68,7 +68,7 @@ class CreateNewUser implements CreatesNewUsers
             ]);
 
             $workspaceName = $accountType === AccountTypes::INDIVIDUAL
-                ? "{$user->name}'s Workspace"
+                ? $user->name
                 : Str::squish($input['organization_name']);
 
             $this->createWorkspace->execute($user, new CreateWorkspaceData(

@@ -2,21 +2,21 @@
 
 namespace App\Http\Controllers\Api\Consultations;
 
-use App\Actions\Consultations\ReserveConsultationAction;
-use App\DTOs\Consultations\ConsultationEligibilityData;
 use App\Http\Requests\Consultations\StoreConsultationEligibilityRequest;
-use App\Http\Resources\ConsultationEligibilityResource;
+use App\Http\Resources\PatientConsultationSponsorshipResource;
+use App\Models\Beneficiary;
+use App\Queries\Consultations\PatientConsultationSponsorshipQuery;
 
 final readonly class CheckConsultationEligibilityController
 {
-    public function __construct(private ReserveConsultationAction $reserveConsultation) {}
+    public function __construct(private PatientConsultationSponsorshipQuery $sponsorships) {}
 
-    public function __invoke(StoreConsultationEligibilityRequest $request): ConsultationEligibilityResource
+    public function __invoke(StoreConsultationEligibilityRequest $request): PatientConsultationSponsorshipResource
     {
-        return new ConsultationEligibilityResource(
-            $this->reserveConsultation->execute(
-                ConsultationEligibilityData::fromRequest($request),
-            ),
+        $patient = Beneficiary::query()->findOrFail($request->patientId());
+
+        return new PatientConsultationSponsorshipResource(
+            $this->sponsorships->getForPatient($patient),
         );
     }
 }

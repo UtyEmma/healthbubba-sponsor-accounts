@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/page-header';
 import { PaymentStatusNotice } from '@/components/payment-status-notice';
 import { Disclose } from '@/components/toggle/disclose';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { PlanBillingPageProps } from '@/types';
 import { CapacityPurchaseCard } from './partials/capacity-purchase-card';
@@ -12,6 +13,7 @@ import { PlanCard } from './partials/plan-cards';
 import { PlanChangeDialog } from './partials/plan-change-dialog';
 import { PlanCheckoutDialog } from './partials/plan-checkout-dialog';
 import { PlanFaq } from './partials/plan-faq';
+import { SubscriptionRenewalDialog } from './partials/subscription-renewal-dialog';
 import { DashboardLayout } from '@/layouts/dashboard';
 
 const nairaFormatter = new Intl.NumberFormat('en-NG', {
@@ -39,12 +41,14 @@ export default function ({
     accountType,
     plans,
     subscription,
+    wallet,
     capacityPurchase,
 }: PlanBillingPageProps) {
     const { errors, flash } = usePage().props;
     const [selectedPlan, setSelectedPlan] = useState<
         PlanBillingPageProps['plans'][number] | null
     >(null);
+    const [renewalOpen, setRenewalOpen] = useState(false);
 
     const renewalDate =
         subscription?.status === 'trialing'
@@ -141,29 +145,27 @@ export default function ({
                                                 subscription.plan.billingLabel}
                                         </p>
                                     </div>
-                                    {subscription.scheduledPlan && (
-                                        <div className="grid gap-1 border-t pt-4 lg:col-span-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+                                    {subscription.renewalPaymentAvailable && (
+                                        <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4 lg:col-span-4">
                                             <div>
                                                 <p className="text-sm font-medium">
-                                                    Downgrade scheduled to{' '}
-                                                    {
-                                                        subscription
-                                                            .scheduledPlan.name
-                                                    }
+                                                    Subscription payment due
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
-                                                    The new price will be
-                                                    charged when the plan
-                                                    changes on{' '}
-                                                    {formatDate(
-                                                        subscription.scheduledPlanChangeAt,
-                                                    )}
-                                                    .
+                                                    Pay from Wallet or use
+                                                    Paystack to keep your plan
+                                                    active.
                                                 </p>
                                             </div>
-                                            <span className="w-fit rounded-full bg-warning/10 px-2.5 py-1 text-xs font-medium text-warning">
-                                                Scheduled
-                                            </span>
+                                            <Button
+                                                type="button"
+                                                size="compact"
+                                                onClick={() =>
+                                                    setRenewalOpen(true)
+                                                }
+                                            >
+                                                Renew plan
+                                            </Button>
                                         </div>
                                     )}
                                 </>
@@ -224,6 +226,7 @@ export default function ({
                     <PlanFaq />
                     <PlanCheckoutDialog
                         accountType={accountType}
+                        wallet={wallet}
                         plan={selectedPlan}
                         open={
                             selectedPlan !== null &&
@@ -239,6 +242,11 @@ export default function ({
                     {subscription && (
                         <PlanChangeDialog
                             subscriptionId={subscription.id}
+                            currentPlanName={
+                                subscription.plan?.name ?? 'Current plan'
+                            }
+                            currentCapacity={subscription.capacityCount}
+                            wallet={wallet}
                             plan={selectedPlan}
                             open={selectedPlan?.plan_change?.available === true}
                             onOpenChange={(open) => {
@@ -246,6 +254,14 @@ export default function ({
                                     setSelectedPlan(null);
                                 }
                             }}
+                        />
+                    )}
+                    {subscription && (
+                        <SubscriptionRenewalDialog
+                            subscription={subscription}
+                            wallet={wallet}
+                            open={renewalOpen}
+                            onOpenChange={setRenewalOpen}
                         />
                     )}
                 </div>

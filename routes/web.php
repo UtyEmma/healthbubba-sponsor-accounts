@@ -56,6 +56,7 @@ use App\Http\Controllers\Payments\PaymentWebhookController;
 use App\Http\Controllers\Payments\StoreCapacityPurchaseController;
 use App\Http\Controllers\Payments\StorePlanChangeController;
 use App\Http\Controllers\Payments\StorePlanCheckoutController;
+use App\Http\Controllers\Payments\StoreSubscriptionRenewalController;
 use App\Http\Controllers\Payments\StoreWalletPaymentController;
 use App\Http\Controllers\Reports\BusinessConsultationReportController;
 use App\Http\Controllers\WalletController;
@@ -226,6 +227,8 @@ Route::middleware(['auth', EnsureInstitutionalAccountVerified::class])->group(fu
         Route::post('/subscriptions/{subscription}/plan-changes/{plan:slug}', [StorePlanChangeController::class, 'store'])
             ->name('subscriptions.plan_changes.store')
             ->withoutScopedBindings();
+        Route::post('/subscriptions/{subscription}/renewal', StoreSubscriptionRenewalController::class)
+            ->name('subscriptions.renewals.store');
         Route::get('/activity-log', WorkspaceActivityIndexController::class)->name('activity_log.index');
         Route::post('/activity-log/read-all', MarkWorkspaceActivitiesReadController::class)
             ->middleware('throttle:30,1')

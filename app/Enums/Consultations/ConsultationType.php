@@ -10,8 +10,8 @@ enum ConsultationType: string
     public function label(): string
     {
         return match ($this) {
-            self::GeneralPractitioner => 'GP Consultation',
-            self::Specialist => 'Specialist Consultation',
+            self::GeneralPractitioner => 'Scheduled Consultation',
+            self::Specialist => 'Instant Consultation',
         };
     }
 }

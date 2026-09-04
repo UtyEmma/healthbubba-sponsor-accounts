@@ -7,6 +7,7 @@ use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Str;
+use Revoltify\Subscriptionify\Enums\SubscriptionStatus;
 
 /** @mixin Subscription */
 final class SubscriptionResource extends JsonResource
@@ -44,6 +45,7 @@ final class SubscriptionResource extends JsonResource
             'capacityCount' => $this->capacity_count,
             'renewalAttempts' => $this->renewal_attempts,
             'renewalAmount' => $this->renewalAmount,
+            'renewalPaymentAvailable' => $this->renewalPaymentAvailable(),
             'scheduledPlan' => $this->whenLoaded('scheduledPlan', fn (): ?array => $this->scheduledPlan === null
                 ? null
                 : [
@@ -53,6 +55,20 @@ final class SubscriptionResource extends JsonResource
                 ]),
             'scheduledPlanChangeAt' => $this->scheduled_plan_change_at?->toISOString(),
         ];
+    }
+
+    private function renewalPaymentAvailable(): bool
+    {
+        if ($this->status === SubscriptionStatus::PastDue) {
+            return true;
+        }
+
+        if ($this->status !== SubscriptionStatus::Active) {
+            return false;
+        }
+
+        return $this->renewal_retry_at?->isPast() === true
+            || $this->next_charge_at?->isPast() === true;
     }
 
     private function billingLabel(): string

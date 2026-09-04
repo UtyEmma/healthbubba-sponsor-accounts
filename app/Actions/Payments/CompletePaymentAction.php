@@ -24,6 +24,7 @@ use App\Models\Wallet;
 use App\Models\Workspace;
 use App\Payments\PaymentService;
 use App\Services\Payments\PlanPricingService;
+use App\Services\Payments\PlanChangePricingService;
 use App\ValueObjects\Money;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -41,6 +42,7 @@ final readonly class CompletePaymentAction
         private FailPaymentAction $failPayment,
         private CompleteCapacityPurchaseAction $completeCapacityPurchase,
         private PlanPricingService $planPricing,
+        private PlanChangePricingService $planChangePricing,
     ) {}
 
     public function execute(
@@ -309,6 +311,17 @@ final readonly class CompletePaymentAction
 
         $targetCharge = $this->planPricing->renewalForPlan($subscription, $targetPlan);
         $currentCharge = $this->planPricing->renewal($subscription);
+        $quotedAt = $payment->metadata['quoted_at'] ?? null;
+
+        if (! is_string($quotedAt)) {
+            throw new PaymentVerificationFailed('The plan upgrade quote is invalid.');
+        }
+
+        $quote = $this->planChangePricing->quote(
+            $subscription,
+            $targetPlan,
+            CarbonImmutable::parse($quotedAt),
+        );
         $currentRenewalMinor = $this->positiveMetadataInteger(
             $payment,
             'current_renewal_minor',
@@ -324,11 +337,17 @@ final readonly class CompletePaymentAction
             'capacity_count',
             'plan upgrade',
         );
+        $currentBaseMinor = $this->positiveMetadataInteger($payment, 'current_base_minor', 'plan upgrade');
+        $targetBaseMinor = $this->positiveMetadataInteger($payment, 'target_base_minor', 'plan upgrade');
 
         if ($currentRenewalMinor !== $currentCharge->money->amountInMinorUnits
             || $targetRenewalMinor !== $targetCharge->money->amountInMinorUnits
-            || $targetRenewalMinor <= $currentRenewalMinor
-            || $capacityCount !== $targetCharge->capacityCount) {
+            || $currentBaseMinor !== $quote->currentBasePrice->amountInMinorUnits
+            || $targetBaseMinor !== $quote->targetBasePrice->amountInMinorUnits
+            || $targetBaseMinor <= $currentBaseMinor
+            || $payment->amount_minor !== $quote->amountDueNow->amountInMinorUnits
+            || $capacityCount !== $targetCharge->capacityCount
+            || $capacityCount !== $quote->targetCapacityCount) {
             throw new PaymentVerificationFailed('The plan pricing changed before the upgrade payment completed.');
         }
 
@@ -463,6 +482,9 @@ final readonly class CompletePaymentAction
             throw new PaymentVerificationFailed('The renewal pricing changed before payment completed.');
         }
         $now = now();
+        $consentedAt = $payment->metadata['recurring_consent_at'] ?? null;
+        $autoRenew = $subscription->auto_renew
+            || ($paymentMethod?->reusable === true && is_string($consentedAt));
         $renewalBase = $subscription->ends_at?->isFuture() === true
             ? $subscription->ends_at
             : $now;
@@ -478,7 +500,8 @@ final readonly class CompletePaymentAction
             'ends_at' => $endsAt,
             'renewed_at' => $now,
             'cancelled_at' => null,
-            'next_charge_at' => $subscription->auto_renew ? $endsAt : null,
+            'auto_renew' => $autoRenew,
+            'next_charge_at' => $autoRenew ? $endsAt : null,
             'renewal_attempts' => 0,
             'renewal_retry_at' => null,
             'payment_method_id' => $paymentMethod?->getKey() ?? $subscription->payment_method_id,

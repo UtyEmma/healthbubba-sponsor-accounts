@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\Payments\CheckoutUnavailable;
 use App\Http\Resources\CapacityPurchaseSummaryResource;
+use App\Http\Resources\BillingWalletResource;
 use App\Http\Resources\PlanResource;
 use App\Http\Resources\SubscriptionResource;
 use App\Mappers\WorkspacePlanMapper;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Models\Wallet;
 use App\Services\Payments\CapacityPricingService;
 use App\Services\Payments\PlanPricingService;
 use App\Services\WorkspaceMembers\WorkspaceMemberAccessService;
@@ -39,6 +41,10 @@ final class BillingController extends Controller
             ->where('subscribable_id', $workspace->getKey())
             ->latest('id')
             ->first();
+        $wallet = $workspace->wallet()->first() ?? new Wallet([
+            'balance' => '0.00',
+            'currency' => config()->string('payments.currency', 'NGN'),
+        ]);
 
         return Inertia::render('billing/index', [
             'accountType' => $workspace->type->value,
@@ -46,6 +52,7 @@ final class BillingController extends Controller
             'plans' => PlanResource::collection(
                 $this->workspacePlans->mapAvailable($workspace, $subscription),
             ),
+            'wallet' => new BillingWalletResource($wallet),
             'subscription' => $subscription === null
                 ? null
                 : new SubscriptionResource(
@@ -54,7 +61,7 @@ final class BillingController extends Controller
                 ),
             'capacityPurchase' => $subscription === null
                 ? null
-                : $this->capacityPurchaseSummary($subscription, $workspace),
+                : $this->capacityPurchaseSummary($subscription, $workspace, $wallet),
         ]);
     }
 
@@ -75,10 +82,11 @@ final class BillingController extends Controller
     private function capacityPurchaseSummary(
         Subscription $subscription,
         Workspace $workspace,
+        Wallet $wallet,
     ): ?CapacityPurchaseSummaryResource {
         $summary = $this->capacityPricing->summary(
             subscription: $subscription,
-            wallet: $workspace->wallet()->first(),
+            wallet: $wallet,
         );
 
         return $summary === null ? null : new CapacityPurchaseSummaryResource($summary);
