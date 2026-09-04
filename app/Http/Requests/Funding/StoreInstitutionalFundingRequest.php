@@ -14,7 +14,7 @@ final class StoreInstitutionalFundingRequest extends AuthorizedInstitutionalFund
                 'min:'.config('payments.wallet.min_amount', '100.00'),
                 'max:'.config('payments.wallet.max_amount', '10000000.00'),
             ],
-            'funding_method' => ['required', 'in:bank_transfer'],
+            'funding_method' => ['required', 'in:paystack'],
         ];
     }
 

@@ -34,6 +34,7 @@ final class StorePlanChangeController extends Controller
                 subscription: $request->subscription(),
                 targetPlan: $request->targetPlan(),
                 callbackUrl: route('payments.callback'),
+                paymentSource: $request->paymentSource(),
             ));
         } catch (CheckoutUnavailable $exception) {
             return back()->withErrors(['plan_change' => $exception->getMessage()]);
@@ -50,7 +51,7 @@ final class StorePlanChangeController extends Controller
         }
 
         $message = $result->quote->direction === PlanChangeDirection::DOWNGRADE
-            ? 'Your downgrade is scheduled for the next billing cycle.'
+            ? 'Your new plan is now active. No charge or refund was applied.'
             : 'Your plan has been upgraded.';
 
         return back()->with('success', $message);

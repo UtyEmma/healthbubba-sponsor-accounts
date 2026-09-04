@@ -1,5 +1,12 @@
 export type AccountType = 'individual' | 'business' | 'institution';
 
+export type SubscriptionPaymentSource = 'wallet' | 'paystack';
+
+export type BillingWallet = {
+    balance: string;
+    currency: string;
+};
+
 export type FeatureType = 'toggle' | 'limit' | 'consumable' | 'metered';
 
 export type PlanFeature = {
@@ -39,6 +46,8 @@ export type PlanChange = {
     renewal_amount: string;
     effective_at: string;
     scheduled: boolean;
+    target_capacity_count: number;
+    limit_violations: string[];
     unavailable_reason: string | null;
 };
 
@@ -80,6 +89,7 @@ export type SubscriptionSummary = {
     capacityCount: number;
     renewalAttempts: number;
     renewalAmount: string;
+    renewalPaymentAvailable: boolean;
     scheduledPlan: {
         id: number;
         name: string;
@@ -108,6 +118,7 @@ export type PlanBillingPageProps = {
     accountType: AccountType;
     accountTypeLabel: string;
     plans: Plan[];
+    wallet: BillingWallet;
     subscription: SubscriptionSummary | null;
     capacityPurchase: CapacityPurchaseSummary | null;
 };

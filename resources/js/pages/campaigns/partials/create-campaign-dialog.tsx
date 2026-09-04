@@ -419,14 +419,14 @@ function AllocationStep({
                 </p>
             </div>
             <AllocationCard
-                title="GP consultations"
+                title="Scheduled consultations"
                 amount={number(data.gp_units) * number(configuration.gpUnitFee)}
                 units={data.gp_units}
                 price={configuration.gpUnitFee}
                 onUnitsChange={(value) => form.setData('gp_units', value)}
             />
             <AllocationCard
-                title="Specialist consultations"
+                title="Instant consultations"
                 amount={
                     number(data.specialist_units) *
                     number(configuration.specialistUnitFee)
@@ -683,11 +683,11 @@ function SummaryStep({
             </div>
             <SummarySection title="Healthcare allocation">
                 <SummaryRow
-                    label={`GP consultations × ${number(data.gp_units).toLocaleString('en-NG')}`}
+                    label={`Scheduled consultations × ${number(data.gp_units).toLocaleString('en-NG')}`}
                     value={formatMoney(totals.gp)}
                 />
                 <SummaryRow
-                    label={`Specialist consultations × ${number(data.specialist_units).toLocaleString('en-NG')}`}
+                    label={`Instant consultations × ${number(data.specialist_units).toLocaleString('en-NG')}`}
                     value={formatMoney(totals.specialist)}
                 />
                 <SummaryRow

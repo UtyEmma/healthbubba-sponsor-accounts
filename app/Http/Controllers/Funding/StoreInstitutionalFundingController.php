@@ -30,8 +30,8 @@ final class StoreInstitutionalFundingController extends Controller
                 amount: Money::fromMajor($request->amount(), config()->string('payments.currency', 'NGN')),
                 callbackUrl: route('payments.callback'),
                 gateway: PaymentGatewayName::PAYSTACK,
-                channels: ['bank_transfer'],
-                fundingMethod: 'bank_transfer',
+                // channels: ['bank_transfer'],
+                fundingMethod: 'paystack',
             ));
         } catch (PaymentException|PaymentVerificationFailed $exception) {
             report($exception);

@@ -32,6 +32,7 @@ export type WorkspaceActivityEvent =
     | 'plan_upgrade_completed'
     | 'plan_downgrade_scheduled'
     | 'plan_downgrade_applied'
+    | 'plan_downgrade_cancelled'
     | 'capacity_purchased'
     | 'beneficiary_invited'
     | 'invitation_resent'

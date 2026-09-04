@@ -1,3 +1,5 @@
+import type { ApiResponse } from './api';
+
 export type ConsultationType = 'gp' | 'specialist';
 export type ConsultationStatus = 'upcoming' | 'completed' | 'cancelled';
 export type ConsultationAllocationScope = 'shared' | 'per_employee';
@@ -132,17 +134,15 @@ export interface ConsultationReservation {
     heldUntilCancelled: boolean;
 }
 
-export interface ConsultationEligibilityResponse {
-    data: {
-        available: boolean;
-        reason: string | null;
-        consultationType: {
-            value: ConsultationType;
-            label: string;
-        } | null;
-        reservation: ConsultationReservation | null;
-    };
-}
+export type ConsultationEligibilityResponse = ApiResponse<{
+    available: boolean;
+    reason: string | null;
+    consultationType: {
+        value: ConsultationType;
+        label: string;
+    } | null;
+    reservation: ConsultationReservation | null;
+}>;
 
 export type ConsultationSponsorshipUnavailableReason =
     | 'no_active_subscription'
@@ -168,26 +168,64 @@ export interface ConsultationTypeAvailability {
 }
 
 export interface ConsultationSponsorAvailability {
-    id: number;
-    name: string;
-    type: {
-        value: 'individual' | 'business' | 'institution';
-        label: string;
+    sponsor: {
+        id: number;
+        name: string;
+        type: {
+            value: 'individual' | 'business' | 'institution';
+            label: string;
+        };
     };
-    consultationTypes: ConsultationTypeAvailability[];
+    campaign: {
+        id: number;
+        name: string;
+        slug: string;
+        description: string | null;
+        location: string | null;
+        city: string | null;
+        state: string | null;
+        country: string | null;
+        status: 'PENDING' | 'IN_PROGRESS' | 'PAUSED' | 'COMPLETED';
+        startsAt: string | null;
+        endsAt: string | null;
+    } | null;
+    limits: Record<ConsultationType, ConsultationLimitAvailability>;
 }
 
-export interface PatientConsultationSponsorshipResponse {
-    patientId: number;
-    sponsors: ConsultationSponsorAvailability[];
+export interface ConsultationLimitAvailability {
+    label: string;
+    available: boolean;
+    reason: ConsultationSponsorshipUnavailableReason | null;
+    allocated: number | null;
+    used: number;
+    reserved: number;
+    remaining: number | null;
+    periodStartsAt: string | null;
+    periodEndsAt: string | null;
 }
+
+export type PatientConsultationSponsorshipResponse = ApiResponse<
+    ConsultationSponsorAvailability[]
+>;
+
+export interface SponsorEligibilityPayload {
+    patient_id: number;
+}
+
+export interface ReserveConsultationPayload {
+    appointment_id: number;
+    sponsor_id: number;
+    campaign_id?: number | null;
+}
+
+export type ConsultationReservationResponse =
+    ApiResponse<ConsultationReservation>;
 
 export interface RecordConsultationUsagePayload {
     appointment_id: number;
-    sponsor_id: number;
 }
 
-export interface ConsultationUsageResponse {
+export interface ConsultationUsageData {
     recorded: true;
     usageReference: string;
     appointmentId: number;
@@ -208,3 +246,5 @@ export interface ConsultationUsageResponse {
     coverageName: string;
     recordedAt: string | null;
 }
+
+export type ConsultationUsageResponse = ApiResponse<ConsultationUsageData>;

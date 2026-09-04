@@ -17,6 +17,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import {
     Table,
     TableBody,
@@ -139,7 +140,7 @@ export default function WorkspaceTeamPage({
                                                         )}
                                                     >
                                                         {({ processing }) => (
-                                                            <select
+                                                            <Select
                                                                 name="role"
                                                                 defaultValue={
                                                                     member.role
@@ -152,7 +153,8 @@ export default function WorkspaceTeamPage({
                                                                 ) =>
                                                                     event.currentTarget.form?.requestSubmit()
                                                                 }
-                                                                className="h-9 rounded-control border border-input bg-background px-3 text-sm"
+                                                                className="h-9"
+                                                                containerClassName="w-auto"
                                                                 aria-label={`Role for ${member.name}`}
                                                             >
                                                                 <option value="administrator">
@@ -161,7 +163,7 @@ export default function WorkspaceTeamPage({
                                                                 <option value="viewer">
                                                                     Viewer
                                                                 </option>
-                                                            </select>
+                                                            </Select>
                                                         )}
                                                     </Form>
                                                 ) : (
@@ -322,11 +324,10 @@ function InviteDialog({
                                 </label>
                                 <label className="grid gap-2 text-[13px] font-medium">
                                     Role
-                                    <select
+                                    <Select
                                         name="role"
                                         required
                                         defaultValue=""
-                                        className="h-10 rounded-control border border-input bg-background px-3 text-sm"
                                     >
                                         <option value="" disabled>
                                             Select
@@ -335,7 +336,7 @@ function InviteDialog({
                                             Administrator
                                         </option>
                                         <option value="viewer">Viewer</option>
-                                    </select>
+                                    </Select>
                                     <InputError error={errors.role} />
                                 </label>
                             </div>

@@ -132,24 +132,30 @@ export function PlanCard({
                 >
                     {plan.is_current
                         ? 'Current plan'
-                        : planChange?.scheduled
-                          ? 'Downgrade scheduled'
-                          : planChange?.direction === 'upgrade'
+                        : planChange?.direction === 'upgrade'
                             ? 'Upgrade now'
                             : planChange?.direction === 'downgrade'
-                              ? 'Schedule downgrade'
+                              ? 'Downgrade now'
                               : plan.checkout_available
                                 ? 'Choose plan'
                                 : 'Unavailable'}
                 </Button>
-                {/* {unavailableReason && !plan.is_current && (
+                {unavailableReason && !plan.is_current && (
                     <p
                         id={reasonId}
-                        className="text-center text-xs leading-5 text-muted-foreground"
+                        className="text-xs leading-5 text-destructive"
                     >
                         {unavailableReason}
                     </p>
-                )} */}
+                )}
+                {planChange?.limit_violations.map((violation) => (
+                    <p
+                        key={violation}
+                        className="text-xs leading-5 text-destructive"
+                    >
+                        {violation}
+                    </p>
+                ))}
             </CardFooter>
         </Card>
     );

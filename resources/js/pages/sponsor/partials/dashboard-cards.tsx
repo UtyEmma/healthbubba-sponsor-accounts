@@ -51,8 +51,8 @@ export function ConsultationPoolCard({
     allocations: ConsultationAllocationSummary[];
 }) {
     const rows = [
-        allocationRow(allocations, 'gp', 'GP Consultations'),
-        allocationRow(allocations, 'specialist', 'Specialist Consultations'),
+        allocationRow(allocations, 'gp', 'Scheduled Consultations'),
+        allocationRow(allocations, 'specialist', 'Instant Consultations'),
     ];
 
     return (

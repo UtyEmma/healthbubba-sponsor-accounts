@@ -602,7 +602,7 @@ function ConsultationAllocation({
             </CardHeader>
             <CardContent className="space-y-5 pt-0">
                 <MetricProgress
-                    label="GP consultations"
+                    label="Scheduled consultations"
                     value={`${consultations.gp.remaining} / ${consultations.gp.allocated} left`}
                     progress={usedPercent(
                         consultations.gp.used + consultations.gp.reserved,
@@ -610,7 +610,7 @@ function ConsultationAllocation({
                     )}
                 />
                 <MetricProgress
-                    label="Specialist consultations"
+                    label="Instant consultations"
                     value={`${consultations.specialist.remaining} / ${consultations.specialist.allocated} left`}
                     progress={usedPercent(
                         consultations.specialist.used +
@@ -621,7 +621,7 @@ function ConsultationAllocation({
                 <div className="overflow-hidden rounded-xl border text-sm">
                     <InfoRow
                         label="Allocated"
-                        value={`${consultations.gp.allocated} GP`}
+                        value={`${consultations.gp.allocated} scheduled consultations`}
                     />
                     <InfoRow
                         label="Used"
@@ -666,13 +666,13 @@ function RemainingCampaignCard({
         <div className="rounded-xl border p-4">
             <Link
                 href={campaigns.show({ campaign: campaign.slug })}
-                className="font-semibold hover:underline text-foreground"
+                className="font-semibold text-foreground hover:underline"
             >
                 {campaign.name}
             </Link>
             <div className="mt-4 space-y-4">
                 <MetricProgress
-                    label="GP"
+                    label="Scheduled consultations"
                     value={`${campaign.gp.remaining} of ${campaign.gp.units} left`}
                     progress={usedPercent(
                         campaign.gp.confirmed + campaign.gp.reserved,
@@ -680,7 +680,7 @@ function RemainingCampaignCard({
                     )}
                 />
                 <MetricProgress
-                    label="Specialist"
+                    label="Instant consultations"
                     value={`${campaign.specialist.remaining} of ${campaign.specialist.units} left`}
                     progress={usedPercent(
                         campaign.specialist.confirmed +

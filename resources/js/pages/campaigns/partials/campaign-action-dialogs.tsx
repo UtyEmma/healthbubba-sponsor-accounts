@@ -9,6 +9,7 @@ import EndCampaignController from '@/actions/App/Http/Controllers/InstitutionalC
 import ImportCampaignBeneficiariesController from '@/actions/App/Http/Controllers/InstitutionalCampaigns/ImportCampaignBeneficiariesController';
 import RecordCampaignUsageController from '@/actions/App/Http/Controllers/InstitutionalCampaigns/RecordCampaignUsageController';
 import StoreCampaignBeneficiaryController from '@/actions/App/Http/Controllers/InstitutionalCampaigns/StoreCampaignBeneficiaryController';
+import { BeneficiaryImportTemplateLink } from '@/components/beneficiary-import-template-link';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -19,6 +20,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import type {
     Campaign,
@@ -26,9 +28,6 @@ import type {
     EmployeeImportResult,
     WorkspaceBeneficiary,
 } from '@/types';
-
-const controlClass =
-    'h-10 w-full rounded-control border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20';
 
 interface DialogProps {
     campaign: Campaign;
@@ -166,12 +165,12 @@ export function AllocateMoreDialog({
                 {(
                     [
                         [
-                            'GP consultations',
+                            'Scheduled consultations',
                             'gp_units',
                             detail.configuration.gpUnitFee,
                         ],
                         [
-                            'Specialist consultations',
+                            'Instant consultations',
                             'specialist_units',
                             detail.configuration.specialistUnitFee,
                         ],
@@ -307,24 +306,20 @@ export function RecordUsageDialog({
         >
             <div className="space-y-3">
                 <Field label="Benefit" error={form.errors.benefit}>
-                    <select
-                        className={controlClass}
+                    <Select
                         value={form.data.benefit}
                         onChange={(event) =>
                             form.setData('benefit', event.target.value)
                         }
                     >
-                        <option value="gp">GP consultation</option>
-                        <option value="specialist">
-                            Specialist consultation
-                        </option>
+                        <option value="gp">Scheduled consultation</option>
+                        <option value="specialist">Instant consultation</option>
                         <option value="medication">Medication</option>
                         <option value="laboratory">Laboratory</option>
-                    </select>
+                    </Select>
                 </Field>
                 <Field label="Beneficiary" error={form.errors.beneficiary_id}>
-                    <select
-                        className={controlClass}
+                    <Select
                         value={form.data.beneficiary_id}
                         onChange={(event) =>
                             form.setData('beneficiary_id', event.target.value)
@@ -336,7 +331,7 @@ export function RecordUsageDialog({
                                 {beneficiary.name}
                             </option>
                         ))}
-                    </select>
+                    </Select>
                 </Field>
                 {monetary ? (
                     <Field label="Amount used (₦)" error={form.errors.amount}>
@@ -538,9 +533,12 @@ export function ImportBeneficiariesDialog({
                     or paste rows
                     <span className="h-px flex-1 bg-border" />
                 </div>
-                <p className="text-sm font-medium">
-                    Columns: First, Last, Email, Phone, Community
-                </p>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm font-medium">
+                        Columns: First, Last, Email, Phone, Community
+                    </p>
+                    <BeneficiaryImportTemplateLink />
+                </div>
                 <Textarea
                     rows={6}
                     value={form.data.rows}

@@ -58,6 +58,10 @@ final readonly class ReserveConsultationAction
                 return $this->reserveCampaignAllocation($workspace, $data, $type);
             }
 
+            if ($data->campaignId !== null) {
+                return ConsultationEligibilityResult::unavailable('campaign_not_applicable', $type);
+            }
+
             $subscription = $this->coverage->activeSubscription($workspace, lock: true);
 
             if (! $subscription instanceof Subscription) {
@@ -78,6 +82,7 @@ final readonly class ReserveConsultationAction
             $existing = Consultation::query()
                 ->whereBelongsTo($workspace)
                 ->whereBelongsTo($workspaceBeneficiary)
+                ->where('appointment_id', $data->appointmentId)
                 ->where('beneficiary_id', $data->patientId)
                 ->where('doctor_id', $data->doctorId)
                 ->where('consultation_type', $type)
@@ -122,6 +127,10 @@ final readonly class ReserveConsultationAction
         ConsultationEligibilityData $data,
         ConsultationType $type,
     ): ConsultationEligibilityResult {
+        if ($data->campaignId === null) {
+            return ConsultationEligibilityResult::unavailable('campaign_required', $type);
+        }
+
         $program = InstitutionalFundingProgram::query()
             ->whereBelongsTo($workspace)
             ->lockForUpdate()
@@ -131,9 +140,24 @@ final readonly class ReserveConsultationAction
             return ConsultationEligibilityResult::unavailable('feature_unavailable', $type);
         }
 
+        $campaign = Campaign::query()
+            ->whereBelongsTo($workspace)
+            ->whereKey($data->campaignId)
+            ->lockForUpdate()
+            ->first();
+
+        if (! $campaign instanceof Campaign) {
+            return ConsultationEligibilityResult::unavailable('campaign_not_available', $type);
+        }
+
+        if (! $campaign->isActive()) {
+            return ConsultationEligibilityResult::unavailable('campaign_not_active', $type);
+        }
+
         $beneficiaries = WorkspaceBeneficiary::query()
             ->whereBelongsTo($workspace)
             ->where('relatable_type', (new Campaign)->getMorphClass())
+            ->where('relatable_id', $data->campaignId)
             ->where('beneficiary_id', $data->patientId)
             ->where('status', WorkspaceBeneficiaryStatus::Active)
             ->orderBy('relatable_id')
@@ -143,6 +167,7 @@ final readonly class ReserveConsultationAction
 
         $existing = Consultation::query()
             ->whereBelongsTo($workspace)
+            ->where('appointment_id', $data->appointmentId)
             ->where('beneficiary_id', $data->patientId)
             ->where('doctor_id', $data->doctorId)
             ->where('consultation_type', $type)
@@ -151,11 +176,21 @@ final readonly class ReserveConsultationAction
             ->first();
 
         if ($existing instanceof Consultation) {
+            if (! $beneficiaries->contains('id', $existing->workspace_beneficiary_id)) {
+                return ConsultationEligibilityResult::unavailable(
+                    'appointment_reserved_under_another_campaign',
+                    $type,
+                );
+            }
+
             return ConsultationEligibilityResult::available($existing);
         }
 
         if ($beneficiaries->isEmpty()) {
-            return ConsultationEligibilityResult::unavailable('patient_not_eligible', $type);
+            return ConsultationEligibilityResult::unavailable(
+                'patient_not_eligible_for_campaign',
+                $type,
+            );
         }
 
         $dailyReserved = Consultation::query()
@@ -179,20 +214,6 @@ final readonly class ReserveConsultationAction
         $dailyUsage = $dailyReserved + $dailyUsed;
 
         foreach ($beneficiaries as $workspaceBeneficiary) {
-            $campaign = Campaign::query()
-                ->whereBelongsTo($workspace)
-                ->whereKey($workspaceBeneficiary->relatable_id)
-                ->lockForUpdate()
-                ->first();
-
-            if (! $campaign instanceof Campaign) {
-                continue;
-            }
-
-            if (! $campaign->isActive()) {
-                continue;
-            }
-
             $rules = $this->institutionalRules->resolve($campaign, $program);
 
             if ($dailyUsage >= $rules->dailyConsultationLimit) {
@@ -285,6 +306,7 @@ final readonly class ReserveConsultationAction
             'plan_id' => $allocation->planId,
             'beneficiary_id' => $data->patientId,
             'doctor_id' => $data->doctorId,
+            'appointment_id' => $data->appointmentId,
             'consultation_type' => $allocation->type,
             'feature_slug' => $allocation->featureSlug,
             'status' => ConsultationReservationStatus::Reserved,

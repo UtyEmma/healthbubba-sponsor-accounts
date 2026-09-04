@@ -9,8 +9,8 @@ import type { ChartConfig } from '@/components/ui/chart';
 import type { DashboardDepartmentUtilization } from '@/types';
 
 const chartConfig = {
-    gp: { label: 'GP consultations', color: '#2f66df' },
-    specialist: { label: 'Specialist consultations', color: '#2ac17e' },
+    gp: { label: 'Scheduled consultations', color: '#2f66df' },
+    specialist: { label: 'Instant consultations', color: '#2ac17e' },
 } satisfies ChartConfig;
 
 export function DepartmentUtilizationChart({

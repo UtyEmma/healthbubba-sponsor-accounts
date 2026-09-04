@@ -2,10 +2,12 @@
 
 namespace App\Http\Requests\Payments;
 
+use App\Enums\Payments\SubscriptionPaymentSource;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\Workspace;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Illuminate\Validation\Rule;
 
 final class StorePlanChangeRequest extends AuthorizedWorkspacePaymentRequest
 {
@@ -29,7 +31,20 @@ final class StorePlanChangeRequest extends AuthorizedWorkspacePaymentRequest
     {
         return [
             'confirmed' => ['required', 'accepted'],
+            'payment_source' => ['required', Rule::enum(SubscriptionPaymentSource::class)],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if (! $this->has('payment_source')) {
+            $this->merge(['payment_source' => SubscriptionPaymentSource::WALLET->value]);
+        }
+    }
+
+    public function paymentSource(): SubscriptionPaymentSource
+    {
+        return SubscriptionPaymentSource::from((string) $this->validated('payment_source'));
     }
 
     public function subscription(): Subscription

@@ -31,6 +31,7 @@ final class StorePlanCheckoutController extends Controller
                 plan: $request->plan(),
                 additionalCapacity: $request->additionalCapacity(),
                 callbackUrl: route('payments.callback'),
+                paymentSource: $request->paymentSource(),
                 gateway: $request->gateway(),
             ));
         } catch (CheckoutUnavailable $exception) {
@@ -43,6 +44,10 @@ final class StorePlanCheckoutController extends Controller
             ]);
         }
 
-        return Inertia::location($session->authorizationUrl);
+        if ($session->checkoutSession !== null) {
+            return Inertia::location($session->checkoutSession->authorizationUrl);
+        }
+
+        return back()->with('success', 'Your subscription is now active.');
     }
 }

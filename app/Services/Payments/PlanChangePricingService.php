@@ -25,34 +25,38 @@ final readonly class PlanChangePricingService
             throw new CheckoutUnavailable('This is already the current subscription plan.');
         }
 
-        $currentCharge = $this->plans->renewal($subscription);
-        $targetCharge = $this->plans->renewalForPlan($subscription, $targetPlan);
-        $difference = $targetCharge->money->amountInMinorUnits
-            - $currentCharge->money->amountInMinorUnits;
+        $currency = config()->string('payments.currency', 'NGN');
+        $currentBasePrice = Money::fromMajor($subscription->plan->price, $currency);
+        $targetBasePrice = Money::fromMajor($targetPlan->price, $currency);
+        $difference = $targetBasePrice->amountInMinorUnits
+            - $currentBasePrice->amountInMinorUnits;
 
         if ($difference === 0) {
-            throw new CheckoutUnavailable('The selected plan has the same recurring price as the current plan.');
+            throw new CheckoutUnavailable('The selected plan has the same base price as the current plan.');
         }
 
         $direction = $difference > 0
             ? PlanChangeDirection::UPGRADE
             : PlanChangeDirection::DOWNGRADE;
-        $effectiveAt = $subscription->ends_at;
         $quotedAt ??= now();
+        $termEndsAt = $subscription->ends_at;
 
-        if ($effectiveAt === null || ! $effectiveAt->isAfter($quotedAt)) {
+        if ($termEndsAt === null || ! $termEndsAt->isAfter($quotedAt)) {
             throw new CheckoutUnavailable('The subscription does not have an active billing term.');
         }
 
-        if (! $subscription->starts_at->isBefore($effectiveAt)) {
+        if (! $subscription->starts_at->isBefore($termEndsAt)) {
             throw new CheckoutUnavailable('The subscription billing term is invalid.');
         }
+
+        $currentCharge = $this->plans->renewal($subscription);
+        $targetCharge = $this->plans->renewalForPlan($subscription, $targetPlan);
 
         $amountDueNow = $direction === PlanChangeDirection::UPGRADE
             ? $this->prorateDifference(
                 differenceInMinor: $difference,
                 termStartsAt: $subscription->starts_at,
-                termEndsAt: $effectiveAt,
+                termEndsAt: $termEndsAt,
                 quotedAt: $quotedAt,
                 currency: $targetCharge->money->currency,
             )
@@ -60,13 +64,32 @@ final readonly class PlanChangePricingService
 
         return new PlanChangeQuote(
             direction: $direction,
+            currentBasePrice: $currentBasePrice,
+            targetBasePrice: $targetBasePrice,
             currentRenewal: $currentCharge->money,
             targetRenewal: $targetCharge->money,
             amountDueNow: $amountDueNow,
             targetCapacityCount: $targetCharge->capacityCount ?? $subscription->capacity_count,
             additionalCapacity: $targetCharge->additionalCapacity,
-            effectiveAt: $effectiveAt,
+            effectiveAt: $quotedAt,
+            quotedAt: $quotedAt,
+            termEndsAt: $termEndsAt,
         );
+    }
+
+    public function direction(Subscription $subscription, Plan $targetPlan): PlanChangeDirection
+    {
+        $currency = config()->string('payments.currency', 'NGN');
+        $current = Money::fromMajor($subscription->plan->price, $currency);
+        $target = Money::fromMajor($targetPlan->price, $currency);
+
+        if ($current->amountInMinorUnits === $target->amountInMinorUnits) {
+            throw new CheckoutUnavailable('The selected plan has the same base price as the current plan.');
+        }
+
+        return $target->amountInMinorUnits > $current->amountInMinorUnits
+            ? PlanChangeDirection::UPGRADE
+            : PlanChangeDirection::DOWNGRADE;
     }
 
     private function prorateDifference(

@@ -175,10 +175,10 @@ function CampaignReport({ rows }: { rows: InstitutionalCampaignReportRow[] }) {
                             <TableRow>
                                 <TableHead>Campaign</TableHead>
                                 <TableHead className="text-right">
-                                    GP used
+                                    Scheduled consultations used
                                 </TableHead>
                                 <TableHead className="text-right">
-                                    Specialist used
+                                    Instant consultations used
                                 </TableHead>
                                 <TableHead className="text-right">
                                     Medication

@@ -70,13 +70,13 @@ export default function InstitutionalFundingPage({
                             </p>
                         </div>
                         <div className="flex flex-col gap-2 sm:flex-row">
-                            <Button
+                            {/* <Button
                                 variant="outline"
                                 onClick={() => setExtendOpen(true)}
                             >
                                 <RotateCw className="size-4" />
                                 Extend program
-                            </Button>
+                            </Button> */}
                             <Button onClick={() => setFundOpen(true)}>
                                 <Plus className="size-4" />
                                 Fund account
@@ -103,7 +103,10 @@ export default function InstitutionalFundingPage({
                         </p>
                     </div>
 
-                    <Tabs defaultValue="allocation" className="mt-4 gap-4 flex-col">
+                    <Tabs
+                        defaultValue="allocation"
+                        className="mt-4 flex-col gap-4"
+                    >
                         <TabsList className="h-10 w-full justify-start overflow-x-auto sm:w-fit">
                             <TabsTrigger value="allocation" className="px-3">
                                 Allocation
@@ -428,9 +431,12 @@ function CoverageRules({
 }: InstitutionalFundingPageProps & { onEdit: () => void }) {
     const rules = [
         ['Coverage type', funding.program.coverageTypeLabel],
-        ['GP limit / beneficiary', funding.program.gpLimitPerBeneficiary],
         [
-            'Specialist limit / beneficiary',
+            'Scheduled consultation limit / beneficiary',
+            funding.program.gpLimitPerBeneficiary,
+        ],
+        [
+            'Instant consultation limit / beneficiary',
             funding.program.specialistLimitPerBeneficiary,
         ],
         ['Daily usage limit', funding.program.dailyConsultationLimit],

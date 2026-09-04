@@ -41,9 +41,10 @@ export default function CampaignItem({ campaign }: { campaign: Campaign }) {
     const gp = financial.consultations.gp;
     const specialist = financial.consultations.specialist;
     const remainingMessage = [
-        gp.units > 0 && `${gp.remaining.toLocaleString('en-NG')} GP`,
+        gp.units > 0 &&
+            `${gp.remaining.toLocaleString('en-NG')} scheduled consultations`,
         specialist.units > 0 &&
-            `${specialist.remaining.toLocaleString('en-NG')} specialist consultations`,
+            `${specialist.remaining.toLocaleString('en-NG')} instant consultations`,
     ]
         .filter(Boolean)
         .join(' and ');
@@ -117,13 +118,13 @@ export default function CampaignItem({ campaign }: { campaign: Campaign }) {
                 <div className="mt-4 grid gap-5 border-t pt-4 lg:grid-cols-2">
                     {gp.units > 0 && (
                         <ConsultationProgress
-                            label="GP consultations"
+                            label="Scheduled consultations"
                             metric={gp}
                         />
                     )}
                     {specialist.units > 0 && (
                         <ConsultationProgress
-                            label="Specialist"
+                            label="Instant consultations"
                             metric={specialist}
                         />
                     )}
@@ -219,8 +220,8 @@ function ProgressRow({
     return (
         <div>
             <div className="mb-2 flex items-center justify-between gap-4 text-sm">
-                <span className='font-medium'>{label}</span>
-                <span className="text-muted-foreground ">{value}</span>
+                <span className="font-medium">{label}</span>
+                <span className="text-muted-foreground">{value}</span>
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                 <div

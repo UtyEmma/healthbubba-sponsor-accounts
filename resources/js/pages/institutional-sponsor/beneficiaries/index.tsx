@@ -6,6 +6,7 @@ import ImportInstitutionalBeneficiariesController from '@/actions/App/Http/Contr
 import StoreInstitutionalBeneficiaryController from '@/actions/App/Http/Controllers/Institutional/StoreInstitutionalBeneficiaryController';
 import DownloadCampaignImportErrorsController from '@/actions/App/Http/Controllers/InstitutionalCampaigns/DownloadCampaignImportErrorsController';
 import UpdateCampaignBeneficiaryAccessController from '@/actions/App/Http/Controllers/InstitutionalCampaigns/UpdateCampaignBeneficiaryAccessController';
+import { BeneficiaryImportTemplateLink } from '@/components/beneficiary-import-template-link';
 import { PageHeader } from '@/components/page-header';
 import { RosterPagination } from '@/components/roster-pagination';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -25,6 +26,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import {
     Table,
     TableBody,
@@ -156,8 +158,7 @@ export default function InstitutionalBeneficiariesPage({
                                         setSearch(event.target.value)
                                     }
                                 />
-                                <select
-                                    className="h-10 rounded-control border border-input bg-background px-3 text-sm"
+                                <Select
                                     value={filters.campaign ?? ''}
                                     onChange={(event) =>
                                         visit({ campaign: event.target.value })
@@ -172,9 +173,8 @@ export default function InstitutionalBeneficiariesPage({
                                             {campaign.name}
                                         </option>
                                     ))}
-                                </select>
-                                <select
-                                    className="h-10 rounded-control border border-input bg-background px-3 text-sm"
+                                </Select>
+                                <Select
                                     value={filters.status ?? ''}
                                     onChange={(event) =>
                                         visit({ status: event.target.value })
@@ -190,7 +190,7 @@ export default function InstitutionalBeneficiariesPage({
                                             {capitalize(status)}
                                         </option>
                                     ))}
-                                </select>
+                                </Select>
                             </div>
                         </div>
                         <div className="overflow-x-auto">
@@ -349,10 +349,9 @@ function AddBeneficiaryDialog({
                         Choose the campaign that will fund this person.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-3 px-6 pb-5 sm:grid-cols-2">
+                <div className="grid gap-3 px-6 py-5 sm:grid-cols-2">
                     <Field label="Campaign" error={form.errors.campaign} wide>
-                        <select
-                            className="h-10 rounded-control border border-input bg-background px-3 text-sm"
+                        <Select
                             value={form.data.campaign}
                             onChange={(event) => {
                                 const campaign = campaigns.find(
@@ -376,7 +375,7 @@ function AddBeneficiaryDialog({
                                     {campaign.name}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </Field>
                     <Field label="First name" error={form.errors.first_name}>
                         <Input
@@ -480,8 +479,7 @@ function ImportBeneficiariesDialog({
                 </DialogHeader>
                 <div className="space-y-4 px-6 pb-5">
                     <Field label="Campaign" error={form.errors.campaign}>
-                        <select
-                            className="h-10 rounded-control border border-input bg-background px-3 text-sm"
+                        <Select
                             value={form.data.campaign}
                             onChange={(event) =>
                                 form.setData('campaign', event.target.value)
@@ -495,7 +493,7 @@ function ImportBeneficiariesDialog({
                                     {campaign.name}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </Field>
                     <button
                         type="button"
@@ -522,9 +520,12 @@ function ImportBeneficiariesDialog({
                             )
                         }
                     />
-                    <p className="text-sm font-medium">
-                        Or paste: First, Last, Email, Phone, Community
-                    </p>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-sm font-medium">
+                            Or paste: First, Last, Email, Phone, Community
+                        </p>
+                        <BeneficiaryImportTemplateLink />
+                    </div>
                     <Textarea
                         rows={6}
                         value={form.data.rows}

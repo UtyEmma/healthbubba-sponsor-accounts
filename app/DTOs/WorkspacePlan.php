@@ -41,6 +41,8 @@ final readonly class WorkspacePlan implements Arrayable
      *     renewal_amount: string,
      *     effective_at: string,
      *     scheduled: bool,
+     *     target_capacity_count: int,
+     *     limit_violations: list<string>,
      *     unavailable_reason: string|null
      * }|null  $planChange
      */
@@ -94,6 +96,8 @@ final readonly class WorkspacePlan implements Arrayable
      *         renewal_amount: string,
      *         effective_at: string,
      *         scheduled: bool,
+     *         target_capacity_count: int,
+     *         limit_violations: list<string>,
      *         unavailable_reason: string|null
      *     }|null,
      *     unavailable_reason: string|null,

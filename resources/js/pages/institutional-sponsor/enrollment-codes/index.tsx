@@ -4,7 +4,6 @@ import { useState } from 'react';
 
 import StoreEnrollmentCodeController from '@/actions/App/Http/Controllers/Institutional/StoreEnrollmentCodeController';
 import { PageHeader } from '@/components/page-header';
-import { RosterPagination } from '@/components/roster-pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,6 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
+import { Select } from '@/components/ui/select';
 import { DashboardLayout } from '@/layouts/dashboard';
 import type {
     EnrollmentCodePageProps,
@@ -30,7 +30,7 @@ export default function EnrollmentCodesPage({
     const { flash, workspacePermissions } = usePage().props;
     const [createOpen, setCreateOpen] = useState(false);
     const [announcement, setAnnouncement] = useState('');
-console.log(enrollmentCodes)
+
     return (
         <>
             <Head title="Enrollment Codes" />
@@ -208,8 +208,7 @@ function CreateCodeDialog({
                 </DialogHeader>
                 <div className="grid gap-4 px-6 pb-5">
                     <Field label="Campaign" error={form.errors.campaign}>
-                        <select
-                            className="h-10 rounded-control border border-input bg-background px-3 text-sm"
+                        <Select
                             value={form.data.campaign}
                             onChange={(event) =>
                                 selectCampaign(event.target.value)
@@ -223,7 +222,7 @@ function CreateCodeDialog({
                                     {campaign.name}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </Field>
                     <div className="grid gap-3 sm:grid-cols-2">
                         <Field

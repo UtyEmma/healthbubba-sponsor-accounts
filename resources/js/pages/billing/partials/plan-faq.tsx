@@ -5,15 +5,19 @@ import { Card, CardContent } from '@/components/ui/card';
 const questions = [
     {
         question: 'How is coverage allocated to each employee?',
-        answer: 'Unlike family plans, corporate coverage is isolated per employee. Each seat gets its own monthly allotment (2 GP on Business Basic; 3 GP + 1 specialist on Business Premium). One employee can never consume another employee’s unused consultations.',
+        answer: 'Unlike family plans, corporate coverage is isolated per employee. Each seat gets its own monthly allotment (2 scheduled consultations on Business Basic; 3 scheduled consultations + 1 instant consultation on Business Premium). One employee can never consume another employee’s unused consultations.',
     },
     {
         question: 'Do unused consultations roll over?',
-        answer: 'No. All unused GP and specialist allocations expire and reset to zero at 00:00 on your monthly renewal date.',
+        answer: 'No. All unused scheduled and instant consultation allocations expire and reset to zero at 00:00 on your monthly renewal date.',
     },
     {
         question: 'What happens when I upgrade or downgrade the plan?',
-        answer: 'Upgrades between tiers are processed instantly with a pro-rata adjustment. Downgrades don’t take effect mid-cycle — they’re staged and apply at the next billing cycle to protect already-consumed allocations.',
+        answer: 'Upgrades take effect immediately after a prorated payment. Eligible downgrades also take effect immediately, with no charge or refund; a downgrade is blocked when current capacity or consultation usage exceeds the target limits.',
+    },
+    {
+        question: 'How are subscription payments collected?',
+        answer: 'You can pay with your Wallet or Paystack. Renewals try the Wallet first and use a saved reusable Paystack authorization only when the Wallet balance is insufficient.',
     },
     {
         question: 'Can I cancel anytime?',

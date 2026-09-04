@@ -8,13 +8,7 @@ import InputError from '@/components/input/input-error';
 import InputPassword from '@/components/input/password';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select } from '@/components/ui/select';
 import { home, login, register } from '@/routes';
 import auth from '@/routes/auth';
 import institutionalRegistration from '@/routes/institutional_registration';
@@ -761,66 +755,51 @@ function InstitutionFields({
         <>
             <Field label="Organization type" error={errors.organization_type}>
                 <Select
-                    value={data.organization_type || null}
-                    onValueChange={(value) =>
-                        setData('organization_type', value ?? '')
+                    value={data.organization_type || ''}
+                    onChange={(event) =>
+                        setData('organization_type', event.currentTarget.value)
                     }
                 >
-                    <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select organization type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {organizationTypes.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
+                    <option value="" disabled>
+                        Select organization type
+                    </option>
+                    {organizationTypes.map((option) => (
+                        <option key={option.value} value={option.value}>
+                            {option.label}
+                        </option>
+                    ))}
                 </Select>
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Country" error={errors.country_code}>
                     <Select
                         value={data.country_code}
-                        onValueChange={(value) =>
-                            setData('country_code', value ?? 'NG')
+                        onChange={(event) =>
+                            setData('country_code', event.currentTarget.value)
                         }
                     >
-                        <SelectTrigger className="w-full">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {countries.map((option) => (
-                                <SelectItem
-                                    key={option.value}
-                                    value={option.value}
-                                >
-                                    {option.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
+                        {countries.map((option) => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
                     </Select>
                 </Field>
                 <Field label="State" error={errors.state_code}>
                     <Select
-                        value={data.state_code || null}
-                        onValueChange={(value) =>
-                            setData('state_code', value ?? '')
+                        value={data.state_code || ''}
+                        onChange={(event) =>
+                            setData('state_code', event.currentTarget.value)
                         }
                     >
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select state" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {states.map((option) => (
-                                <SelectItem
-                                    key={option.value}
-                                    value={option.value}
-                                >
-                                    {option.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
+                        <option value="" disabled>
+                            Select state
+                        </option>
+                        {states.map((option) => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
                     </Select>
                 </Field>
             </div>

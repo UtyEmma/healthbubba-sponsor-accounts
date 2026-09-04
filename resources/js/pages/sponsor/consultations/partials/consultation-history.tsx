@@ -14,11 +14,11 @@ import {
 import { cn } from '@/lib/utils';
 
 const consultations = [
-    ['GP Consultation', '1 GP from shared pool'],
-    ['GP Consultation', '1 GP from shared pool'],
-    ['Specialist', '1 Specialist from shared pool'],
-    ['GP Consultation', '1 GP from shared pool'],
-    ['GP Consultation', '1 GP from shared pool'],
+    ['Scheduled Consultation', '1 scheduled consultation from shared pool'],
+    ['Scheduled Consultation', '1 scheduled consultation from shared pool'],
+    ['Instant Consultation', '1 instant consultation from shared pool'],
+    ['Scheduled Consultation', '1 scheduled consultation from shared pool'],
+    ['Scheduled Consultation', '1 scheduled consultation from shared pool'],
 ] as const;
 
 export function ConsultationHistory() {

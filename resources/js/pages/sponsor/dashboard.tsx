@@ -41,7 +41,7 @@ export default function IndividualDashboard({ dashboard }: DashboardPageProps) {
         },
         {
             icon: 'dashboard-consults.svg',
-            label: 'GP consults left',
+            label: 'Scheduled consultations left',
             value:
                 gpAllocation?.remaining === null
                     ? '∞'

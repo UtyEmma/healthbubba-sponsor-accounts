@@ -1,4 +1,5 @@
 export type * from './auth';
+export type * from './api';
 export type * from './activity';
 export type * from './billing';
 export type * from './business-consultation-report';

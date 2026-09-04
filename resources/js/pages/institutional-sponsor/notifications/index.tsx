@@ -7,19 +7,16 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 
-import { BusinessPortalShell } from '@/components/business-portal-shell';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-
-import { institutionalNavigation } from '../partials/institutional-navigation';
 import { DashboardLayout } from '@/layouts/dashboard';
+import { cn } from '@/lib/utils';
 
 const initialNotifications = [
     {
         id: 1,
-        title: 'GP coverage utilization has reached 50% of the annual pool.',
+        title: 'Scheduled consultation coverage utilization has reached 50% of the annual pool.',
         date: '20 Jun 2026',
         tone: 'amber',
         icon: HeartPulseIcon,
@@ -61,7 +58,7 @@ export default function InstitutionalNotificationsPage() {
     return (
         <>
             <Head title="Notifications" />
-            <DashboardLayout >
+            <DashboardLayout>
                 <div className="mx-auto w-full max-w-6xl">
                     <PageHeader
                         title="Notifications"

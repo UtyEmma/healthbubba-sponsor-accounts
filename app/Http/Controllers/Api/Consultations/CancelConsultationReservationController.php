@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\Consultations;
 use App\Actions\Consultations\CancelConsultationReservationAction;
 use App\Http\Requests\Consultations\CancelConsultationReservationRequest;
 use App\Http\Resources\ConsultationReservationResource;
-use App\Models\Consultations\Consultation;
+use App\Models\Consultations\Appointment;
 
 final readonly class CancelConsultationReservationController
 {
@@ -13,10 +13,10 @@ final readonly class CancelConsultationReservationController
 
     public function __invoke(
         CancelConsultationReservationRequest $request,
-        Consultation $consultation,
+        Appointment $appointment,
     ): ConsultationReservationResource {
         return new ConsultationReservationResource(
-            $this->cancelReservation->execute($consultation),
+            $this->cancelReservation->execute($appointment),
         );
     }
 }
