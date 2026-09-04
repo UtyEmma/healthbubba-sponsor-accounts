@@ -9,6 +9,7 @@ import EndCampaignController from '@/actions/App/Http/Controllers/InstitutionalC
 import ImportCampaignBeneficiariesController from '@/actions/App/Http/Controllers/InstitutionalCampaigns/ImportCampaignBeneficiariesController';
 import RecordCampaignUsageController from '@/actions/App/Http/Controllers/InstitutionalCampaigns/RecordCampaignUsageController';
 import StoreCampaignBeneficiaryController from '@/actions/App/Http/Controllers/InstitutionalCampaigns/StoreCampaignBeneficiaryController';
+import { BeneficiaryImportTemplateLink } from '@/components/beneficiary-import-template-link';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -532,9 +533,12 @@ export function ImportBeneficiariesDialog({
                     or paste rows
                     <span className="h-px flex-1 bg-border" />
                 </div>
-                <p className="text-sm font-medium">
-                    Columns: First, Last, Email, Phone, Community
-                </p>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm font-medium">
+                        Columns: First, Last, Email, Phone, Community
+                    </p>
+                    <BeneficiaryImportTemplateLink />
+                </div>
                 <Textarea
                     rows={6}
                     value={form.data.rows}

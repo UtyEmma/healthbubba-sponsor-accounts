@@ -9,6 +9,7 @@ final readonly class ReserveConsultationData
     public function __construct(
         public int $appointmentId,
         public int $sponsorId,
+        public ?int $campaignId,
     ) {}
 
     public static function fromRequest(StoreConsultationReservationRequest $request): self
@@ -16,6 +17,9 @@ final readonly class ReserveConsultationData
         return new self(
             appointmentId: $request->integer('appointment_id'),
             sponsorId: $request->integer('sponsor_id'),
+            campaignId: $request->filled('campaign_id')
+                ? $request->integer('campaign_id')
+                : null,
         );
     }
 }

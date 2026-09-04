@@ -6,6 +6,7 @@ import ImportInstitutionalBeneficiariesController from '@/actions/App/Http/Contr
 import StoreInstitutionalBeneficiaryController from '@/actions/App/Http/Controllers/Institutional/StoreInstitutionalBeneficiaryController';
 import DownloadCampaignImportErrorsController from '@/actions/App/Http/Controllers/InstitutionalCampaigns/DownloadCampaignImportErrorsController';
 import UpdateCampaignBeneficiaryAccessController from '@/actions/App/Http/Controllers/InstitutionalCampaigns/UpdateCampaignBeneficiaryAccessController';
+import { BeneficiaryImportTemplateLink } from '@/components/beneficiary-import-template-link';
 import { PageHeader } from '@/components/page-header';
 import { RosterPagination } from '@/components/roster-pagination';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -348,7 +349,7 @@ function AddBeneficiaryDialog({
                         Choose the campaign that will fund this person.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-3 px-6 pb-5 sm:grid-cols-2">
+                <div className="grid gap-3 px-6 py-5 sm:grid-cols-2">
                     <Field label="Campaign" error={form.errors.campaign} wide>
                         <Select
                             value={form.data.campaign}
@@ -519,9 +520,12 @@ function ImportBeneficiariesDialog({
                             )
                         }
                     />
-                    <p className="text-sm font-medium">
-                        Or paste: First, Last, Email, Phone, Community
-                    </p>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-sm font-medium">
+                            Or paste: First, Last, Email, Phone, Community
+                        </p>
+                        <BeneficiaryImportTemplateLink />
+                    </div>
                     <Textarea
                         rows={6}
                         value={form.data.rows}

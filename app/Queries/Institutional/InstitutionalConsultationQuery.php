@@ -19,43 +19,39 @@ final readonly class InstitutionalConsultationQuery
     /** @return LengthAwarePaginator<int, InstitutionalConsultationRow> */
     public function paginate(Workspace $workspace, ?string $campaignSlug): LengthAwarePaginator
     {
-        $enrollments = WorkspaceBeneficiary::query()
+        $enrollmentIds = WorkspaceBeneficiary::query()
             ->whereBelongsTo($workspace)
             ->where('relatable_type', (new Campaign)->getMorphClass())
             ->whereNotNull('beneficiary_id')
-            ->with('relatable')
             ->when($campaignSlug !== null && $campaignSlug !== '', function ($query) use ($workspace, $campaignSlug): void {
                 $query->whereIn('relatable_id', Campaign::query()
                     ->whereBelongsTo($workspace)
                     ->where('slug', $campaignSlug)
                     ->select('id'));
             })
-            ->get();
+            ->pluck('id');
 
-        if ($enrollments->isEmpty()) {
+        if ($enrollmentIds->isEmpty()) {
+            return $this->emptyPaginator();
+        }
+
+        $appointmentIds = Consultation::query()
+            ->whereBelongsTo($workspace)
+            ->whereIn('workspace_beneficiary_id', $enrollmentIds->all())
+            ->whereNotNull('appointment_id')
+            ->pluck('appointment_id')
+            ->map(static fn (mixed $appointmentId): int => (int) $appointmentId)
+            ->all();
+
+        if ($appointmentIds === []) {
             return $this->emptyPaginator();
         }
 
         $appointmentQuery = Appointment::query()
             ->select(['appointment_id', 'patient_id', 'doctor_id', 'sponsor_id', 'date', 'time', 'status', 'created_at'])
-            ->with(['patient:id,first_name,last_name', 'doctor:id,provider_type']);
-
-        if ($campaignSlug !== null && $campaignSlug !== '') {
-            $appointmentIds = Consultation::query()
-                ->whereIn('workspace_beneficiary_id', $enrollments->modelKeys())
-                ->whereBelongsTo($workspace)
-                ->whereNotNull('appointment_id')
-                ->pluck('appointment_id')
-                ->all();
-
-            if ($appointmentIds === []) {
-                return $this->emptyPaginator();
-            }
-
-            $appointmentQuery->whereIn('appointment_id', $appointmentIds);
-        } else {
-            $appointmentQuery->whereIn('patient_id', $enrollments->pluck('beneficiary_id')->unique()->values()->all());
-        }
+            ->with(['patient:id,first_name,last_name', 'doctor:id,provider_type'])
+            ->sponsoredBy($workspace)
+            ->whereIn('appointment_id', $appointmentIds);
 
         $appointments = $appointmentQuery
             ->latest('date')
@@ -73,9 +69,12 @@ final readonly class InstitutionalConsultationQuery
 
         return $appointments->through(function (Appointment $appointment) use ($snapshotsByAppointment): InstitutionalConsultationRow {
             $snapshot = $snapshotsByAppointment[$appointment->getKey()] ?? null;
-            $sponsorCovered = $snapshot instanceof Consultation;
-            $campaign = $sponsorCovered ? $snapshot->workspaceBeneficiary->relatable : null;
-            $type = $sponsorCovered ? $snapshot->consultation_type : $this->types->resolve($appointment->doctor?->provider_type);
+            $campaign = $snapshot instanceof Consultation
+                ? $snapshot->workspaceBeneficiary->relatable
+                : null;
+            $type = $snapshot instanceof Consultation
+                ? $snapshot->consultation_type
+                : $this->types->resolve($appointment->doctor?->provider_type);
 
             return new InstitutionalConsultationRow(
                 id: (int) $appointment->getKey(),
@@ -97,8 +96,8 @@ final readonly class InstitutionalConsultationQuery
                     AppointmentStatus::Completed => 'Completed',
                     AppointmentStatus::Cancelled => 'Cancelled',
                 },
-                paymentSource: $sponsorCovered ? 'sponsor_coverage' : 'personal',
-                paymentSourceLabel: $sponsorCovered ? 'Sponsor coverage' : 'Personal',
+                paymentSource: 'sponsor_coverage',
+                paymentSourceLabel: 'Sponsor coverage',
             );
         });
     }

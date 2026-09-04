@@ -215,6 +215,7 @@ export interface SponsorEligibilityPayload {
 export interface ReserveConsultationPayload {
     appointment_id: number;
     sponsor_id: number;
+    campaign_id?: number | null;
 }
 
 export type ConsultationReservationResponse =

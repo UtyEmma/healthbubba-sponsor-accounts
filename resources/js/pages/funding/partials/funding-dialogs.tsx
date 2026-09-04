@@ -35,7 +35,7 @@ export function FundAccountDialog({
     onOpenChange,
     summary,
 }: ControlledDialogProps & { summary: FundingSummary }) {
-    const form = useForm({ amount: '', funding_method: 'bank_transfer' });
+    const form = useForm({ amount: '', funding_method: 'paystack' });
     const amount = Number(form.data.amount.replaceAll(',', '') || 0);
     const projected = Number(summary.availableBalance) + amount;
     const fundingPaymentError = (
@@ -96,8 +96,8 @@ export function FundAccountDialog({
                     />
                 </Field>
                 <Field label="Funding method">
-                    <Select value="bank_transfer" disabled>
-                        <option value="bank_transfer">Bank transfer</option>
+                    <Select value="paystack" disabled>
+                        <option value="paystack">Paystack</option>
                     </Select>
                 </Field>
                 <div className="flex items-center justify-between rounded-lg border border-border bg-muted/40 px-3 py-3 text-sm">

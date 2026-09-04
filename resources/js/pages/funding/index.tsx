@@ -70,13 +70,13 @@ export default function InstitutionalFundingPage({
                             </p>
                         </div>
                         <div className="flex flex-col gap-2 sm:flex-row">
-                            <Button
+                            {/* <Button
                                 variant="outline"
                                 onClick={() => setExtendOpen(true)}
                             >
                                 <RotateCw className="size-4" />
                                 Extend program
-                            </Button>
+                            </Button> */}
                             <Button onClick={() => setFundOpen(true)}>
                                 <Plus className="size-4" />
                                 Fund account

@@ -125,8 +125,7 @@ export default function InstitutionalConsultationsPage({
                                                     </TableCell>
                                                     <TableCell className="text-muted-foreground">
                                                         {consultation.campaign
-                                                            ?.name ??
-                                                            'Self-funded'}
+                                                            ?.name ?? '—'}
                                                     </TableCell>
                                                     <TableCell>
                                                         <Badge
