@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Consultations;
 
+use App\Models\Consultations\Appointment;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 final class RecordConsultationUsageRequest extends FormRequest
 {
@@ -11,12 +13,16 @@ final class RecordConsultationUsageRequest extends FormRequest
         return true;
     }
 
-    /** @return array<string, list<string>> */
+    /** @return array<string, list<mixed>> */
     public function rules(): array
     {
         return [
-            'appointment_id' => ['required', 'integer', 'min:1'],
-            'sponsor_id' => ['required', 'integer', 'min:1'],
+            'appointment_id' => [
+                'required',
+                'integer',
+                'min:1',
+                Rule::exists(Appointment::class, 'appointment_id'),
+            ],
         ];
     }
 }

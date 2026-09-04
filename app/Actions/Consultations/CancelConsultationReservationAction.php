@@ -11,9 +11,19 @@ use Illuminate\Validation\ValidationException;
 
 final class CancelConsultationReservationAction
 {
-    public function execute(Consultation $reservation): Consultation
+    public function execute(Appointment $appointment): Consultation
     {
-        return DB::transaction(function () use ($reservation): Consultation {
+        $reservation = Consultation::query()
+            ->where('appointment_id', $appointment->getKey())
+            ->first();
+
+        if (! $reservation instanceof Consultation) {
+            throw ValidationException::withMessages([
+                'appointment_id' => 'No consultation reservation exists for this appointment.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($appointment, $reservation): Consultation {
             $locked = Consultation::query()
                 ->whereKey($reservation->getKey())
                 ->lockForUpdate()
@@ -23,18 +33,11 @@ final class CancelConsultationReservationAction
                 return $locked;
             }
 
-            if ($locked->appointment_id !== null) {
-                $appointment = Appointment::query()
-                    ->select(['appointment_id', 'sponsor_id', 'status'])
-                    ->find($locked->appointment_id);
-
-                if ($appointment instanceof Appointment
-                    && $appointment->sponsor_id === (string) $locked->workspace_id
-                    && $appointment->status !== AppointmentStatus::Cancelled) {
-                    throw ValidationException::withMessages([
-                        'reservation' => 'Cancel the sponsored HealthBubba appointment before releasing its allocation.',
-                    ]);
-                }
+            if ($appointment->sponsor_id === (string) $locked->workspace_id
+                && $appointment->status !== AppointmentStatus::Cancelled) {
+                throw ValidationException::withMessages([
+                    'reservation' => 'Cancel the sponsored HealthBubba appointment before releasing its allocation.',
+                ]);
             }
 
             $locked->update([

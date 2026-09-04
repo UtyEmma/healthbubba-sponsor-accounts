@@ -78,6 +78,7 @@ final readonly class ReserveConsultationAction
             $existing = Consultation::query()
                 ->whereBelongsTo($workspace)
                 ->whereBelongsTo($workspaceBeneficiary)
+                ->where('appointment_id', $data->appointmentId)
                 ->where('beneficiary_id', $data->patientId)
                 ->where('doctor_id', $data->doctorId)
                 ->where('consultation_type', $type)
@@ -143,6 +144,7 @@ final readonly class ReserveConsultationAction
 
         $existing = Consultation::query()
             ->whereBelongsTo($workspace)
+            ->where('appointment_id', $data->appointmentId)
             ->where('beneficiary_id', $data->patientId)
             ->where('doctor_id', $data->doctorId)
             ->where('consultation_type', $type)
@@ -285,6 +287,7 @@ final readonly class ReserveConsultationAction
             'plan_id' => $allocation->planId,
             'beneficiary_id' => $data->patientId,
             'doctor_id' => $data->doctorId,
+            'appointment_id' => $data->appointmentId,
             'consultation_type' => $allocation->type,
             'feature_slug' => $allocation->featureSlug,
             'status' => ConsultationReservationStatus::Reserved,

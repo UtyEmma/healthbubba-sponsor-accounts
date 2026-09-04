@@ -1,6 +1,5 @@
 import { Form } from '@inertiajs/react';
-import { CreditCardIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { store as storePlanCheckout } from '@/actions/App/Http/Controllers/Payments/StorePlanCheckoutController';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,13 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import type { AccountType, Plan } from '@/types';
+import type {
+    AccountType,
+    BillingWallet,
+    Plan,
+    SubscriptionPaymentSource,
+} from '@/types';
+import { PaymentSourceOptions } from './payment-source-options';
 
 function formatMoney(amount: number, currency: string): string {
     return new Intl.NumberFormat('en-NG', {
@@ -26,20 +31,25 @@ function formatMoney(amount: number, currency: string): string {
 
 export function PlanCheckoutDialog({
     accountType,
+    wallet,
     plan,
     open,
     onOpenChange,
 }: {
     accountType: AccountType;
+    wallet: BillingWallet;
     plan: Plan | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
     const [additionalCapacity, setAdditionalCapacity] = useState(0);
+    const [paymentSource, setPaymentSource] =
+        useState<SubscriptionPaymentSource>('wallet');
 
     function handleOpenChange(nextOpen: boolean) {
         if (!nextOpen) {
             setAdditionalCapacity(0);
+            setPaymentSource('wallet');
         }
 
         onOpenChange(nextOpen);
@@ -56,6 +66,15 @@ export function PlanCheckoutDialog({
         Number(plan?.price ?? 0) + additionalCapacity * additionalUnitPrice;
     const accountLabel =
         accountType === 'business' ? 'business subscription' : 'subscription';
+    const walletBalance = Number(wallet.balance);
+
+    useEffect(() => {
+        if (!open) {
+            return;
+        }
+
+        setPaymentSource(walletBalance >= total ? 'wallet' : 'paystack');
+    }, [open, plan?.id, total, walletBalance]);
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -65,8 +84,8 @@ export function PlanCheckoutDialog({
                         Checkout {plan?.name ?? 'plan'}
                     </DialogTitle>
                     <DialogDescription className="leading-5">
-                        Review your recurring {accountLabel} before continuing
-                        to Paystack.
+                        Review your recurring {accountLabel}, choose a payment
+                        method, and confirm the charge.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -201,6 +220,23 @@ export function PlanCheckoutDialog({
                                         </div>
                                     </section>
 
+                                    <PaymentSourceOptions
+                                        amount={total}
+                                        balance={walletBalance}
+                                        currency={wallet.currency}
+                                        value={paymentSource}
+                                        onChange={setPaymentSource}
+                                        disabled={processing}
+                                    />
+                                    {errors.payment_source && (
+                                        <p
+                                            className="text-sm text-destructive"
+                                            role="alert"
+                                        >
+                                            {errors.payment_source}
+                                        </p>
+                                    )}
+
                                     <label className="flex items-start gap-3 rounded-lg border p-4 text-sm leading-5">
                                         <input
                                             type="checkbox"
@@ -221,8 +257,9 @@ export function PlanCheckoutDialog({
                                         <span>
                                             I authorize recurring charges for
                                             this subscription at the displayed
-                                            cadence. Future charges use the
-                                            current plan and capacity pricing.
+                                            cadence. Renewals try my Wallet
+                                            first, then a reusable Paystack
+                                            authorization when available.
                                         </span>
                                     </label>
                                     {errors.recurring_consent && (
@@ -246,12 +283,6 @@ export function PlanCheckoutDialog({
                                                 errors.gateway}
                                         </p>
                                     )}
-                                    <p className="flex items-start gap-2 text-xs leading-5 text-muted-foreground">
-                                        <CreditCardIcon className="mt-0.5 size-4 shrink-0" />
-                                        You will choose a supported payment
-                                        method on Paystack. Access is activated
-                                        only after server-side verification.
-                                    </p>
                                 </div>
 
                                 <DialogFooter className="flex-row justify-end border-t px-6 py-4">
@@ -273,8 +304,10 @@ export function PlanCheckoutDialog({
                                         disabled={processing}
                                     >
                                         {processing
-                                            ? 'Opening checkout…'
-                                            : 'Continue to Paystack'}
+                                            ? 'Processing…'
+                                            : paymentSource === 'wallet'
+                                              ? 'Pay from Wallet'
+                                              : 'Continue to Paystack'}
                                     </Button>
                                 </DialogFooter>
                             </>

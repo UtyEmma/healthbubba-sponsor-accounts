@@ -11,6 +11,7 @@ use App\Models\Subscription;
 use App\Models\Workspace;
 use App\Services\Payments\CapacityPricingService;
 use App\Services\Payments\PlanChangePricingService;
+use App\Services\Payments\PlanChangeEligibilityService;
 use App\Support\Billing\QuotaDescriptionFormatter;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
@@ -25,6 +26,7 @@ final readonly class WorkspacePlanMapper
         private QuotaDescriptionFormatter $quotaDescriptions,
         private CapacityPricingService $capacityPricing,
         private PlanChangePricingService $planChangePricing,
+        private PlanChangeEligibilityService $planChangeEligibility,
     ) {}
 
     public function map(
@@ -99,7 +101,7 @@ final readonly class WorkspacePlanMapper
             : $workspace->onPlan($plan);
         $checkout = $this->checkoutState($workspace, $plan, $isCurrent, $subscription);
         $capacity = $this->capacityPricing->configuration($plan);
-        $planChange = $this->planChangeState($subscription, $plan, $isCurrent);
+        $planChange = $this->planChangeState($workspace, $subscription, $plan, $isCurrent);
 
         return new WorkspacePlan(
             id: (int) $plan->getKey(),
@@ -227,10 +229,13 @@ final readonly class WorkspacePlanMapper
      *     renewal_amount: string,
      *     effective_at: string,
      *     scheduled: bool,
+     *     target_capacity_count: int,
+     *     limit_violations: list<string>,
      *     unavailable_reason: string|null
      * }|null
      */
     private function planChangeState(
+        Workspace $workspace,
         ?Subscription $subscription,
         Plan $plan,
         bool $isCurrent,
@@ -241,8 +246,20 @@ final readonly class WorkspacePlanMapper
             return null;
         }
 
+        $violations = [];
+
         try {
-            $quote = $this->planChangePricing->quote($subscription, $plan);
+            $direction = $this->planChangePricing->direction($subscription, $plan);
+            $quoteSubscription = $subscription;
+
+            if ($direction === PlanChangeDirection::DOWNGRADE) {
+                $eligibility = $this->planChangeEligibility->assess($workspace, $subscription, $plan);
+                $violations = $eligibility->violations;
+                $quoteSubscription = clone $subscription;
+                $quoteSubscription->setAttribute('capacity_count', $eligibility->targetCapacityCount);
+            }
+
+            $quote = $this->planChangePricing->quote($quoteSubscription, $plan);
         } catch (CheckoutUnavailable $exception) {
             return [
                 'available' => false,
@@ -251,23 +268,14 @@ final readonly class WorkspacePlanMapper
                 'renewal_amount' => $plan->price,
                 'effective_at' => $subscription->ends_at?->toISOString() ?? '',
                 'scheduled' => false,
+                'target_capacity_count' => $subscription->capacity_count,
+                'limit_violations' => $violations,
                 'unavailable_reason' => $exception->getMessage(),
             ];
         }
 
-        $isScheduled = (int) $subscription->scheduled_plan_id === (int) $plan->getKey();
-        $unavailableReason = null;
-        $available = ! $isScheduled;
-
-        if ($isScheduled) {
-            $unavailableReason = 'This downgrade is already scheduled.';
-        } elseif ($quote->direction === PlanChangeDirection::DOWNGRADE
-            && (! $subscription->auto_renew
-                || $subscription->payment_method_id === null
-                || $subscription->gateway === null)) {
-            $available = false;
-            $unavailableReason = 'Automatic renewal must be active before scheduling a downgrade.';
-        }
+        $available = $violations === [];
+        $unavailableReason = $available ? null : implode(' ', $violations);
 
         return [
             'available' => $available,
@@ -275,7 +283,9 @@ final readonly class WorkspacePlanMapper
             'amount_due_now' => $quote->amountDueNow->toMajorAmount(),
             'renewal_amount' => $quote->targetRenewal->toMajorAmount(),
             'effective_at' => $quote->effectiveAt->toISOString(),
-            'scheduled' => $isScheduled,
+            'scheduled' => false,
+            'target_capacity_count' => $quote->targetCapacityCount,
+            'limit_violations' => $violations,
             'unavailable_reason' => $unavailableReason,
         ];
     }

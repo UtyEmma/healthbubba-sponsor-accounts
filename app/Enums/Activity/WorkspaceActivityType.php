@@ -13,6 +13,7 @@ enum WorkspaceActivityType: string
     case PlanUpgradeCompleted = 'plan_upgrade_completed';
     case PlanDowngradeScheduled = 'plan_downgrade_scheduled';
     case PlanDowngradeApplied = 'plan_downgrade_applied';
+    case PlanDowngradeCancelled = 'plan_downgrade_cancelled';
     case CapacityPurchased = 'capacity_purchased';
     case BeneficiaryInvited = 'beneficiary_invited';
     case InvitationResent = 'invitation_resent';
@@ -39,6 +40,7 @@ enum WorkspaceActivityType: string
             self::PlanUpgradeCompleted,
             self::PlanDowngradeScheduled,
             self::PlanDowngradeApplied,
+            self::PlanDowngradeCancelled,
             self::CapacityPurchased => 'subscription',
             self::BeneficiaryInvited,
             self::InvitationResent,
@@ -67,6 +69,7 @@ enum WorkspaceActivityType: string
             self::PlanUpgradeCompleted => 'arrow-up-circle',
             self::PlanDowngradeScheduled,
             self::PlanDowngradeApplied => 'calendar-clock',
+            self::PlanDowngradeCancelled => 'circle-alert',
             self::CapacityPurchased,
             self::BeneficiaryInvited,
             self::InvitationResent,
@@ -97,6 +100,7 @@ enum WorkspaceActivityType: string
             self::PlanDowngradeScheduled,
             self::BeneficiarySuspended => 'warning',
             self::PaymentFailed,
+            self::PlanDowngradeCancelled,
             self::SubscriptionPastDue,
             self::SubscriptionExpired,
             self::InvitationCancelled,

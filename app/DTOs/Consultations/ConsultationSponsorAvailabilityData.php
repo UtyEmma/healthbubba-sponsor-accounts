@@ -12,5 +12,6 @@ final readonly class ConsultationSponsorAvailabilityData
         public string $name,
         public AccountTypes $type,
         public array $consultationTypes,
+        public ?ConsultationCampaignAvailabilityData $campaign = null,
     ) {}
 }

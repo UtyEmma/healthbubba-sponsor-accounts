@@ -1,5 +1,6 @@
 import { Form } from '@inertiajs/react';
-import { ArrowDownIcon, ArrowUpIcon, CreditCardIcon } from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, TriangleAlertIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { store as storePlanChange } from '@/actions/App/Http/Controllers/Payments/StorePlanChangeController';
 import { Button } from '@/components/ui/button';
@@ -12,13 +13,12 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import type { Plan } from '@/types';
-
-const dateFormatter = new Intl.DateTimeFormat('en-NG', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-});
+import type {
+    BillingWallet,
+    Plan,
+    SubscriptionPaymentSource,
+} from '@/types';
+import { PaymentSourceOptions } from './payment-source-options';
 
 function formatMoney(amount: string, currency: string): string {
     return new Intl.NumberFormat('en-NG', {
@@ -30,17 +30,37 @@ function formatMoney(amount: string, currency: string): string {
 
 export function PlanChangeDialog({
     subscriptionId,
+    currentPlanName,
+    currentCapacity,
+    wallet,
     plan,
     open,
     onOpenChange,
 }: {
     subscriptionId: number;
+    currentPlanName: string;
+    currentCapacity: number;
+    wallet: BillingWallet;
     plan: Plan | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
     const change = plan?.plan_change;
     const isUpgrade = change?.direction === 'upgrade';
+    const amountDue = Number(change?.amount_due_now ?? 0);
+    const walletBalance = Number(wallet.balance);
+    const [paymentSource, setPaymentSource] =
+        useState<SubscriptionPaymentSource>('wallet');
+
+    useEffect(() => {
+        if (!open || !isUpgrade) {
+            setPaymentSource('wallet');
+
+            return;
+        }
+
+        setPaymentSource(walletBalance >= amountDue ? 'wallet' : 'paystack');
+    }, [amountDue, isUpgrade, open, plan?.id, walletBalance]);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -56,8 +76,8 @@ export function PlanChangeDialog({
                     </DialogTitle>
                     <DialogDescription className="leading-5">
                         {isUpgrade
-                            ? 'The prorated difference is charged now and the new plan starts after verified payment.'
-                            : 'No charge is made now. The new price is charged and the plan changes at your next billing cycle.'}
+                            ? 'The prorated base-price difference is charged now and the new plan starts immediately after payment.'
+                            : 'The lower-priced plan starts immediately. There is no charge or refund for the remaining term.'}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -75,6 +95,14 @@ export function PlanChangeDialog({
                                         className="grid gap-3 rounded-lg border bg-muted/30 p-4"
                                         aria-label="Plan change summary"
                                     >
+                                        <SummaryRow
+                                            label="Current plan"
+                                            value={currentPlanName}
+                                        />
+                                        <SummaryRow
+                                            label="New plan"
+                                            value={plan.name}
+                                        />
                                         <SummaryRow
                                             label={
                                                 isUpgrade
@@ -98,14 +126,34 @@ export function PlanChangeDialog({
                                             value={
                                                 isUpgrade
                                                     ? 'Immediately after payment'
-                                                    : dateFormatter.format(
-                                                          new Date(
-                                                              change.effective_at,
-                                                          ),
-                                                      )
+                                                    : 'Immediately'
                                             }
                                         />
+                                        <SummaryRow
+                                            label="Capacity"
+                                            value={`${currentCapacity} → ${change.target_capacity_count}`}
+                                        />
                                     </section>
+
+                                    {isUpgrade && (
+                                        <PaymentSourceOptions
+                                            amount={amountDue}
+                                            balance={walletBalance}
+                                            currency={wallet.currency}
+                                            value={paymentSource}
+                                            onChange={setPaymentSource}
+                                            disabled={processing}
+                                        />
+                                    )}
+
+                                    <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm leading-5">
+                                        <TriangleAlertIcon className="mt-0.5 size-4 shrink-0 text-warning" />
+                                        <p>
+                                            {isUpgrade
+                                                ? 'This upgrade takes effect immediately after payment. The full new price applies at renewal.'
+                                                : 'This downgrade takes effect immediately and reduces your limits. No refund or Wallet credit will be issued.'}
+                                        </p>
+                                    </div>
 
                                     <label className="flex items-start gap-3 rounded-lg border p-4 text-sm leading-5">
                                         <input
@@ -117,28 +165,22 @@ export function PlanChangeDialog({
                                             className="mt-0.5 size-4 shrink-0 accent-primary"
                                         />
                                         <span>
-                                            I confirm this plan change and its
-                                            displayed billing date and amount.
+                                            I understand this plan change and
+                                            confirm its immediate effect,
+                                            limits, and displayed amount.
                                         </span>
                                     </label>
 
                                     {(errors.confirmed ||
-                                        errors.plan_change) && (
+                                        errors.plan_change ||
+                                        errors.payment_source) && (
                                         <p
                                             className="text-sm text-destructive"
                                             role="alert"
                                         >
                                             {errors.confirmed ??
-                                                errors.plan_change}
-                                        </p>
-                                    )}
-
-                                    {isUpgrade && (
-                                        <p className="flex items-start gap-2 text-xs leading-5 text-muted-foreground">
-                                            <CreditCardIcon className="mt-0.5 size-4 shrink-0" />
-                                            You will continue to Paystack. The
-                                            plan changes only after server-side
-                                            payment verification.
+                                                errors.plan_change ??
+                                                errors.payment_source}
                                         </p>
                                     )}
                                 </div>
@@ -164,8 +206,10 @@ export function PlanChangeDialog({
                                         {processing
                                             ? 'Processing…'
                                             : isUpgrade
-                                              ? 'Continue to Paystack'
-                                              : 'Schedule downgrade'}
+                                              ? paymentSource === 'wallet'
+                                                  ? 'Pay and upgrade'
+                                                  : 'Continue to Paystack'
+                                              : 'Confirm downgrade'}
                                     </Button>
                                 </DialogFooter>
                             </>

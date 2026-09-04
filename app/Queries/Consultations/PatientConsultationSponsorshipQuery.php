@@ -2,6 +2,7 @@
 
 namespace App\Queries\Consultations;
 
+use App\DTOs\Consultations\ConsultationCampaignAvailabilityData;
 use App\DTOs\Consultations\ConsultationSponsorAvailabilityData;
 use App\DTOs\Consultations\ConsultationTypeAvailabilityData;
 use App\DTOs\Consultations\PatientConsultationSponsorshipData;
@@ -44,11 +45,11 @@ final readonly class PatientConsultationSponsorshipQuery
 
         $sponsors = $memberships
             ->groupBy('workspace_id')
-            ->map(function (Collection $workspaceMemberships) use ($patient): ?ConsultationSponsorAvailabilityData {
+            ->flatMap(function (Collection $workspaceMemberships) use ($patient): array {
                 $membership = $workspaceMemberships->first();
 
                 if (! $membership instanceof WorkspaceBeneficiary) {
-                    return null;
+                    return [];
                 }
 
                 $workspace = $membership->workspace;
@@ -59,16 +60,15 @@ final readonly class PatientConsultationSponsorshipQuery
                         $workspaceMemberships->values()->all(),
                     );
 
-                    return $this->institutionalSponsor(
+                    return $this->institutionalSponsors(
                         $workspace,
                         $institutionalMemberships,
                         (int) $patient->getKey(),
                     );
                 }
 
-                return $this->subscriptionSponsor($workspace, $membership);
+                return [$this->subscriptionSponsor($workspace, $membership)];
             })
-            ->filter(fn (mixed $sponsor): bool => $sponsor instanceof ConsultationSponsorAvailabilityData)
             ->values()
             ->all();
 
@@ -132,28 +132,15 @@ final readonly class PatientConsultationSponsorshipQuery
     }
 
     /** @param EloquentCollection<int, WorkspaceBeneficiary> $memberships */
-    private function institutionalSponsor(
+    /**
+     * @param  EloquentCollection<int, WorkspaceBeneficiary>  $memberships
+     * @return list<ConsultationSponsorAvailabilityData>
+     */
+    private function institutionalSponsors(
         Workspace $workspace,
         EloquentCollection $memberships,
         int $patientId,
-    ): ConsultationSponsorAvailabilityData {
-        $program = InstitutionalFundingProgram::query()
-            ->whereBelongsTo($workspace)
-            ->first();
-
-        if (! $program instanceof InstitutionalFundingProgram) {
-            return $this->sponsor(
-                $workspace,
-                array_map(
-                    fn (ConsultationType $type): ConsultationTypeAvailabilityData => $this->unavailableType(
-                        $type,
-                        'no_funding_program',
-                    ),
-                    ConsultationType::cases(),
-                ),
-            );
-        }
-
+    ): array {
         $campaignMorph = (new Campaign)->getMorphClass();
         $campaignMemberships = $memberships
             ->where('relatable_type', $campaignMorph)
@@ -175,36 +162,35 @@ final readonly class PatientConsultationSponsorshipQuery
             ->keyBy('id');
 
         if ($campaigns->isEmpty()) {
-            return $this->sponsor(
-                $workspace,
-                array_map(
-                    fn (ConsultationType $type): ConsultationTypeAvailabilityData => $this->unavailableType(
-                        $type,
-                        'no_active_campaign',
-                    ),
-                    ConsultationType::cases(),
-                ),
-            );
+            return [];
         }
 
-        $period = $this->institutionalRules->resolve($campaigns->first(), $program);
+        $program = InstitutionalFundingProgram::query()
+            ->whereBelongsTo($workspace)
+            ->first();
+
+        if (! $program instanceof InstitutionalFundingProgram) {
+            return array_values($campaigns
+                ->map(fn (Campaign $campaign): ConsultationSponsorAvailabilityData => $this->sponsor(
+                    $workspace,
+                    array_map(
+                        fn (ConsultationType $type): ConsultationTypeAvailabilityData => $this->unavailableType(
+                            $type,
+                            'no_funding_program',
+                            $campaign->name,
+                        ),
+                        ConsultationType::cases(),
+                    ),
+                    $campaign,
+                ))
+                ->all());
+        }
+
         $activeCampaignIds = array_values(
             $campaigns->keys()->map(fn (mixed $id): int => (int) $id)->all(),
         );
         $campaignUsed = $this->campaignUsed($activeCampaignIds);
         $campaignReserved = $this->campaignReserved($activeCampaignIds);
-        $beneficiaryUsed = $this->campaignUsed(
-            $activeCampaignIds,
-            patientId: $patientId,
-            periodStartsAt: $period->periodStart,
-            periodEndsAt: $period->periodEnd,
-        );
-        $beneficiaryReserved = $this->campaignReserved(
-            $activeCampaignIds,
-            patientId: $patientId,
-            periodStartsAt: $period->periodStart,
-            periodEndsAt: $period->periodEnd,
-        );
         $dailyReserved = Consultation::query()
             ->whereBelongsTo($workspace)
             ->where('beneficiary_id', $patientId)
@@ -224,112 +210,104 @@ final readonly class PatientConsultationSponsorshipQuery
             ->whereBetween('occurred_at', [now()->startOfDay(), now()->endOfDay()])
             ->sum('quantity');
         $dailyUsage = $dailyReserved + $dailyUsed;
-        $types = [];
 
-        foreach (ConsultationType::cases() as $type) {
-            $types[] = $this->institutionalType(
-                type: $type,
-                program: $program,
-                campaignMemberships: $campaignMemberships,
-                campaigns: $campaigns,
-                campaignUsed: $campaignUsed,
-                campaignReserved: $campaignReserved,
-                beneficiaryUsed: $beneficiaryUsed,
-                beneficiaryReserved: $beneficiaryReserved,
-                dailyUsage: $dailyUsage,
-            );
-        }
+        return array_values($campaigns
+            ->map(function (Campaign $campaign) use (
+                $workspace,
+                $program,
+                $patientId,
+                $campaignUsed,
+                $campaignReserved,
+                $dailyUsage,
+            ): ConsultationSponsorAvailabilityData {
+                $rules = $this->institutionalRules->resolve($campaign, $program);
+                $beneficiaryUsed = $this->campaignUsed(
+                    [(int) $campaign->getKey()],
+                    patientId: $patientId,
+                    periodStartsAt: $rules->periodStart,
+                    periodEndsAt: $rules->periodEnd,
+                );
+                $beneficiaryReserved = $this->campaignReserved(
+                    [(int) $campaign->getKey()],
+                    patientId: $patientId,
+                    periodStartsAt: $rules->periodStart,
+                    periodEndsAt: $rules->periodEnd,
+                );
+                $types = array_map(
+                    fn (ConsultationType $type): ConsultationTypeAvailabilityData => $this->institutionalCampaignType(
+                        type: $type,
+                        campaign: $campaign,
+                        program: $program,
+                        campaignUsed: $campaignUsed,
+                        campaignReserved: $campaignReserved,
+                        beneficiaryUsed: $beneficiaryUsed,
+                        beneficiaryReserved: $beneficiaryReserved,
+                        dailyUsage: $dailyUsage,
+                    ),
+                    ConsultationType::cases(),
+                );
 
-        return $this->sponsor($workspace, $types);
+                return $this->sponsor($workspace, $types, $campaign);
+            })
+            ->all());
     }
 
     /**
-     * @param  Collection<int, WorkspaceBeneficiary>  $campaignMemberships
-     * @param  Collection<int, Campaign>  $campaigns
      * @param  array<string, int>  $campaignUsed
      * @param  array<string, int>  $campaignReserved
      * @param  array<string, int>  $beneficiaryUsed
      * @param  array<string, int>  $beneficiaryReserved
      */
-    private function institutionalType(
+    private function institutionalCampaignType(
         ConsultationType $type,
+        Campaign $campaign,
         InstitutionalFundingProgram $program,
-        Collection $campaignMemberships,
-        Collection $campaigns,
         array $campaignUsed,
         array $campaignReserved,
         array $beneficiaryUsed,
         array $beneficiaryReserved,
         int $dailyUsage,
     ): ConsultationTypeAvailabilityData {
-        $unavailable = $this->unavailableType($type, 'allocation_exhausted');
+        $rules = $this->institutionalRules->resolve($campaign, $program);
+        $allocated = (int) $campaign->consultationQuotas
+            ->where('consultation_type', $type)
+            ->sum('quantity');
+        $campaignUsedUnits = $campaignUsed[$this->usageKey($campaign->getKey(), $type)] ?? 0;
+        $campaignReservedUnits = $campaignReserved[$this->usageKey($campaign->getKey(), $type)] ?? 0;
+        $beneficiaryUsedUnits = $beneficiaryUsed[$this->usageKey($campaign->getKey(), $type)] ?? 0;
+        $beneficiaryReservedUnits = $beneficiaryReserved[$this->usageKey($campaign->getKey(), $type)] ?? 0;
+        $allocationRemaining = max(0, $allocated - $campaignUsedUnits - $campaignReservedUnits);
+        $dailyRemaining = max(0, $rules->dailyConsultationLimit - $dailyUsage);
+        $beneficiaryRemaining = null;
+        $beneficiaryLimit = null;
 
-        foreach ($campaignMemberships as $membership) {
-            $campaign = $campaigns->get($membership->relatable_id);
-
-            if (! $campaign instanceof Campaign) {
-                continue;
-            }
-
-            $rules = $this->institutionalRules->resolve($campaign, $program);
-            $allocated = (int) $campaign->consultationQuotas
-                ->where('consultation_type', $type)
-                ->sum('quantity');
-            $used = $campaignUsed[$this->usageKey($campaign->getKey(), $type)] ?? 0;
-            $reserved = $campaignReserved[$this->usageKey($campaign->getKey(), $type)] ?? 0;
-            $allocationRemaining = max(0, $allocated - $used - $reserved);
-            $dailyRemaining = max(0, $rules->dailyConsultationLimit - $dailyUsage);
-            $beneficiaryRemaining = null;
-
-            if ($rules->coverageType === InstitutionalCoverageType::PerBeneficiary) {
-                $beneficiaryUsedForType = $beneficiaryUsed[
-                    $this->usageKey($campaign->getKey(), $type)
-                ] ?? 0;
-                $beneficiaryReservedForType = $beneficiaryReserved[
-                    $this->usageKey($campaign->getKey(), $type)
-                ] ?? 0;
-                $beneficiaryRemaining = max(
-                    0,
-                    $this->institutionalRules->beneficiaryLimit($rules, $type)
-                        - $beneficiaryUsedForType
-                        - $beneficiaryReservedForType,
-                );
-            }
-
-            $remaining = min(
-                $allocationRemaining,
-                $dailyRemaining,
-                $beneficiaryRemaining ?? PHP_INT_MAX,
+        if ($rules->coverageType === InstitutionalCoverageType::PerBeneficiary) {
+            $beneficiaryLimit = $this->institutionalRules->beneficiaryLimit($rules, $type);
+            $beneficiaryRemaining = max(
+                0,
+                $beneficiaryLimit - $beneficiaryUsedUnits - $beneficiaryReservedUnits,
             );
-            $reason = match (true) {
+        }
+
+        $remaining = min($allocationRemaining, $dailyRemaining, $beneficiaryRemaining ?? PHP_INT_MAX);
+
+        return new ConsultationTypeAvailabilityData(
+            type: $type,
+            available: $remaining > 0,
+            reason: match (true) {
                 $dailyRemaining === 0 => 'daily_limit_reached',
                 $beneficiaryRemaining === 0 => 'per_beneficiary_limit_reached',
                 $allocationRemaining === 0 => 'allocation_exhausted',
                 default => null,
-            };
-            $availability = new ConsultationTypeAvailabilityData(
-                type: $type,
-                available: $remaining > 0,
-                reason: $reason,
-                coverageName: $campaign->name,
-                allocatedUnits: $allocated,
-                usedUnits: $used,
-                reservedUnits: $reserved,
-                remainingUnits: $remaining,
-                periodStartsAt: $rules->periodStart,
-                periodEndsAt: $rules->periodEnd,
-            );
-
-            if ($availability->available) {
-                return $availability;
-            }
-
-            if ($unavailable->coverageName === null) {
-                $unavailable = $availability;
-            }
-        }
-
-        return $unavailable;
+            },
+            coverageName: $campaign->name,
+            allocatedUnits: $beneficiaryLimit ?? $allocated,
+            usedUnits: $beneficiaryUsedUnits,
+            reservedUnits: $beneficiaryReservedUnits,
+            remainingUnits: $remaining,
+            periodStartsAt: $rules->periodStart,
+            periodEndsAt: $rules->periodEnd,
+        );
     }
 
     /**
@@ -439,13 +417,29 @@ final readonly class PatientConsultationSponsorshipQuery
     }
 
     /** @param list<ConsultationTypeAvailabilityData> $types */
-    private function sponsor(Workspace $workspace, array $types): ConsultationSponsorAvailabilityData
-    {
+    private function sponsor(
+        Workspace $workspace,
+        array $types,
+        ?Campaign $campaign = null,
+    ): ConsultationSponsorAvailabilityData {
         return new ConsultationSponsorAvailabilityData(
             id: (int) $workspace->getKey(),
             name: $workspace->name,
             type: $workspace->type,
             consultationTypes: $types,
+            campaign: $campaign === null ? null : new ConsultationCampaignAvailabilityData(
+                id: (int) $campaign->getKey(),
+                name: $campaign->name,
+                slug: $campaign->slug,
+                description: $campaign->description,
+                location: $campaign->location,
+                city: $campaign->city,
+                state: $campaign->state,
+                country: $campaign->country,
+                status: $campaign->lifecycleStatus(),
+                startsAt: $campaign->start_date?->toImmutable(),
+                endsAt: $campaign->end_date?->toImmutable(),
+            ),
         );
     }
 

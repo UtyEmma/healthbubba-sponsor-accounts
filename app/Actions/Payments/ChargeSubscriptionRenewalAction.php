@@ -5,6 +5,7 @@ namespace App\Actions\Payments;
 use App\DTOs\Payments\RecurringChargeData;
 use App\Enums\Payments\PaymentPurpose;
 use App\Enums\Payments\PaymentStatus;
+use App\Enums\Payments\WalletRenewalResult;
 use App\Exceptions\Payments\CheckoutUnavailable;
 use App\Exceptions\Payments\GatewayRequestException;
 use App\Exceptions\Payments\PaymentException;
@@ -30,6 +31,7 @@ final readonly class ChargeSubscriptionRenewalAction
         private CompletePaymentAction $completePayment,
         private FailPaymentAction $failPayment,
         private RecordRenewalFailureAction $recordFailure,
+        private AttemptWalletSubscriptionRenewalAction $walletRenewal,
     ) {}
 
     public function execute(int $subscriptionId): void
@@ -47,6 +49,17 @@ final readonly class ChargeSubscriptionRenewalAction
         if ($pendingPayment instanceof Payment) {
             $this->reconcilePendingPayment($subscription, $pendingPayment);
 
+            return;
+        }
+
+        try {
+            $walletResult = $this->walletRenewal->execute($subscriptionId);
+        } catch (CheckoutUnavailable $exception) {
+            report($exception);
+            $walletResult = WalletRenewalResult::INSUFFICIENT;
+        }
+
+        if ($walletResult !== WalletRenewalResult::INSUFFICIENT) {
             return;
         }
 
@@ -298,7 +311,6 @@ final readonly class ChargeSubscriptionRenewalAction
     {
         if (! $subscription->auto_renew
             || $subscription->status !== SubscriptionStatus::Active
-            || $subscription->gateway === null
             || $subscription->subscribable_type !== (new Workspace)->getMorphClass()) {
             return false;
         }
