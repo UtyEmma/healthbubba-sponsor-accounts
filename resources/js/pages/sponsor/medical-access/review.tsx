@@ -150,9 +150,9 @@ export default function MedicalAccessReviewPage({
                         </CardFooter>
                     )}
                 </Card>
-                <p className="pt-5 text-center text-xs leading-5 text-muted-foreground">
+                {/* <p className="pt-5 text-center text-xs leading-5 text-muted-foreground">
                     This secure consent page does not require you to sign in.
-                </p>
+                </p> */}
             </div>
         </main>
     );

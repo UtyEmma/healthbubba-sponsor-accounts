@@ -45,9 +45,15 @@ final readonly class DashboardController
             ]);
         }
 
+        $dashboard = $this->dashboard->execute($workspace, $user);
+
+        if ($dashboard->subscription?->active !== true) {
+            return Inertia::render('sponsor/empty-state');
+        }
+
         return Inertia::render($page, [
             'dashboard' => new WorkspaceDashboardResource(
-                $this->dashboard->execute($workspace, $user),
+                $dashboard,
             ),
         ]);
     }
