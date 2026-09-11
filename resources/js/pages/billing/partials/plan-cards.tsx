@@ -57,7 +57,11 @@ export function PlanCard({
                 <p className="pt-3 text-3xl leading-9 font-semibold tracking-tight">
                     {formatPrice(plan.price, plan.currency)}
                 </p>
-                <p className="text-xs text-muted-foreground">{plan.cadence}</p>
+                <p className="text-xs text-muted-foreground">
+                    {plan.capacity?.unit === 'seat'
+                        ? 'per employee / month'
+                        : plan.cadence}
+                </p>
             </CardHeader>
 
             <CardContent className="flex flex-1 flex-col gap-4 px-4 pt-3">
@@ -109,6 +113,20 @@ export function PlanCard({
                         </li>
                     ))}
                 </ul>
+
+                {plan.capacity?.unit === 'beneficiary' &&
+                    plan.capacity.additional_unit_price && (
+                        <p className="border-t pt-4 text-sm text-muted-foreground">
+                            Additional Beneficiary:{' '}
+                            <span className="font-medium text-foreground">
+                                {formatPrice(
+                                    plan.capacity.additional_unit_price,
+                                    plan.currency,
+                                )}
+                                /month each
+                            </span>
+                        </p>
+                    )}
             </CardContent>
 
             <CardFooter className="grid gap-2 px-4 pt-5 pb-6">
@@ -133,12 +151,12 @@ export function PlanCard({
                     {plan.is_current
                         ? 'Current plan'
                         : planChange?.direction === 'upgrade'
-                            ? 'Upgrade now'
-                            : planChange?.direction === 'downgrade'
-                              ? 'Downgrade now'
-                              : plan.checkout_available
-                                ? 'Choose plan'
-                                : 'Unavailable'}
+                          ? 'Upgrade now'
+                          : planChange?.direction === 'downgrade'
+                            ? 'Downgrade now'
+                            : plan.checkout_available
+                              ? 'Choose plan'
+                              : 'Unavailable'}
                 </Button>
                 {unavailableReason && !plan.is_current && (
                     <p
