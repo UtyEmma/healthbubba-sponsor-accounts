@@ -6,6 +6,7 @@ import type { MedicalAccessPageProps } from '@/types';
 
 import { AccessRequestsTable } from './partials/access-requests-table';
 import { RequestAccessDialog } from './partials/request-access-dialog';
+import { DashboardLayout } from '@/layouts/dashboard';
 
 export default function MedicalAccessIndex({
     requests,
@@ -17,7 +18,7 @@ export default function MedicalAccessIndex({
     return (
         <>
             <Head title="Medical Access" />
-            <PortalShell>
+            <DashboardLayout>
                 <div className="mx-auto w-full max-w-6xl">
                     <PageHeader
                         title="Medical Access"
@@ -55,7 +56,7 @@ export default function MedicalAccessIndex({
                         <AccessRequestsTable requests={requests} />
                     </section>
                 </div>
-            </PortalShell>
+            </DashboardLayout>
         </>
     );
 }

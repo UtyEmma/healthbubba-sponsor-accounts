@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import type { WorkspaceBeneficiaryPageProps } from '@/types';
 import { AddBeneficiaryDialog } from './partials/add-beneficiary-dialog';
 import { BeneficiariesTable } from './partials/beneficiaries-table';
+import { DashboardLayout } from '@/layouts/dashboard';
 
 export default function BeneficiariesIndex({
     invitations,
@@ -17,7 +18,7 @@ export default function BeneficiariesIndex({
     return (
         <>
             <Head title="Beneficiaries" />
-            <PortalShell>
+            <DashboardLayout>
                 <div className="mx-auto w-full max-w-6xl">
                     <PageHeader
                         title="Beneficiaries"
@@ -66,7 +67,7 @@ export default function BeneficiariesIndex({
                         />
                     </section>
                 </div>
-            </PortalShell>
+            </DashboardLayout>
         </>
     );
 }
