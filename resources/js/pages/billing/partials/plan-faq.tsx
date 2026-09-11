@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 const questions = [
     {
         question: 'How is coverage allocated to each employee?',
-        answer: 'Unlike family plans, corporate coverage is isolated per employee. Each seat gets its own monthly allotment (2 scheduled consultations on Business Basic; 3 scheduled consultations + 1 instant consultation on Business Premium). One employee can never consume another employee’s unused consultations.',
+        answer: 'Unlike family plans, corporate coverage is isolated per employee. Each seat gets its own monthly allotment (2 instant consultations on Business Basic; 4 instant consultations and 1 scheduled consultation on Business Premium). One employee can never consume another employee’s unused consultations.',
     },
     {
         question: 'Do unused consultations roll over?',

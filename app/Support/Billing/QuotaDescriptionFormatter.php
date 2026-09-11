@@ -25,19 +25,30 @@ final readonly class QuotaDescriptionFormatter
             Features::BENEFICIARIES_INCLUDED => "{$quota} included",
             Features::MAXIMUM_BENEFICIARIES => "Up to {$quota}",
             Features::GP_CONSULTATIONS,
-            Features::SPECIALIST_CONSULTATIONS,
-            Features::GP_CONSULTATIONS_PER_SEAT,
-            Features::SPECIALIST_CONSULTATIONS_PER_SEAT => $this->consultationAllowance(
+            Features::SPECIALIST_CONSULTATIONS => $this->consultationAllowance(
                 quota: $quota,
                 assignment: $assignment,
-                perEmployee: $plan->account_type === AccountTypes::BUSINESS
-                    || in_array($featureType, [
-                        Features::GP_CONSULTATIONS_PER_SEAT,
-                        Features::SPECIALIST_CONSULTATIONS_PER_SEAT,
-                    ], true),
+                perEmployee: false,
             ),
+            Features::GP_CONSULTATIONS_PER_SEAT,
+            Features::SPECIALIST_CONSULTATIONS_PER_SEAT => $plan->account_type === AccountTypes::BUSINESS
+                ? $this->consultationAllowance(
+                    quota: $quota,
+                    assignment: $assignment,
+                    perEmployee: true,
+                )
+                : $this->additionalBeneficiaryAllowance($quota, $assignment),
             default => $this->allowanceWithCadence($quota, $assignment),
         };
+    }
+
+    private function additionalBeneficiaryAllowance(string $quota, FeaturePlan $assignment): string
+    {
+        $cadence = $this->cadence($assignment);
+
+        return $cadence === null
+            ? "{$quota} per added beneficiary"
+            : "{$quota} per added beneficiary / {$cadence}";
     }
 
     private function consultationAllowance(
@@ -84,7 +95,8 @@ final readonly class QuotaDescriptionFormatter
             : "{$period} ".Str::plural($interval->value, $period);
     }
 
-    private function formatNumber(string $number): string {
+    private function formatNumber(string $number): string
+    {
         $formatted = Number::format((float) $number, maxPrecision: 8);
 
         return $formatted === false ? $number : $formatted;

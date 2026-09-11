@@ -4,14 +4,15 @@ namespace App\Mappers;
 
 use App\DTOs\WorkspacePlan;
 use App\Enums\AccountTypes;
+use App\Enums\Subscriptions\Features;
 use App\Enums\Subscriptions\PlanChangeDirection;
 use App\Exceptions\Payments\CheckoutUnavailable;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\Workspace;
 use App\Services\Payments\CapacityPricingService;
-use App\Services\Payments\PlanChangePricingService;
 use App\Services\Payments\PlanChangeEligibilityService;
+use App\Services\Payments\PlanChangePricingService;
 use App\Support\Billing\QuotaDescriptionFormatter;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
@@ -343,7 +344,7 @@ final readonly class WorkspacePlanMapper
                 $quota = $limits?->getValue();
 
                 $quotas[] = [
-                    'name' => $feature->name,
+                    'name' => $this->featureName($plan, $feature),
                     'slug' => $feature->slug,
                     'quota' => $quota,
                     'description' => $this->quotaDescriptions->format(
@@ -358,7 +359,7 @@ final readonly class WorkspacePlanMapper
 
             $mappedFeature = [
                 'slug' => $feature->slug,
-                'name' => $feature->name,
+                'name' => $this->featureName($plan, $feature),
                 'description' => $feature->description,
                 'type' => $feature->type->value,
                 'included' => $isIncluded,
@@ -379,6 +380,38 @@ final readonly class WorkspacePlanMapper
             'features' => [...$includedFeatures, ...$excludedFeatures],
             'quotas' => $quotas,
         ];
+    }
+
+    private function featureName(Plan $plan, Feature $feature): string
+    {
+        $featureType = Features::tryFrom($feature->slug);
+
+        if ($plan->account_type !== AccountTypes::INDIVIDUAL) {
+            return $feature->name;
+        }
+
+        if ($featureType === Features::SPECIALIST_CONSULTATIONS_PER_SEAT) {
+            return 'Instant Consultations per Added Beneficiary';
+        }
+
+        if ($featureType === Features::GP_CONSULTATIONS_PER_SEAT) {
+            return 'Scheduled Consultations per Added Beneficiary';
+        }
+
+        if ($featureType !== Features::ADDITIONAL_BENEFICIARIES) {
+            return $feature->name;
+        }
+
+        $capacity = $this->capacityPricing->configuration($plan);
+        $additionalBeneficiaries = max(
+            0,
+            ($capacity->maximumCapacity ?? $capacity->includedCapacity)
+                - $capacity->includedCapacity,
+        );
+
+        return $additionalBeneficiaries > 0
+            ? "Add up to {$additionalBeneficiaries} More Beneficiaries"
+            : $feature->name;
     }
 
     private function featureAssignment(?Feature $feature): ?FeaturePlan
