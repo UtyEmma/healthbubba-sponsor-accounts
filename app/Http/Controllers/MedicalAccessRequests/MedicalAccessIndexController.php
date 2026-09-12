@@ -32,6 +32,7 @@ final readonly class MedicalAccessIndexController
             ->withQueryString();
         $beneficiaries = $workspace->workspaceBeneficiaries()
             ->select(['id', 'public_id', 'first_name', 'last_name', 'email'])
+            ->whereNull('primary_sponsor_user_id')
             ->where('status', WorkspaceBeneficiaryStatus::Active)
             ->whereNotNull('beneficiary_id')
             ->orderBy('first_name')

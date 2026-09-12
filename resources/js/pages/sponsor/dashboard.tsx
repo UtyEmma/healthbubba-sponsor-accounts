@@ -24,10 +24,10 @@ export default function IndividualDashboard({ dashboard }: DashboardPageProps) {
     const statistics: DashboardStatistic[] = [
         {
             icon: 'dashboard-beneficiaries.svg',
-            label: 'Active beneficiaries',
+            label: 'Covered people',
             value: String(dashboard.beneficiaries.active),
             detail: dashboard.subscription
-                ? `of ${dashboard.beneficiaries.capacity} max on ${dashboard.subscription.planName}`
+                ? `Sponsor included · ${dashboard.beneficiaries.total} of ${dashboard.beneficiaries.capacity} beneficiary slots used`
                 : 'No active plan capacity',
         },
         {

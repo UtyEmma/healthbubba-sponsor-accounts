@@ -22,8 +22,12 @@ final readonly class QuotaDescriptionFormatter
         $featureType = Features::tryFrom($feature->slug);
 
         return match ($featureType) {
-            Features::BENEFICIARIES_INCLUDED => "{$quota} included",
-            Features::MAXIMUM_BENEFICIARIES => "Up to {$quota}",
+            Features::BENEFICIARIES_INCLUDED => $plan->account_type === AccountTypes::INDIVIDUAL
+                ? "Sponsor + {$quota} beneficiaries included"
+                : "{$quota} included",
+            Features::MAXIMUM_BENEFICIARIES => $plan->account_type === AccountTypes::INDIVIDUAL
+                ? "Sponsor + up to {$quota} beneficiaries"
+                : "Up to {$quota}",
             Features::GP_CONSULTATIONS,
             Features::SPECIALIST_CONSULTATIONS => $this->consultationAllowance(
                 quota: $quota,

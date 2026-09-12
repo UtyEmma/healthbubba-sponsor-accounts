@@ -2,6 +2,7 @@
 
 namespace App\Actions\Workspaces;
 
+use App\Actions\WorkspaceBeneficiaries\EnsureIndividualSponsorCoverageAction;
 use App\DTOs\Workspaces\CreateWorkspaceData;
 use App\Enums\AccountTypes;
 use App\Enums\WorkspaceMembers\WorkspaceMemberRole;
@@ -15,6 +16,10 @@ use Illuminate\Validation\ValidationException;
 
 final class CreateNewWorkspace
 {
+    public function __construct(
+        private readonly EnsureIndividualSponsorCoverageAction $ensureIndividualSponsorCoverage,
+    ) {}
+
     public function execute(User $user, CreateWorkspaceData $data): Workspace
     {
         return DB::transaction(function () use ($user, $data): Workspace {
@@ -56,6 +61,10 @@ final class CreateNewWorkspace
                     'starts_on' => $startsOn->toDateString(),
                     'ends_on' => $startsOn->copy()->addYearNoOverflow()->toDateString(),
                 ]);
+            }
+
+            if ($data->accountType === AccountTypes::INDIVIDUAL) {
+                $this->ensureIndividualSponsorCoverage->execute($workspace);
             }
 
             return $workspace;

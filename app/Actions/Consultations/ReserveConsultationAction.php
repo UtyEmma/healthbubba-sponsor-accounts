@@ -2,6 +2,7 @@
 
 namespace App\Actions\Consultations;
 
+use App\Actions\WorkspaceBeneficiaries\EnsureIndividualSponsorCoverageAction;
 use App\DTOs\Consultations\ConsultationAllocation;
 use App\DTOs\Consultations\ConsultationEligibilityData;
 use App\DTOs\Consultations\ConsultationEligibilityResult;
@@ -12,6 +13,7 @@ use App\Enums\Consultations\ConsultationReservationStatus;
 use App\Enums\Consultations\ConsultationType;
 use App\Enums\InstitutionalCoverageType;
 use App\Enums\WorkspaceBeneficiaries\WorkspaceBeneficiaryStatus;
+use App\Models\Beneficiary;
 use App\Models\Campaign;
 use App\Models\CampaignConsultationQuota;
 use App\Models\CampaignUsageEntry;
@@ -33,6 +35,7 @@ final readonly class ReserveConsultationAction
         private ConsultationCoverageService $coverage,
         private ConsultationTypeResolver $types,
         private InstitutionalCoverageRulesResolver $institutionalRules,
+        private EnsureIndividualSponsorCoverageAction $ensureIndividualSponsorCoverage,
     ) {}
 
     public function execute(ConsultationEligibilityData $data): ConsultationEligibilityResult
@@ -52,8 +55,11 @@ final readonly class ReserveConsultationAction
         }
 
         $type = $this->types->resolve($doctor->provider_type);
+        $patient = $workspace->type === AccountTypes::INDIVIDUAL
+            ? Beneficiary::query()->select(['id', 'email'])->find($data->patientId)
+            : null;
 
-        return DB::transaction(function () use ($data, $workspace, $type): ConsultationEligibilityResult {
+        return DB::transaction(function () use ($data, $workspace, $type, $patient): ConsultationEligibilityResult {
             if ($workspace->type === AccountTypes::INSTITUTION) {
                 return $this->reserveCampaignAllocation($workspace, $data, $type);
             }
@@ -62,18 +68,22 @@ final readonly class ReserveConsultationAction
                 return ConsultationEligibilityResult::unavailable('campaign_not_applicable', $type);
             }
 
+            $primarySponsorCoverage = $patient instanceof Beneficiary
+                ? $this->ensureIndividualSponsorCoverage->execute($workspace, $patient)
+                : null;
             $subscription = $this->coverage->activeSubscription($workspace, lock: true);
 
             if (! $subscription instanceof Subscription) {
                 return ConsultationEligibilityResult::unavailable('no_active_subscription', $type);
             }
 
-            $workspaceBeneficiary = WorkspaceBeneficiary::query()
-                ->whereBelongsTo($workspace)
-                ->where('beneficiary_id', $data->patientId)
-                ->where('status', WorkspaceBeneficiaryStatus::Active)
-                ->lockForUpdate()
-                ->first();
+            $workspaceBeneficiary = $primarySponsorCoverage
+                ?? WorkspaceBeneficiary::query()
+                    ->whereBelongsTo($workspace)
+                    ->where('beneficiary_id', $data->patientId)
+                    ->where('status', WorkspaceBeneficiaryStatus::Active)
+                    ->lockForUpdate()
+                    ->first();
 
             if (! $workspaceBeneficiary instanceof WorkspaceBeneficiary) {
                 return ConsultationEligibilityResult::unavailable('patient_not_eligible', $type);

@@ -143,7 +143,10 @@ final readonly class ConsultationCoverageService
         $scaling = $this->scaling($workspace, $subscription);
         $activeBeneficiaries = $workspace->workspaceBeneficiaries()
             ->where('status', WorkspaceBeneficiaryStatus::Active)
-            ->whereNotNull('beneficiary_id')
+            ->when(
+                $workspace->type === AccountTypes::BUSINESS,
+                fn ($query) => $query->whereNotNull('beneficiary_id'),
+            )
             ->count();
         $summaries = [];
 

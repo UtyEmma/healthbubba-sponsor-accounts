@@ -41,6 +41,7 @@ export interface WorkspaceBeneficiary {
     status: WorkspaceBeneficiaryStatus;
     source: WorkspaceBeneficiarySource;
     hasHealthBubbaAccount: boolean;
+    isPrimarySponsor: boolean;
     invitedAt: string;
     expiresAt: string;
     acceptedAt: string | null;

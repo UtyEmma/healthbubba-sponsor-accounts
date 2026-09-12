@@ -4,6 +4,7 @@ namespace App\Services\WorkspaceBeneficiaries;
 
 use App\Models\Beneficiary;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Throwable;
 
 final class BeneficiaryLookupService
@@ -24,7 +25,7 @@ final class BeneficiaryLookupService
                 ->chunk(500)
                 ->flatMap(fn (Collection $chunk): Collection => Beneficiary::query()
                     ->select(['id', 'email'])
-                    ->whereIn('email', $chunk->all())
+                    ->whereIn(DB::raw('LOWER(email)'), $chunk->all())
                     ->get())
                 ->mapWithKeys(static fn (Beneficiary $beneficiary): array => [
                     mb_strtolower(trim((string) $beneficiary->getAttribute('email'))) => (int) $beneficiary->getKey(),

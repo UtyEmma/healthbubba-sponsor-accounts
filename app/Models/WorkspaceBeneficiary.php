@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
  * @property string $relatable_type
  * @property int $relatable_id
  * @property int|null $invited_by_user_id
+ * @property int|null $primary_sponsor_user_id
  * @property int|null $beneficiary_id
  * @property string $public_id
  * @property string $first_name
@@ -39,6 +40,7 @@ use Illuminate\Support\Carbon;
  * @property-read Workspace $workspace
  * @property-read Workspace|Campaign $relatable
  * @property-read Beneficiary|null $beneficiary
+ * @property-read User|null $primarySponsor
  */
 final class WorkspaceBeneficiary extends Model
 {
@@ -50,6 +52,7 @@ final class WorkspaceBeneficiary extends Model
         'relatable_type',
         'relatable_id',
         'invited_by_user_id',
+        'primary_sponsor_user_id',
         'beneficiary_id',
         'public_id',
         'first_name',
@@ -97,6 +100,12 @@ final class WorkspaceBeneficiary extends Model
         return $this->belongsTo(User::class, 'invited_by_user_id');
     }
 
+    /** @return BelongsTo<User, $this> */
+    public function primarySponsor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'primary_sponsor_user_id');
+    }
+
     /** @return BelongsTo<Beneficiary, $this> */
     public function beneficiary(): BelongsTo
     {
@@ -127,7 +136,7 @@ final class WorkspaceBeneficiary extends Model
      */
     public function scopeConsumingCapacity(Builder $query): Builder
     {
-        return $query->where(function (Builder $query): void {
+        return $query->whereNull('primary_sponsor_user_id')->where(function (Builder $query): void {
             $query->whereIn('status', [
                 WorkspaceBeneficiaryStatus::Active,
                 WorkspaceBeneficiaryStatus::Suspended,
@@ -142,6 +151,11 @@ final class WorkspaceBeneficiary extends Model
     public function isPending(): bool
     {
         return $this->status === WorkspaceBeneficiaryStatus::Pending;
+    }
+
+    public function isPrimarySponsor(): bool
+    {
+        return $this->primary_sponsor_user_id !== null;
     }
 
     public function isActive(): bool

@@ -46,6 +46,12 @@ final readonly class CreateMedicalAccessRequestAction
                 ]);
             }
 
+            if ($beneficiary->isPrimarySponsor()) {
+                throw ValidationException::withMessages([
+                    'beneficiary_public_id' => 'Medical access requests are only available for dependants.',
+                ]);
+            }
+
             if ($beneficiary->status !== WorkspaceBeneficiaryStatus::Active || $beneficiary->beneficiary_id === null) {
                 throw ValidationException::withMessages([
                     'beneficiary_public_id' => 'Medical access can only be requested for active beneficiaries with a HealthBubba account.',
