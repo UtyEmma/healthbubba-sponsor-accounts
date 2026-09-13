@@ -9,6 +9,8 @@ use App\Enums\AccountTypes;
 use App\Enums\Activity\WorkspaceActivityType;
 use App\Enums\CampaignStatus;
 use App\Enums\WorkspaceBeneficiaries\WorkspaceBeneficiaryStatus;
+use App\Enums\WorkspaceMembers\WorkspaceMemberRole;
+use App\Enums\WorkspaceMembers\WorkspaceMemberStatus;
 use App\Models\Campaign;
 use App\Models\User;
 use App\Models\Workspace;
@@ -44,6 +46,17 @@ final readonly class InviteWorkspaceBeneficiaryAction
         $invitation = DB::transaction(function () use ($workspace, $inviter, $data, $beneficiaryId, $relatable): WorkspaceBeneficiary {
             Workspace::query()->whereKey($workspace->getKey())->lockForUpdate()->firstOrFail();
             $target = $this->lockTarget($workspace, $relatable);
+
+            if ($workspace->type === AccountTypes::INDIVIDUAL
+                && $workspace->members()
+                    ->where('role', WorkspaceMemberRole::Owner)
+                    ->where('status', WorkspaceMemberStatus::Active)
+                    ->whereHas('user', fn ($query) => $query->whereRaw('LOWER(email) = ?', [$data->email]))
+                    ->exists()) {
+                throw ValidationException::withMessages([
+                    'email' => 'The primary sponsor is already covered and does not use a beneficiary slot.',
+                ]);
+            }
 
             if ($target instanceof Campaign) {
                 if ($target->lifecycleStatus() === CampaignStatus::COMPLETED) {
@@ -138,6 +151,7 @@ final readonly class InviteWorkspaceBeneficiaryAction
 
             $invitation->fill([
                 'invited_by_user_id' => $inviter->getKey(),
+                'primary_sponsor_user_id' => null,
                 'beneficiary_id' => $beneficiaryId,
                 'first_name' => $data->firstName,
                 'last_name' => $data->lastName,

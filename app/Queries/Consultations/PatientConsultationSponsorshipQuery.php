@@ -35,9 +35,19 @@ final readonly class PatientConsultationSponsorshipQuery
 
     public function getForPatient(Beneficiary $patient): PatientConsultationSponsorshipData
     {
+        $email = mb_strtolower(trim((string) $patient->email));
         $memberships = WorkspaceBeneficiary::query()
             ->with('workspace')
-            ->where('beneficiary_id', $patient->getKey())
+            ->where(function ($query) use ($patient, $email): void {
+                $query->where('beneficiary_id', $patient->getKey());
+
+                if ($email !== '') {
+                    $query->orWhereHas(
+                        'primarySponsor',
+                        fn ($query) => $query->whereRaw('LOWER(email) = ?', [$email]),
+                    );
+                }
+            })
             ->where('status', WorkspaceBeneficiaryStatus::Active)
             ->orderBy('workspace_id')
             ->orderBy('id')

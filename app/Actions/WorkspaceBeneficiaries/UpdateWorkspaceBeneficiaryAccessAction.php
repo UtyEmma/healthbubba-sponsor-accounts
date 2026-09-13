@@ -31,8 +31,20 @@ final readonly class UpdateWorkspaceBeneficiaryAccessAction
         WorkspaceBeneficiary $beneficiary,
         WorkspaceBeneficiaryAccessAction $action,
     ): WorkspaceBeneficiary {
+        if ($beneficiary->isPrimarySponsor()) {
+            throw ValidationException::withMessages([
+                'access' => 'Primary sponsor coverage cannot be suspended, restored, or revoked.',
+            ]);
+        }
+
         return DB::transaction(function () use ($workspace, $user, $beneficiary, $action): WorkspaceBeneficiary {
             $locked = $this->lockBeneficiary($workspace, $beneficiary);
+
+            if ($locked->isPrimarySponsor()) {
+                throw ValidationException::withMessages([
+                    'access' => 'Primary sponsor coverage cannot be suspended, restored, or revoked.',
+                ]);
+            }
 
             $updated = match ($action) {
                 WorkspaceBeneficiaryAccessAction::Suspend => $this->suspend($locked),

@@ -32,7 +32,11 @@ final readonly class WorkspaceBeneficiaryIndexController
             ->where('status', WorkspaceBeneficiaryStatus::Pending)
             ->count();
         $invitations = $workspace->beneficiaryEnrollments()
-            ->with('relatable')
+            ->with([
+                'relatable',
+                'primarySponsor:id,name,email,phone',
+            ])
+            ->orderByDesc('primary_sponsor_user_id')
             ->latest('id')
             ->paginate(10)
             ->withQueryString();

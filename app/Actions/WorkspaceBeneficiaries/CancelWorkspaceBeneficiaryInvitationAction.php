@@ -23,6 +23,12 @@ final readonly class CancelWorkspaceBeneficiaryInvitationAction
 
     public function execute(Workspace $workspace, User $user, WorkspaceBeneficiary $invitation): WorkspaceBeneficiary
     {
+        if ($invitation->isPrimarySponsor()) {
+            throw ValidationException::withMessages([
+                'invitation' => 'Primary sponsor coverage cannot be cancelled.',
+            ]);
+        }
+
         return DB::transaction(function () use ($workspace, $user, $invitation): WorkspaceBeneficiary {
             $this->capacity->lockSubscription($workspace);
             $this->capacity->expirePending($workspace);
@@ -30,6 +36,12 @@ final readonly class CancelWorkspaceBeneficiaryInvitationAction
                 ->whereKey($invitation->getKey())
                 ->lockForUpdate()
                 ->firstOrFail();
+
+            if ($locked->isPrimarySponsor()) {
+                throw ValidationException::withMessages([
+                    'invitation' => 'Primary sponsor coverage cannot be cancelled.',
+                ]);
+            }
 
             if ($locked->status !== WorkspaceBeneficiaryStatus::Pending) {
                 throw ValidationException::withMessages(['invitation' => 'Only a pending invitation can be cancelled.']);

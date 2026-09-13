@@ -44,7 +44,7 @@ export function BeneficiariesTable({
         <Card className="overflow-hidden">
             <div className="flex h-14 items-center border-b px-6">
                 <h2 className="text-base leading-6 font-semibold">
-                    All beneficiaries ({invitations.meta.total})
+                    Covered people ({invitations.meta.total})
                 </h2>
             </div>
             <div className="overflow-x-auto">
@@ -69,7 +69,7 @@ export function BeneficiariesTable({
                                     colSpan={canManage ? 5 : 4}
                                     className="h-28 text-center text-muted-foreground"
                                 >
-                                    No beneficiaries have been invited yet.
+                                    No covered people are available yet.
                                 </TableCell>
                             </TableRow>
                         ) : (
@@ -81,13 +81,22 @@ export function BeneficiariesTable({
                                                 {initials(invitation)}
                                             </span>
                                             <div>
-                                                <p className="font-medium whitespace-nowrap">
-                                                    {invitation.name}
-                                                </p>
+                                                <div className="flex items-center gap-2">
+                                                    <p className="font-medium whitespace-nowrap">
+                                                        {invitation.name}
+                                                    </p>
+                                                    {invitation.isPrimarySponsor && (
+                                                        <Badge variant="secondary">
+                                                            Primary sponsor
+                                                        </Badge>
+                                                    )}
+                                                </div>
                                                 <p className="text-xs text-muted-foreground">
-                                                    {invitation.hasHealthBubbaAccount
-                                                        ? 'HealthBubba account found'
-                                                        : 'New invitee'}
+                                                    {invitation.isPrimarySponsor
+                                                        ? 'Included with your plan'
+                                                        : invitation.hasHealthBubbaAccount
+                                                          ? 'HealthBubba account found'
+                                                          : 'New invitee'}
                                                 </p>
                                             </div>
                                         </div>
@@ -117,16 +126,20 @@ export function BeneficiariesTable({
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-muted-foreground">
-                                        {invitation.status === 'pending'
-                                            ? `Expires ${formatDate(invitation.expiresAt)}`
-                                            : `Invited ${formatDate(invitation.invitedAt)}`}
+                                        {invitation.isPrimarySponsor
+                                            ? 'Automatically covered'
+                                            : invitation.status === 'pending'
+                                              ? `Expires ${formatDate(invitation.expiresAt)}`
+                                              : `Invited ${formatDate(invitation.invitedAt)}`}
                                     </TableCell>
                                     {canManage && (
                                         <TableCell className="pr-8 text-right">
-                                            <WorkspaceInvitationActions
-                                                invitation={invitation}
-                                                campaignSlug={campaignSlug}
-                                            />
+                                            {!invitation.isPrimarySponsor && (
+                                                <WorkspaceInvitationActions
+                                                    invitation={invitation}
+                                                    campaignSlug={campaignSlug}
+                                                />
+                                            )}
                                         </TableCell>
                                     )}
                                 </TableRow>

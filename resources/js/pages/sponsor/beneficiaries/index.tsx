@@ -1,12 +1,11 @@
 import { Head, usePage } from '@inertiajs/react';
 
 import { PageHeader } from '@/components/page-header';
-import { PortalShell } from '@/components/portal-shell';
 import { Card, CardContent } from '@/components/ui/card';
+import { DashboardLayout } from '@/layouts/dashboard';
 import type { WorkspaceBeneficiaryPageProps } from '@/types';
 import { AddBeneficiaryDialog } from './partials/add-beneficiary-dialog';
 import { BeneficiariesTable } from './partials/beneficiaries-table';
-import { DashboardLayout } from '@/layouts/dashboard';
 
 export default function BeneficiariesIndex({
     invitations,
@@ -17,12 +16,12 @@ export default function BeneficiariesIndex({
 
     return (
         <>
-            <Head title="Beneficiaries" />
+            <Head title="Covered people" />
             <DashboardLayout>
                 <div className="mx-auto w-full max-w-6xl">
                     <PageHeader
-                        title="Beneficiaries"
-                        description="Invite and manage the people covered by your sponsorship."
+                        title="Covered people"
+                        description="Your coverage includes you as the primary sponsor, plus the dependants on your plan."
                         action={
                             workspacePermissions.canManage ? (
                                 <AddBeneficiaryDialog />
@@ -41,15 +40,15 @@ export default function BeneficiariesIndex({
                         aria-label="Beneficiary overview"
                     >
                         <SummaryCard
-                            label="Active"
+                            label="Active covered people"
                             value={String(counts.active)}
                         />
                         <SummaryCard
-                            label="Pending invites"
+                            label="Pending dependants"
                             value={String(counts.pending)}
                         />
                         <SummaryCard
-                            label="Capacity"
+                            label="Dependant capacity"
                             value={`${capacity.used}/${capacity.total}`}
                         />
                     </section>
@@ -60,7 +59,7 @@ export default function BeneficiariesIndex({
                         </p>
                     )}
 
-                    <section className="pt-5" aria-label="Beneficiary list">
+                    <section className="pt-5" aria-label="Covered people list">
                         <BeneficiariesTable
                             invitations={invitations}
                             canManage={workspacePermissions.canManage}
