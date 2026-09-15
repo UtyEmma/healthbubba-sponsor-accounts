@@ -126,6 +126,13 @@ class FortifyServiceProvider extends ServiceProvider
             'initialAccountType' => $this->requestedAccountType($request),
             'initialEmail' => Str::lower(trim((string) $request->query('email'))),
         ]));
+        Fortify::requestPasswordResetLinkView(fn (Request $request) => Inertia::render('auth/forgot-password', [
+            'status' => $request->session()->get('status'),
+        ]));
+        Fortify::resetPasswordView(fn (Request $request) => Inertia::render('auth/reset-password', [
+            'email' => Str::lower(trim((string) $request->query('email'))),
+            'token' => (string) $request->route('token'),
+        ]));
     }
 
     private function requestedAccountType(Request $request): ?string
