@@ -14,6 +14,7 @@ final readonly class RecurringChargeData
         public string $authorizationCode,
         public string $reference,
         public array $metadata = [],
+        public ?string $customerReference = null,
     ) {
         if ($this->amount->amountInMinorUnits === 0) {
             throw new InvalidArgumentException('A recurring charge amount must be greater than zero.');

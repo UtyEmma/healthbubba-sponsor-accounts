@@ -6,6 +6,8 @@ use App\DTOs\Payments\CheckoutSession;
 use App\DTOs\Payments\InitializePaymentData;
 use App\DTOs\Payments\StartSubscriptionRenewalData;
 use App\DTOs\Payments\SubscriptionCheckoutResult;
+use App\Enums\Payments\PaymentCheckoutProfile;
+use App\Enums\Payments\PaymentGatewayName;
 use App\Enums\Payments\PaymentPurpose;
 use App\Enums\Payments\PaymentStatus;
 use App\Enums\Payments\SubscriptionPaymentSource;
@@ -18,6 +20,7 @@ use App\Models\Workspace;
 use App\Payments\PaymentService;
 use App\Services\Payments\PlanPricingService;
 use App\Support\Payments\PaymentReferenceGenerator;
+use App\ValueObjects\Money;
 use Illuminate\Support\Facades\DB;
 use Revoltify\Subscriptionify\Enums\SubscriptionStatus;
 
@@ -38,11 +41,11 @@ final readonly class StartSubscriptionRenewalAction
 
             return match ($result) {
                 WalletRenewalResult::PAID => new SubscriptionCheckoutResult(
-                    Subscription::query()->findOrFail($data->subscription->getKey()),
+                    Subscription::query()->whereKey($data->subscription->getKey())->firstOrFail(),
                     null,
                 ),
                 WalletRenewalResult::INSUFFICIENT => throw new CheckoutUnavailable(
-                    'Your wallet balance is insufficient. Choose Paystack to continue.',
+                    "Your wallet balance is insufficient. Choose {$this->payments->gatewayName()->label()} to continue.",
                 ),
                 WalletRenewalResult::NOT_DUE => throw new CheckoutUnavailable(
                     'This subscription is not due for renewal.',
@@ -84,7 +87,7 @@ final readonly class StartSubscriptionRenewalAction
             }
 
             $quote = $this->pricing->renewal($subscription);
-            $gateway = $this->payments->gatewayName();
+            $gateway = $this->activeExternalGateway($data->paymentSource);
             $payment = Payment::query()->create([
                 'workspace_id' => $data->workspace->getKey(),
                 'user_id' => $data->user->getKey(),
@@ -108,7 +111,7 @@ final readonly class StartSubscriptionRenewalAction
                     'renewal_attempt' => $subscription->renewal_attempts + 1,
                     'renewal_due_at' => $subscription->next_charge_at?->toISOString(),
                     'recurring_consent_at' => now()->toISOString(),
-                    'payment_source' => SubscriptionPaymentSource::PAYSTACK->value,
+                    'payment_source' => $gateway->value,
                 ],
             ]);
             $payment->update(['metadata' => [...$payment->metadata, 'payment_id' => $payment->getKey()]]);
@@ -122,6 +125,7 @@ final readonly class StartSubscriptionRenewalAction
             return new SubscriptionCheckoutResult(null, new CheckoutSession(
                 gateway: $payment->gateway,
                 reference: $payment->reference,
+                providerReference: $payment->provider_reference ?? $payment->reference,
                 authorizationUrl: $authorizationUrl,
                 accessCode: '',
             ));
@@ -129,12 +133,13 @@ final readonly class StartSubscriptionRenewalAction
 
         try {
             $session = $this->payments->initialize(new InitializePaymentData(
-                amount: new \App\ValueObjects\Money($payment->amount_minor, $payment->currency),
+                amount: new Money($payment->amount_minor, $payment->currency),
                 email: $data->user->email,
                 reference: $payment->reference,
+                description: 'Subscription renewal',
                 callbackUrl: $data->callbackUrl,
                 metadata: $payment->metadata,
-                channels: ['card'],
+                profile: PaymentCheckoutProfile::RECURRING_CARD,
             ), $payment->gateway);
         } catch (PaymentException $exception) {
             $this->failPayment->execute($payment, 'initialization_failed', $exception->getMessage());
@@ -143,7 +148,7 @@ final readonly class StartSubscriptionRenewalAction
         }
 
         $payment->update([
-            'provider_reference' => $session->reference,
+            'provider_reference' => $session->providerReference,
             'provider_metadata' => [
                 'gateway' => $session->gateway->value,
                 'authorization_url' => $session->authorizationUrl,
@@ -170,5 +175,17 @@ final readonly class StartSubscriptionRenewalAction
 
         return $subscription->renewal_retry_at?->isPast() === true
             || $subscription->next_charge_at?->isPast() === true;
+    }
+
+    private function activeExternalGateway(SubscriptionPaymentSource $source): PaymentGatewayName
+    {
+        $gateway = $source->gateway();
+        $active = $this->payments->gatewayName();
+
+        if ($gateway === null || $gateway !== $active) {
+            throw new CheckoutUnavailable("{$active->label()} is the active external payment provider. Refresh and try again.");
+        }
+
+        return $active;
     }
 }

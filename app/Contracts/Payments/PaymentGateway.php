@@ -14,7 +14,7 @@ interface PaymentGateway
 
     public function initialize(InitializePaymentData $data): CheckoutSession;
 
-    public function verify(string $reference): PaymentVerification;
+    public function verify(string $reference, ?string $providerReference = null): PaymentVerification;
 
     /** @param array<string, mixed> $headers */
     public function parseWebhook(string $rawPayload, array $headers): GatewayWebhook;

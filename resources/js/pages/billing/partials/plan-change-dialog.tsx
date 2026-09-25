@@ -1,6 +1,6 @@
 import { Form } from '@inertiajs/react';
 import { ArrowDownIcon, ArrowUpIcon, TriangleAlertIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { store as storePlanChange } from '@/actions/App/Http/Controllers/Payments/StorePlanChangeController';
 import { Button } from '@/components/ui/button';
@@ -13,11 +13,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import type {
-    BillingWallet,
-    Plan,
-    SubscriptionPaymentSource,
-} from '@/types';
+import { useActivePaymentGateway } from '@/hooks/use-active-payment-gateway';
+import type { BillingWallet, Plan, SubscriptionPaymentSource } from '@/types';
 import { PaymentSourceOptions } from './payment-source-options';
 
 function formatMoney(amount: string, currency: string): string {
@@ -45,25 +42,27 @@ export function PlanChangeDialog({
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
+    const gateway = useActivePaymentGateway();
     const change = plan?.plan_change;
     const isUpgrade = change?.direction === 'upgrade';
     const amountDue = Number(change?.amount_due_now ?? 0);
     const walletBalance = Number(wallet.balance);
-    const [paymentSource, setPaymentSource] =
-        useState<SubscriptionPaymentSource>('wallet');
+    const [selectedPaymentSource, setSelectedPaymentSource] =
+        useState<SubscriptionPaymentSource | null>(null);
+    const paymentSource =
+        selectedPaymentSource ??
+        (isUpgrade && walletBalance < amountDue ? gateway.name : 'wallet');
 
-    useEffect(() => {
-        if (!open || !isUpgrade) {
-            setPaymentSource('wallet');
-
-            return;
+    function handleOpenChange(nextOpen: boolean) {
+        if (!nextOpen) {
+            setSelectedPaymentSource(null);
         }
 
-        setPaymentSource(walletBalance >= amountDue ? 'wallet' : 'paystack');
-    }, [amountDue, isUpgrade, open, plan?.id, walletBalance]);
+        onOpenChange(nextOpen);
+    }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent showCloseButton={false} className="sm:max-w-lg">
                 <DialogHeader className="gap-1 border-b px-6 pt-6 pb-4">
                     <DialogTitle className="flex items-center gap-2 text-base leading-6 font-semibold">
@@ -141,7 +140,7 @@ export function PlanChangeDialog({
                                             balance={walletBalance}
                                             currency={wallet.currency}
                                             value={paymentSource}
-                                            onChange={setPaymentSource}
+                                            onChange={setSelectedPaymentSource}
                                             disabled={processing}
                                         />
                                     )}
@@ -208,7 +207,7 @@ export function PlanChangeDialog({
                                             : isUpgrade
                                               ? paymentSource === 'wallet'
                                                   ? 'Pay and upgrade'
-                                                  : 'Continue to Paystack'
+                                                  : `Continue to ${gateway.label}`
                                               : 'Confirm downgrade'}
                                     </Button>
                                 </DialogFooter>

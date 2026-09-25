@@ -9,6 +9,7 @@ use App\DTOs\Payments\InitializePaymentData;
 use App\DTOs\Payments\PaymentMethodData;
 use App\DTOs\Payments\PaymentVerification;
 use App\DTOs\Payments\RecurringChargeData;
+use App\Enums\Payments\PaymentCheckoutProfile;
 use App\Enums\Payments\PaymentGatewayName;
 use App\Enums\Payments\PaymentStatus;
 use App\Exceptions\Payments\GatewayConfigurationException;
@@ -69,7 +70,7 @@ final readonly class PaystackGateway implements RecurringPaymentGateway
             'reference' => $data->reference,
             'callback_url' => $data->callbackUrl,
             'metadata' => $this->encodeMetadata($data->metadata, $data->reference),
-            'channels' => $data->channels,
+            'channels' => $data->profile === PaymentCheckoutProfile::FLEXIBLE ? null : ['card'],
         ]), $data->reference);
 
         $reference = $this->requiredString($payload, 'reference', $data->reference);
@@ -87,12 +88,13 @@ final readonly class PaystackGateway implements RecurringPaymentGateway
         return new CheckoutSession(
             gateway: $this->name(),
             reference: $reference,
+            providerReference: $reference,
             authorizationUrl: $authorizationUrl,
             accessCode: $this->requiredString($payload, 'access_code', $reference),
         );
     }
 
-    public function verify(string $reference): PaymentVerification
+    public function verify(string $reference, ?string $providerReference = null): PaymentVerification
     {
         $payload = $this->get('/transaction/verify/'.rawurlencode($reference), $reference);
 

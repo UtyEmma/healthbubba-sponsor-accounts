@@ -3,8 +3,6 @@
 namespace App\Http\Requests\Payments;
 
 use App\Enums\AccountTypes;
-use App\Enums\Payments\PaymentGatewayName;
-use Illuminate\Validation\Rule;
 
 final class StoreWalletPaymentRequest extends AuthorizedWorkspacePaymentRequest
 {
@@ -25,20 +23,12 @@ final class StoreWalletPaymentRequest extends AuthorizedWorkspacePaymentRequest
                 'min:'.config('payments.wallet.min_amount', '100.00'),
                 'max:'.config('payments.wallet.max_amount', '10000000.00'),
             ],
-            'gateway' => ['nullable', Rule::enum(PaymentGatewayName::class)],
         ];
     }
 
     public function amount(): string
     {
         return (string) $this->validated('amount');
-    }
-
-    public function gateway(): ?PaymentGatewayName
-    {
-        $gateway = $this->validated('gateway');
-
-        return is_string($gateway) ? PaymentGatewayName::tryFrom($gateway) : null;
     }
 
     protected function prepareForValidation(): void

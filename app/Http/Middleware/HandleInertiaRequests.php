@@ -3,12 +3,14 @@
 namespace App\Http\Middleware;
 
 use App\Enums\WorkspaceMembers\WorkspaceMemberStatus;
+use App\Http\Resources\ActivePaymentGatewayResource;
 use App\Http\Resources\UserResource;
 use App\Http\Resources\WorkspaceActivityResource;
 use App\Http\Resources\WorkspaceOptionResource;
 use App\Http\Resources\WorkspaceResource;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Payments\ActivePaymentGatewayResolver;
 use App\Services\Activity\WorkspaceActivityAuthorizationService;
 use App\Services\Activity\WorkspaceActivityQuery;
 use App\Services\WorkspaceMembers\WorkspaceMemberAccessService;
@@ -21,6 +23,7 @@ class HandleInertiaRequests extends Middleware
         private readonly WorkspaceActivityAuthorizationService $activityAuthorization,
         private readonly WorkspaceActivityQuery $activities,
         private readonly WorkspaceMemberAccessService $workspaceAccess,
+        private readonly ActivePaymentGatewayResolver $paymentGateway,
     ) {}
 
     /**
@@ -89,6 +92,9 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $user instanceof User ? new UserResource($user) : null,
             ],
+            'activePaymentGateway' => $user instanceof User
+                ? new ActivePaymentGatewayResource($this->paymentGateway->resolve())
+                : null,
             'activityNotifications' => $activityNotifications,
             'flash' => [
                 'success' => fn (): ?string => $request->session()->get('success'),

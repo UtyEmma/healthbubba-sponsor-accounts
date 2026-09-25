@@ -13,32 +13,40 @@ use App\Exceptions\Payments\UnsupportedGatewayOperationException;
 
 final readonly class PaymentService
 {
-    public function __construct(private PaymentGatewayRegistry $gateways) {}
+    public function __construct(
+        private PaymentGatewayRegistry $gateways,
+        private ActivePaymentGatewayResolver $activeGateway,
+    ) {}
 
     public function gatewayName(?PaymentGatewayName $gateway = null): PaymentGatewayName
     {
-        return $this->gateways->gatewayName($gateway);
+        return $this->gateways->gatewayName($gateway ?? $this->activeGateway->resolve());
     }
 
     public function initialize(
         InitializePaymentData $data,
         ?PaymentGatewayName $gateway = null,
     ): CheckoutSession {
-        return $this->gateways->resolve($gateway)->initialize($data);
+        return $this->gateways
+            ->resolve($gateway ?? $this->activeGateway->resolve())
+            ->initialize($data);
     }
 
     public function verify(
         string $reference,
         ?PaymentGatewayName $gateway = null,
+        ?string $providerReference = null,
     ): PaymentVerification {
-        return $this->gateways->resolve($gateway)->verify($reference);
+        return $this->gateways
+            ->resolve($gateway ?? $this->activeGateway->resolve())
+            ->verify($reference, $providerReference);
     }
 
     public function charge(
         RecurringChargeData $data,
         ?PaymentGatewayName $gateway = null,
     ): PaymentVerification {
-        $resolvedGateway = $this->gateways->resolve($gateway);
+        $resolvedGateway = $this->gateways->resolve($gateway ?? $this->activeGateway->resolve());
 
         if (! $resolvedGateway instanceof RecurringPaymentGateway) {
             throw new UnsupportedGatewayOperationException(
@@ -56,6 +64,8 @@ final readonly class PaymentService
         array $headers,
         ?PaymentGatewayName $gateway = null,
     ): GatewayWebhook {
-        return $this->gateways->resolve($gateway)->parseWebhook($rawPayload, $headers);
+        return $this->gateways
+            ->resolve($gateway ?? $this->activeGateway->resolve())
+            ->parseWebhook($rawPayload, $headers);
     }
 }

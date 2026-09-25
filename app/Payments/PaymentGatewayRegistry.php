@@ -15,7 +15,6 @@ final readonly class PaymentGatewayRegistry
     /** @param iterable<PaymentGateway> $gateways */
     public function __construct(
         iterable $gateways,
-        private PaymentGatewayName $defaultGateway,
     ) {
         $registeredGateways = [];
 
@@ -29,17 +28,11 @@ final readonly class PaymentGatewayRegistry
             $registeredGateways[$name] = $gateway;
         }
 
-        if (! isset($registeredGateways[$this->defaultGateway->value])) {
-            throw new GatewayConfigurationException("The default [{$this->defaultGateway->value}] payment gateway is not registered.");
-        }
-
         $this->gateways = $registeredGateways;
     }
 
-    public function resolve(?PaymentGatewayName $gateway = null): PaymentGateway
+    public function resolve(PaymentGatewayName $gateway): PaymentGateway
     {
-        $gateway ??= $this->defaultGateway;
-
         if (! array_key_exists($gateway->value, $this->gateways)) {
             throw new PaymentGatewayNotConfiguredException($gateway);
         }
@@ -47,7 +40,7 @@ final readonly class PaymentGatewayRegistry
         return $this->gateways[$gateway->value];
     }
 
-    public function gatewayName(?PaymentGatewayName $gateway = null): PaymentGatewayName
+    public function gatewayName(PaymentGatewayName $gateway): PaymentGatewayName
     {
         return $this->resolve($gateway)->name();
     }

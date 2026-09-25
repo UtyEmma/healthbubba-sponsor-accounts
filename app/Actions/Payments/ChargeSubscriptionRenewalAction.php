@@ -105,6 +105,7 @@ final readonly class ChargeSubscriptionRenewalAction
                     authorizationCode: $paymentMethod->authorization_code,
                     reference: $payment->reference,
                     metadata: $payment->metadata,
+                    customerReference: $paymentMethod->customer_code,
                 ),
                 $payment->gateway,
             );

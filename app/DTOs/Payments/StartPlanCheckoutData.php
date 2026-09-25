@@ -2,7 +2,6 @@
 
 namespace App\DTOs\Payments;
 
-use App\Enums\Payments\PaymentGatewayName;
 use App\Enums\Payments\SubscriptionPaymentSource;
 use App\Models\Plan;
 use App\Models\User;
@@ -17,6 +16,5 @@ final readonly class StartPlanCheckoutData
         public int $additionalCapacity,
         public string $callbackUrl,
         public SubscriptionPaymentSource $paymentSource = SubscriptionPaymentSource::WALLET,
-        public ?PaymentGatewayName $gateway = null,
     ) {}
 }

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Funding;
 
 use App\Actions\Payments\StartWalletFundingAction;
 use App\DTOs\Payments\StartWalletFundingData;
-use App\Enums\Payments\PaymentGatewayName;
 use App\Exceptions\Payments\PaymentException;
 use App\Exceptions\Payments\PaymentVerificationFailed;
 use App\Http\Controllers\Controller;
@@ -29,15 +28,12 @@ final class StoreInstitutionalFundingController extends Controller
                 user: $user,
                 amount: Money::fromMajor($request->amount(), config()->string('payments.currency', 'NGN')),
                 callbackUrl: route('payments.callback'),
-                gateway: PaymentGatewayName::PAYSTACK,
-                // channels: ['bank_transfer'],
-                fundingMethod: 'paystack',
             ));
         } catch (PaymentException|PaymentVerificationFailed $exception) {
             report($exception);
 
             return back()->withErrors([
-                'funding_payment' => 'Unable to start the bank transfer right now. Please try again.',
+                'funding_payment' => 'Unable to start the payment right now. Please try again.',
             ]);
         }
 

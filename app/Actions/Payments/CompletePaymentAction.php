@@ -23,8 +23,8 @@ use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Models\Workspace;
 use App\Payments\PaymentService;
-use App\Services\Payments\PlanPricingService;
 use App\Services\Payments\PlanChangePricingService;
+use App\Services\Payments\PlanPricingService;
 use App\ValueObjects\Money;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -59,7 +59,11 @@ final readonly class CompletePaymentAction
             return $payment;
         }
 
-        $verification ??= $this->payments->verify($payment->reference, $payment->gateway);
+        $verification ??= $this->payments->verify(
+            reference: $payment->reference,
+            gateway: $payment->gateway,
+            providerReference: $payment->provider_reference,
+        );
 
         if ($verification->status !== PaymentStatus::SUCCEEDED) {
             if ($verification->status === PaymentStatus::FAILED) {
@@ -505,6 +509,9 @@ final readonly class CompletePaymentAction
             'renewal_attempts' => 0,
             'renewal_retry_at' => null,
             'payment_method_id' => $paymentMethod?->getKey() ?? $subscription->payment_method_id,
+            'gateway' => $paymentMethod instanceof PaymentMethod
+                ? $payment->gateway
+                : $subscription->gateway,
         ]);
 
         return $subscription->refresh();

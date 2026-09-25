@@ -8,6 +8,7 @@ export type * from './consultation';
 export type * from './dashboard';
 export type * from './funding';
 export type * from './medical-access';
+export type * from './payment';
 export type * from './institutional-onboarding';
 export type * from './institutional-registration';
 export type * from './institutional';

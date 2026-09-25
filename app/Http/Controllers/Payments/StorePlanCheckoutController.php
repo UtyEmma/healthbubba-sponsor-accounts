@@ -32,7 +32,6 @@ final class StorePlanCheckoutController extends Controller
                 additionalCapacity: $request->additionalCapacity(),
                 callbackUrl: route('payments.callback'),
                 paymentSource: $request->paymentSource(),
-                gateway: $request->gateway(),
             ));
         } catch (CheckoutUnavailable $exception) {
             return back()->withErrors(['payment' => $exception->getMessage()]);

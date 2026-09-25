@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { PaymentStatusNotice } from '@/components/payment-status-notice';
 import { Disclose } from '@/components/toggle/disclose';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { useActivePaymentGateway } from '@/hooks/use-active-payment-gateway';
+import { DashboardLayout } from '@/layouts/dashboard';
 import { cn } from '@/lib/utils';
 import type { PlanBillingPageProps } from '@/types';
 import { CapacityPurchaseCard } from './partials/capacity-purchase-card';
@@ -14,7 +16,6 @@ import { PlanChangeDialog } from './partials/plan-change-dialog';
 import { PlanCheckoutDialog } from './partials/plan-checkout-dialog';
 import { PlanFaq } from './partials/plan-faq';
 import { SubscriptionRenewalDialog } from './partials/subscription-renewal-dialog';
-import { DashboardLayout } from '@/layouts/dashboard';
 
 const nairaFormatter = new Intl.NumberFormat('en-NG', {
     style: 'currency',
@@ -45,6 +46,7 @@ export default function ({
     capacityPurchase,
 }: PlanBillingPageProps) {
     const { errors, flash } = usePage().props;
+    const gateway = useActivePaymentGateway();
     const [selectedPlan, setSelectedPlan] = useState<
         PlanBillingPageProps['plans'][number] | null
     >(null);
@@ -153,8 +155,8 @@ export default function ({
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
                                                     Pay from Wallet or use
-                                                    Paystack to keep your plan
-                                                    active.
+                                                    {gateway.label} to keep your
+                                                    plan active.
                                                 </p>
                                             </div>
                                             <Button

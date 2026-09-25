@@ -1,6 +1,6 @@
 export type AccountType = 'individual' | 'business' | 'institution';
 
-export type SubscriptionPaymentSource = 'wallet' | 'paystack';
+export type SubscriptionPaymentSource = 'wallet' | 'paystack' | 'stripe';
 
 export type BillingWallet = {
     balance: string;

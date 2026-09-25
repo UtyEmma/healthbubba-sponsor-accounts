@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { useActivePaymentGateway } from '@/hooks/use-active-payment-gateway';
 import type {
     FundingConfiguration,
     FundingSummary,
@@ -35,7 +36,8 @@ export function FundAccountDialog({
     onOpenChange,
     summary,
 }: ControlledDialogProps & { summary: FundingSummary }) {
-    const form = useForm({ amount: '', funding_method: 'paystack' });
+    const gateway = useActivePaymentGateway();
+    const form = useForm({ amount: '', funding_method: gateway.name });
     const amount = Number(form.data.amount.replaceAll(',', '') || 0);
     const projected = Number(summary.availableBalance) + amount;
     const fundingPaymentError = (
@@ -74,7 +76,9 @@ export function FundAccountDialog({
                         onClick={submit}
                         disabled={form.processing || amount <= 0}
                     >
-                        {form.processing ? 'Opening Paystack…' : 'Fund account'}
+                        {form.processing
+                            ? `Opening ${gateway.label}…`
+                            : 'Fund account'}
                     </Button>
                 </>
             }
@@ -96,8 +100,8 @@ export function FundAccountDialog({
                     />
                 </Field>
                 <Field label="Funding method">
-                    <Select value="paystack" disabled>
-                        <option value="paystack">Paystack</option>
+                    <Select value={gateway.name} disabled>
+                        <option value={gateway.name}>{gateway.label}</option>
                     </Select>
                 </Field>
                 <div className="flex items-center justify-between rounded-lg border border-border bg-muted/40 px-3 py-3 text-sm">

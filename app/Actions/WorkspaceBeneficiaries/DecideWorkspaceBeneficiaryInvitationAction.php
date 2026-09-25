@@ -8,15 +8,24 @@ use App\Enums\Activity\WorkspaceActivityType;
 use App\Enums\WorkspaceBeneficiaries\WorkspaceBeneficiaryStatus;
 use App\Models\WorkspaceBeneficiary;
 use App\Services\Activity\WorkspaceActivityLogger;
+use App\Services\WorkspaceBeneficiaries\BeneficiaryLookupService;
 use Illuminate\Support\Facades\DB;
 
 final readonly class DecideWorkspaceBeneficiaryInvitationAction
 {
-    public function __construct(private WorkspaceActivityLogger $activities) {}
+    public function __construct(
+        private BeneficiaryLookupService $beneficiaries,
+        private WorkspaceActivityLogger $activities,
+    ) {}
 
     public function execute(WorkspaceBeneficiary $invitation, string $decision): WorkspaceBeneficiary
     {
-        return DB::transaction(function () use ($invitation, $decision): WorkspaceBeneficiary {
+        $email = mb_strtolower(trim($invitation->email));
+        $beneficiaryId = $decision === 'accept'
+            ? $this->beneficiaries->idsByEmail([$email])->get($email, $invitation->beneficiary_id)
+            : null;
+
+        return DB::transaction(function () use ($invitation, $decision, $beneficiaryId): WorkspaceBeneficiary {
             $locked = WorkspaceBeneficiary::query()
                 ->whereKey($invitation->getKey())
                 ->lockForUpdate()
@@ -34,7 +43,11 @@ final readonly class DecideWorkspaceBeneficiaryInvitationAction
 
             $now = now();
             $locked->update($decision === 'accept'
-                ? ['status' => WorkspaceBeneficiaryStatus::Active, 'accepted_at' => $now]
+                ? [
+                    'status' => WorkspaceBeneficiaryStatus::Active,
+                    'beneficiary_id' => $beneficiaryId,
+                    'accepted_at' => $now,
+                ]
                 : ['status' => WorkspaceBeneficiaryStatus::Declined, 'declined_at' => $now]);
 
             $workspace = $locked->workspace()->firstOrFail();

@@ -5,6 +5,7 @@ namespace App\Actions\Payments;
 use App\DTOs\Payments\CheckoutSession;
 use App\DTOs\Payments\InitializePaymentData;
 use App\DTOs\Payments\StartWalletFundingData;
+use App\Enums\Payments\PaymentCheckoutProfile;
 use App\Enums\Payments\PaymentPurpose;
 use App\Enums\Payments\PaymentStatus;
 use App\Exceptions\Payments\PaymentException;
@@ -23,7 +24,7 @@ final readonly class StartWalletFundingAction
 
     public function execute(StartWalletFundingData $data): CheckoutSession
     {
-        $gateway = $this->payments->gatewayName($data->gateway);
+        $gateway = $this->payments->gatewayName();
         $wallet = $data->workspace->wallet()->firstOrCreate([], [
             'balance' => '0.00',
             'currency' => $data->amount->currency,
@@ -48,7 +49,7 @@ final readonly class StartWalletFundingAction
                 'email' => $data->user->email,
                 'workspace_id' => $data->workspace->getKey(),
                 'purpose' => PaymentPurpose::WALLET_TOP_UP->value,
-                'funding_method' => $data->fundingMethod,
+                'funding_method' => $gateway->value,
             ],
         ]);
 
@@ -65,9 +66,10 @@ final readonly class StartWalletFundingAction
                     amount: $data->amount,
                     email: $data->user->email,
                     reference: $payment->reference,
+                    description: 'Workspace wallet funding',
                     callbackUrl: $data->callbackUrl,
                     metadata: $metadata,
-                    channels: $data->channels,
+                    profile: PaymentCheckoutProfile::FLEXIBLE,
                 ),
                 $gateway,
             );
@@ -78,8 +80,11 @@ final readonly class StartWalletFundingAction
         }
 
         $payment->update([
-            'provider_reference' => $session->reference,
-            'provider_metadata' => ['gateway' => $session->gateway->value],
+            'provider_reference' => $session->providerReference,
+            'provider_metadata' => [
+                'gateway' => $session->gateway->value,
+                'authorization_url' => $session->authorizationUrl,
+            ],
             'initialized_at' => now(),
         ]);
 

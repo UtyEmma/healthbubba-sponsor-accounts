@@ -20,5 +20,13 @@ return [
             'verify_attempts' => (int) env('PAYSTACK_VERIFY_ATTEMPTS', 3),
             'retry_delay' => (int) env('PAYSTACK_RETRY_DELAY', 200),
         ],
+        'stripe' => [
+            'secret_key' => env('STRIPE_SECRET_KEY'),
+            'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+            'api_version' => env('STRIPE_API_VERSION'),
+            'timeout' => (int) env('STRIPE_TIMEOUT', 10),
+            'connect_timeout' => (int) env('STRIPE_CONNECT_TIMEOUT', 3),
+            'max_network_retries' => (int) env('STRIPE_MAX_NETWORK_RETRIES', 2),
+        ],
     ],
 ];

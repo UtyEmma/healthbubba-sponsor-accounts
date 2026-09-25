@@ -37,6 +37,7 @@ return [
 
     'healthbubba' => [
         'service_token' => env('HEALTHBUBBA_SERVICE_TOKEN'),
+        'web_url' => env('HEALTHBUBBA_WEB_URL', 'https://web.healthbubba.com'),
     ],
 
     'termii' => [

@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Payments;
 
-use App\Enums\Payments\PaymentGatewayName;
 use App\Enums\Payments\SubscriptionPaymentSource;
 use App\Models\Plan;
 use Illuminate\Validation\Rule;
@@ -17,7 +16,6 @@ final class StorePlanCheckoutRequest extends AuthorizedWorkspacePaymentRequest
             'additional_capacity' => ['nullable', 'integer', 'min:0', 'max:100000'],
             'recurring_consent' => ['required', 'accepted'],
             'payment_source' => ['required', Rule::enum(SubscriptionPaymentSource::class)],
-            'gateway' => ['nullable', Rule::enum(PaymentGatewayName::class)],
         ];
     }
 
@@ -49,12 +47,5 @@ final class StorePlanCheckoutRequest extends AuthorizedWorkspacePaymentRequest
     public function additionalCapacity(): int
     {
         return (int) ($this->validated('additional_capacity') ?? 0);
-    }
-
-    public function gateway(): ?PaymentGatewayName
-    {
-        $gateway = $this->validated('gateway');
-
-        return is_string($gateway) ? PaymentGatewayName::tryFrom($gateway) : null;
     }
 }

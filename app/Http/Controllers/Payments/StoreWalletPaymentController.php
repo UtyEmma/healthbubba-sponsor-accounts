@@ -29,12 +29,9 @@ final class StoreWalletPaymentController extends Controller
                 user: $user,
                 amount: Money::fromMajor($request->amount(), config()->string('payments.currency', 'NGN')),
                 callbackUrl: route('payments.callback'),
-                gateway: $request->gateway(),
             ));
         } catch (PaymentException|PaymentVerificationFailed $exception) {
             report($exception);
-
-            
 
             return back()->withErrors([
                 'payment' => 'Unable to start the payment right now. Please try again.',

@@ -16,9 +16,11 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { useActivePaymentGateway } from '@/hooks/use-active-payment-gateway';
 
 export function AddFundsDialog() {
     const [open, setOpen] = useState(false);
+    const gateway = useActivePaymentGateway();
 
     return (
         <WalletDialog
@@ -31,7 +33,7 @@ export function AddFundsDialog() {
                 </Button>
             }
             title="Add funds"
-            description="Enter an amount, then continue to Paystack to choose a secure payment method."
+            description={`Enter an amount, then continue to ${gateway.label} to choose a secure payment method.`}
         >
             <Form {...storeWalletPayment.form()}>
                 {({ errors, processing }) => (

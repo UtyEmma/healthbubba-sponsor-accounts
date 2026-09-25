@@ -1,6 +1,6 @@
 import { Form } from '@inertiajs/react';
 import { TriangleAlertIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import StoreSubscriptionRenewalController from '@/actions/App/Http/Controllers/Payments/StoreSubscriptionRenewalController';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { useActivePaymentGateway } from '@/hooks/use-active-payment-gateway';
 import type {
     BillingWallet,
     SubscriptionPaymentSource,
@@ -39,19 +40,24 @@ export function SubscriptionRenewalDialog({
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
+    const gateway = useActivePaymentGateway();
     const amount = Number(subscription.renewalAmount);
     const balance = Number(wallet.balance);
-    const [paymentSource, setPaymentSource] =
-        useState<SubscriptionPaymentSource>('wallet');
+    const [selectedPaymentSource, setSelectedPaymentSource] =
+        useState<SubscriptionPaymentSource | null>(null);
+    const paymentSource =
+        selectedPaymentSource ?? (balance >= amount ? 'wallet' : gateway.name);
 
-    useEffect(() => {
-        if (open) {
-            setPaymentSource(balance >= amount ? 'wallet' : 'paystack');
+    function handleOpenChange(nextOpen: boolean) {
+        if (!nextOpen) {
+            setSelectedPaymentSource(null);
         }
-    }, [amount, balance, open]);
+
+        onOpenChange(nextOpen);
+    }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent showCloseButton={false} className="sm:max-w-lg">
                 <DialogHeader className="gap-1 border-b px-6 pt-6 pb-4">
                     <DialogTitle className="text-base font-semibold">
@@ -85,7 +91,7 @@ export function SubscriptionRenewalDialog({
                                     balance={balance}
                                     currency={wallet.currency}
                                     value={paymentSource}
-                                    onChange={setPaymentSource}
+                                    onChange={setSelectedPaymentSource}
                                     disabled={processing}
                                 />
 
@@ -94,7 +100,8 @@ export function SubscriptionRenewalDialog({
                                     <p>
                                         Payment renews this plan immediately.
                                         Future automatic renewals try Wallet
-                                        before a saved Paystack authorization.
+                                        before a saved {gateway.label}{' '}
+                                        authorization.
                                     </p>
                                 </div>
 
@@ -149,7 +156,7 @@ export function SubscriptionRenewalDialog({
                                         ? 'Processing…'
                                         : paymentSource === 'wallet'
                                           ? 'Pay and renew'
-                                          : 'Continue to Paystack'}
+                                          : `Continue to ${gateway.label}`}
                                 </Button>
                             </DialogFooter>
                         </>

@@ -13,6 +13,8 @@ use App\Enums\AccountTypes;
 use App\Enums\Activity\WorkspaceActivityType;
 use App\Enums\CapacityPurchases\CapacityPaymentSource;
 use App\Enums\CapacityPurchases\CapacityPurchaseStatus;
+use App\Enums\Payments\PaymentCheckoutProfile;
+use App\Enums\Payments\PaymentGatewayName;
 use App\Enums\Payments\PaymentPurpose;
 use App\Enums\Payments\PaymentStatus;
 use App\Enums\Transactions\TransactionFlow;
@@ -48,7 +50,8 @@ final readonly class StartCapacityPurchaseAction
     {
         return match ($data->paymentSource) {
             CapacityPaymentSource::WALLET => $this->purchaseWithWallet($data),
-            CapacityPaymentSource::PAYSTACK => $this->startPaystackCheckout($data),
+            CapacityPaymentSource::PAYSTACK,
+            CapacityPaymentSource::STRIPE => $this->startExternalCheckout($data),
         };
     }
 
@@ -116,7 +119,7 @@ final readonly class StartCapacityPurchaseAction
         }, 3);
     }
 
-    private function startPaystackCheckout(StartCapacityPurchaseData $data): CapacityPurchaseResult
+    private function startExternalCheckout(StartCapacityPurchaseData $data): CapacityPurchaseResult
     {
         [$purchase, $payment, $shouldInitialize] = DB::transaction(
             function () use ($data): array {
@@ -128,8 +131,7 @@ final readonly class StartCapacityPurchaseAction
                         throw new CheckoutUnavailable('The previous capacity purchase requires payment support review.');
                     }
 
-                    if ($existingPurchase->payment_source !== CapacityPaymentSource::PAYSTACK
-                        || $existingPurchase->quantity !== $data->quantity) {
+                    if ($existingPurchase->quantity !== $data->quantity) {
                         throw new CheckoutUnavailable('A different capacity purchase is already in progress.');
                     }
 
@@ -144,7 +146,7 @@ final readonly class StartCapacityPurchaseAction
 
                 $quote = $this->pricing->quote($subscription, $data->quantity);
                 $purchase = $this->createPurchase($data, $quote);
-                $gateway = $this->payments->gatewayName();
+                $gateway = $this->activeExternalGateway($data->paymentSource);
                 $payment = Payment::query()->create([
                     'workspace_id' => $data->workspace->getKey(),
                     'user_id' => $data->user->getKey(),
@@ -187,9 +189,10 @@ final readonly class StartCapacityPurchaseAction
                     amount: new Money($payment->amount_minor, $payment->currency),
                     email: $data->user->email,
                     reference: $payment->reference,
+                    description: 'Additional subscription capacity',
                     callbackUrl: $data->callbackUrl,
                     metadata: $payment->metadata,
-                    channels: ['card'],
+                    profile: PaymentCheckoutProfile::CARD,
                 ),
                 $payment->gateway,
             );
@@ -200,7 +203,7 @@ final readonly class StartCapacityPurchaseAction
         }
 
         $payment->update([
-            'provider_reference' => $session->reference,
+            'provider_reference' => $session->providerReference,
             'provider_metadata' => [
                 'gateway' => $session->gateway->value,
                 'authorization_url' => $session->authorizationUrl,
@@ -304,8 +307,21 @@ final readonly class StartCapacityPurchaseAction
         return new CheckoutSession(
             gateway: $payment->gateway,
             reference: $payment->reference,
+            providerReference: $payment->provider_reference ?? $payment->reference,
             authorizationUrl: $authorizationUrl,
             accessCode: '',
         );
+    }
+
+    private function activeExternalGateway(CapacityPaymentSource $source): PaymentGatewayName
+    {
+        $gateway = $source->gateway();
+        $active = $this->payments->gatewayName();
+
+        if ($gateway === null || $gateway !== $active) {
+            throw new CheckoutUnavailable("{$active->label()} is the active external payment provider. Refresh and try again.");
+        }
+
+        return $active;
     }
 }

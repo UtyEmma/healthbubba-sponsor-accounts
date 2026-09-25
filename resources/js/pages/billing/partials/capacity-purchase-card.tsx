@@ -3,6 +3,7 @@ import { MinusIcon, PlusIcon, WalletCardsIcon } from 'lucide-react';
 import { useState } from 'react';
 
 import { store as storeCapacityPurchase } from '@/actions/App/Http/Controllers/Payments/StoreCapacityPurchaseController';
+import { Disclose } from '@/components/toggle/disclose';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
@@ -14,8 +15,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import type { CapacityPurchaseSummary } from '@/types';
-import { Disclose } from '@/components/toggle/disclose';
+import { useActivePaymentGateway } from '@/hooks/use-active-payment-gateway';
+import type {
+    CapacityPurchaseSummary,
+    SubscriptionPaymentSource,
+} from '@/types';
 
 function formatMoney(amount: number, currency: string): string {
     return new Intl.NumberFormat('en-NG', {
@@ -30,11 +34,11 @@ export function CapacityPurchaseCard({
 }: {
     summary: CapacityPurchaseSummary;
 }) {
+    const gateway = useActivePaymentGateway();
     const [quantity, setQuantity] = useState(1);
     const [open, setOpen] = useState(false);
-    const [paymentSource, setPaymentSource] = useState<'paystack' | 'wallet'>(
-        'paystack',
-    );
+    const [paymentSource, setPaymentSource] =
+        useState<SubscriptionPaymentSource>('wallet');
     const maximumQuantity =
         summary.maximum_capacity === null
             ? 100000
@@ -45,21 +49,18 @@ export function CapacityPurchaseCard({
     const renewalIncrease = renewalUnitPrice * quantity;
     const walletBalance = Number(summary.wallet_balance);
     const walletAvailable = walletBalance >= chargeNow;
-    const additionalCapacity = Math.max(
-        0,
-        summary.current_capacity - summary.included_capacity,
-    );
-
     function handleOpenChange(nextOpen: boolean) {
         if (!nextOpen) {
-            setPaymentSource('paystack');
+            setPaymentSource(walletAvailable ? 'wallet' : gateway.name);
+        } else {
+            setPaymentSource(walletAvailable ? 'wallet' : gateway.name);
         }
 
         setOpen(nextOpen);
     }
 
     return (
-        <Disclose show={summary.available} >
+        <Disclose show={summary.available}>
             <Card className="mt-7">
                 <CardHeader className="gap-1 px-6 pt-6 pb-3">
                     <h2 className="text-base font-semibold">
@@ -151,7 +152,16 @@ export function CapacityPurchaseCard({
                                     {formatMoney(chargeNow, summary.currency)}
                                 </output>
                             </div>
-                            <Button onClick={() => setOpen(true)}>
+                            <Button
+                                onClick={() => {
+                                    setPaymentSource(
+                                        walletAvailable
+                                            ? 'wallet'
+                                            : gateway.name,
+                                    );
+                                    setOpen(true);
+                                }}
+                            >
                                 Add {quantity}{' '}
                                 {quantity === 1
                                     ? summary.unit
@@ -162,14 +172,17 @@ export function CapacityPurchaseCard({
 
                     {summary.available && maximumQuantity === 0 && (
                         <p className="border-t pt-4 text-sm text-muted-foreground">
-                            This subscription has reached its maximum {summary.unit}{' '}
-                            capacity.
+                            This subscription has reached its maximum{' '}
+                            {summary.unit} capacity.
                         </p>
                     )}
                 </CardContent>
 
                 <Dialog open={open} onOpenChange={handleOpenChange}>
-                    <DialogContent showCloseButton={false} className="sm:max-w-lg">
+                    <DialogContent
+                        showCloseButton={false}
+                        className="sm:max-w-lg"
+                    >
                         <DialogHeader className="gap-1 border-b px-6 pt-6 pb-4">
                             <DialogTitle className="text-base leading-6 font-semibold">
                                 Add {quantity}{' '}
@@ -184,10 +197,12 @@ export function CapacityPurchaseCard({
                         </DialogHeader>
 
                         <Form
-                            {...storeCapacityPurchase.form(summary.subscription_id)}
+                            {...storeCapacityPurchase.form(
+                                summary.subscription_id,
+                            )}
                             onSuccess={() => setOpen(false)}
                         >
-                            {({ errors, processing,  }) => (
+                            {({ errors, processing }) => (
                                 <>
                                     <input
                                         type="hidden"
@@ -224,21 +239,25 @@ export function CapacityPurchaseCard({
                                                 Payment method
                                             </legend>
                                             <PaymentOption
-                                                value="paystack"
+                                                value={gateway.name}
                                                 checked={
-                                                    paymentSource === 'paystack'
+                                                    paymentSource ===
+                                                    gateway.name
                                                 }
                                                 onChange={setPaymentSource}
                                                 disabled={processing}
-                                                title="Paystack"
-                                                description="Pay securely by card through Paystack."
+                                                title={gateway.label}
+                                                description={`Pay securely by card through ${gateway.label}.`}
                                             />
                                             <PaymentOption
                                                 value="wallet"
-                                                checked={paymentSource === 'wallet'}
+                                                checked={
+                                                    paymentSource === 'wallet'
+                                                }
                                                 onChange={setPaymentSource}
                                                 disabled={
-                                                    processing || !walletAvailable
+                                                    processing ||
+                                                    !walletAvailable
                                                 }
                                                 title="Wallet balance"
                                                 description={`${formatMoney(walletBalance, summary.currency)} available${walletAvailable ? '' : ' — insufficient balance'}`}
@@ -282,8 +301,8 @@ export function CapacityPurchaseCard({
                                             {processing
                                                 ? 'Processing…'
                                                 : paymentSource === 'wallet'
-                                                ? 'Pay from wallet'
-                                                : 'Continue to Paystack'}
+                                                  ? 'Pay from wallet'
+                                                  : `Continue to ${gateway.label}`}
                                         </Button>
                                     </DialogFooter>
                                 </>
@@ -293,15 +312,6 @@ export function CapacityPurchaseCard({
                 </Dialog>
             </Card>
         </Disclose>
-    );
-}
-
-function CapacityValue({ label, value }: { label: string; value: string }) {
-    return (
-        <div className="grid gap-1">
-            <dt className="text-muted-foreground">{label}</dt>
-            <dd className="font-medium">{value}</dd>
-        </div>
     );
 }
 
@@ -323,9 +333,9 @@ function PaymentOption({
     description,
     icon,
 }: {
-    value: 'paystack' | 'wallet';
+    value: SubscriptionPaymentSource;
     checked: boolean;
-    onChange: (value: 'paystack' | 'wallet') => void;
+    onChange: (value: SubscriptionPaymentSource) => void;
     disabled: boolean;
     title: string;
     description: string;

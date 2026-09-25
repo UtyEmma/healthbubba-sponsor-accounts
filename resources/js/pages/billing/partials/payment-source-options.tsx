@@ -1,5 +1,6 @@
 import { CreditCardIcon, WalletIcon } from 'lucide-react';
 
+import { useActivePaymentGateway } from '@/hooks/use-active-payment-gateway';
 import { cn } from '@/lib/utils';
 import type { SubscriptionPaymentSource } from '@/types';
 
@@ -26,6 +27,7 @@ export function PaymentSourceOptions({
     onChange: (source: SubscriptionPaymentSource) => void;
     disabled?: boolean;
 }) {
+    const gateway = useActivePaymentGateway();
     const walletAvailable = balance >= amount;
     const projectedBalance = Math.max(0, balance - amount);
 
@@ -66,22 +68,22 @@ export function PaymentSourceOptions({
             <label
                 className={cn(
                     'flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors',
-                    value === 'paystack' && 'border-primary bg-primary/5',
+                    value === gateway.name && 'border-primary bg-primary/5',
                     disabled && 'cursor-not-allowed opacity-60',
                 )}
             >
                 <input
                     type="radio"
                     name="payment_source"
-                    value="paystack"
-                    checked={value === 'paystack'}
-                    onChange={() => onChange('paystack')}
+                    value={gateway.name}
+                    checked={value === gateway.name}
+                    onChange={() => onChange(gateway.name)}
                     disabled={disabled}
                     className="mt-1 size-4 accent-primary"
                 />
                 <CreditCardIcon className="mt-0.5 size-5 shrink-0 text-primary" />
                 <span className="grid gap-1 text-sm">
-                    <span className="font-medium">Paystack</span>
+                    <span className="font-medium">{gateway.label}</span>
                     <span className="text-xs text-muted-foreground">
                         Continue to secure card checkout.
                     </span>

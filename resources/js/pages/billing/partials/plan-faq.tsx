@@ -17,7 +17,7 @@ const questions = [
     },
     {
         question: 'How are subscription payments collected?',
-        answer: 'You can pay with your Wallet or Paystack. Renewals try the Wallet first and use a saved reusable Paystack authorization only when the Wallet balance is insufficient.',
+        answer: "You can pay with your Wallet or the active external payment provider. Renewals try the Wallet first and use the subscription's saved reusable authorization only when the Wallet balance is insufficient.",
     },
     {
         question: 'Can I cancel anytime?',

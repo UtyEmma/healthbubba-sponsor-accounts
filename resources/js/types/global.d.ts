@@ -1,7 +1,8 @@
 import type { Auth } from '@/types/auth';
 import type { WorkspaceActivitySummary } from './activity';
-import type { Workspace } from './workspace';
+import type { ActivePaymentGateway } from './payment';
 import type { WorkspaceOption, WorkspacePermissions } from './team';
+import type { Workspace } from './workspace';
 
 declare module 'react' {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -19,6 +20,7 @@ declare module '@inertiajs/core' {
             workspaceOptions: WorkspaceOption[];
             workspacePermissions: WorkspacePermissions;
             activityNotifications: WorkspaceActivitySummary | null;
+            activePaymentGateway: ActivePaymentGateway | null;
             flash: {
                 success: string | null;
             };

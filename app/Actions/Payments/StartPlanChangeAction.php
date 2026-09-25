@@ -11,6 +11,8 @@ use App\DTOs\Payments\PlanChangeResult;
 use App\DTOs\Payments\StartPlanChangeData;
 use App\Enums\Activity\WorkspaceActivityType;
 use App\Enums\CapacityPurchases\CapacityPurchaseStatus;
+use App\Enums\Payments\PaymentCheckoutProfile;
+use App\Enums\Payments\PaymentGatewayName;
 use App\Enums\Payments\PaymentPurpose;
 use App\Enums\Payments\PaymentStatus;
 use App\Enums\Payments\SubscriptionPaymentSource;
@@ -28,11 +30,11 @@ use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Payments\PaymentService;
 use App\Services\Activity\WorkspaceActivityLogger;
-use App\Services\Payments\PlanChangePricingService;
 use App\Services\Payments\PlanChangeEligibilityService;
+use App\Services\Payments\PlanChangePricingService;
 use App\Support\Payments\PaymentReferenceGenerator;
-use Illuminate\Support\Facades\DB;
 use App\ValueObjects\Money;
+use Illuminate\Support\Facades\DB;
 use Revoltify\Subscriptionify\Enums\SubscriptionStatus;
 
 final readonly class StartPlanChangeAction
@@ -93,7 +95,7 @@ final readonly class StartPlanChangeAction
                     return [$quote, $existingPayment, false];
                 }
 
-                $gateway = $this->payments->gatewayName();
+                $gateway = $this->activeExternalGateway($data->paymentSource);
                 $payment = Payment::query()->create([
                     'workspace_id' => $data->workspace->getKey(),
                     'user_id' => $data->user->getKey(),
@@ -120,7 +122,7 @@ final readonly class StartPlanChangeAction
                         'target_base_minor' => $quote->targetBasePrice->amountInMinorUnits,
                         'quoted_at' => $quote->quotedAt->toISOString(),
                         'term_ends_at' => $subscription->ends_at?->toISOString(),
-                        'payment_source' => SubscriptionPaymentSource::PAYSTACK->value,
+                        'payment_source' => $gateway->value,
                     ],
                 ]);
                 $payment->update([
@@ -149,9 +151,10 @@ final readonly class StartPlanChangeAction
                     amount: $quote->amountDueNow,
                     email: $data->user->email,
                     reference: $payment->reference,
+                    description: "Upgrade to {$data->targetPlan->name}",
                     callbackUrl: $data->callbackUrl,
                     metadata: $payment->metadata,
-                    channels: ['card'],
+                    profile: PaymentCheckoutProfile::CARD,
                 ),
                 $payment->gateway,
             );
@@ -162,7 +165,7 @@ final readonly class StartPlanChangeAction
         }
 
         $payment->update([
-            'provider_reference' => $session->reference,
+            'provider_reference' => $session->providerReference,
             'provider_metadata' => [
                 'gateway' => $session->gateway->value,
                 'authorization_url' => $session->authorizationUrl,
@@ -291,7 +294,9 @@ final readonly class StartPlanChangeAction
         $balance = Money::fromMajor($wallet->balance, $wallet->currency);
 
         if ($balance->amountInMinorUnits < $quote->amountDueNow->amountInMinorUnits) {
-            throw new CheckoutUnavailable('Your wallet balance is insufficient. Choose Paystack to continue.');
+            throw new CheckoutUnavailable(
+                "Your wallet balance is insufficient. Choose {$this->payments->gatewayName()->label()} to continue.",
+            );
         }
 
         $fromPlanId = (int) $subscription->plan_id;
@@ -399,8 +404,21 @@ final readonly class StartPlanChangeAction
         return new CheckoutSession(
             gateway: $payment->gateway,
             reference: $payment->reference,
+            providerReference: $payment->provider_reference ?? $payment->reference,
             authorizationUrl: $authorizationUrl,
             accessCode: '',
         );
+    }
+
+    private function activeExternalGateway(SubscriptionPaymentSource $source): PaymentGatewayName
+    {
+        $gateway = $source->gateway();
+        $active = $this->payments->gatewayName();
+
+        if ($gateway === null || $gateway !== $active) {
+            throw new CheckoutUnavailable("{$active->label()} is the active external payment provider. Refresh and try again.");
+        }
+
+        return $active;
     }
 }

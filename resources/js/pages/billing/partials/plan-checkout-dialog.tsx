@@ -1,5 +1,5 @@
 import { Form } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { store as storePlanCheckout } from '@/actions/App/Http/Controllers/Payments/StorePlanCheckoutController';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { useActivePaymentGateway } from '@/hooks/use-active-payment-gateway';
 import type {
     AccountType,
     BillingWallet,
@@ -42,14 +43,15 @@ export function PlanCheckoutDialog({
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
+    const gateway = useActivePaymentGateway();
     const [additionalCapacity, setAdditionalCapacity] = useState(0);
-    const [paymentSource, setPaymentSource] =
-        useState<SubscriptionPaymentSource>('wallet');
+    const [selectedPaymentSource, setSelectedPaymentSource] =
+        useState<SubscriptionPaymentSource | null>(null);
 
     function handleOpenChange(nextOpen: boolean) {
         if (!nextOpen) {
             setAdditionalCapacity(0);
-            setPaymentSource('wallet');
+            setSelectedPaymentSource(null);
         }
 
         onOpenChange(nextOpen);
@@ -67,14 +69,11 @@ export function PlanCheckoutDialog({
     const accountLabel =
         accountType === 'business' ? 'business subscription' : 'subscription';
     const walletBalance = Number(wallet.balance);
-
-    useEffect(() => {
-        if (!open) {
-            return;
-        }
-
-        setPaymentSource(walletBalance >= total ? 'wallet' : 'paystack');
-    }, [open, plan?.id, total, walletBalance]);
+    const paymentSource =
+        selectedPaymentSource === 'wallet' && walletBalance < total
+            ? gateway.name
+            : (selectedPaymentSource ??
+              (walletBalance >= total ? 'wallet' : gateway.name));
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -225,7 +224,7 @@ export function PlanCheckoutDialog({
                                         balance={walletBalance}
                                         currency={wallet.currency}
                                         value={paymentSource}
-                                        onChange={setPaymentSource}
+                                        onChange={setSelectedPaymentSource}
                                         disabled={processing}
                                     />
                                     {errors.payment_source && (
@@ -258,7 +257,8 @@ export function PlanCheckoutDialog({
                                             I authorize recurring charges for
                                             this subscription at the displayed
                                             cadence. Renewals try my Wallet
-                                            first, then a reusable Paystack
+                                            first, then a reusable{' '}
+                                            {gateway.label}
                                             authorization when available.
                                         </span>
                                     </label>
@@ -307,7 +307,7 @@ export function PlanCheckoutDialog({
                                             ? 'Processing…'
                                             : paymentSource === 'wallet'
                                               ? 'Pay from Wallet'
-                                              : 'Continue to Paystack'}
+                                              : `Continue to ${gateway.label}`}
                                     </Button>
                                 </DialogFooter>
                             </>

@@ -2,6 +2,8 @@
 
 namespace App\Actions\Payments;
 
+use App\DTOs\Activity\WorkspaceActivityActor;
+use App\DTOs\Activity\WorkspaceActivityData;
 use App\DTOs\Payments\CheckoutSession;
 use App\DTOs\Payments\InitializePaymentData;
 use App\DTOs\Payments\PlanCharge;
@@ -9,14 +11,14 @@ use App\DTOs\Payments\StartPlanCheckoutData;
 use App\DTOs\Payments\SubscriptionCheckoutResult;
 use App\Enums\AccountTypes;
 use App\Enums\Activity\WorkspaceActivityType;
+use App\Enums\Payments\PaymentCheckoutProfile;
+use App\Enums\Payments\PaymentGatewayName;
 use App\Enums\Payments\PaymentPurpose;
 use App\Enums\Payments\PaymentStatus;
 use App\Enums\Payments\SubscriptionPaymentSource;
 use App\Enums\Transactions\TransactionFlow;
 use App\Enums\Transactions\TransactionStatus;
 use App\Enums\Transactions\TransactionTypes;
-use App\DTOs\Activity\WorkspaceActivityActor;
-use App\DTOs\Activity\WorkspaceActivityData;
 use App\Exceptions\Payments\CheckoutUnavailable;
 use App\Exceptions\Payments\PaymentException;
 use App\Exceptions\Payments\PaymentVerificationFailed;
@@ -25,11 +27,11 @@ use App\Models\Subscription;
 use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Payments\PaymentService;
-use App\Services\Payments\PlanPricingService;
 use App\Services\Activity\WorkspaceActivityLogger;
+use App\Services\Payments\PlanPricingService;
 use App\Support\Payments\PaymentReferenceGenerator;
-use Illuminate\Support\Facades\DB;
 use App\ValueObjects\Money;
+use Illuminate\Support\Facades\DB;
 use Revoltify\Subscriptionify\Enums\SubscriptionStatus;
 
 final readonly class StartPlanCheckoutAction
@@ -54,12 +56,13 @@ final readonly class StartPlanCheckoutAction
             return $this->payFromWallet($data);
         }
 
-        $gateway = $this->payments->gatewayName($data->gateway);
         $existingSession = $this->resumeUnresolvedCheckout($data, $quote);
 
         if ($existingSession instanceof CheckoutSession) {
             return new SubscriptionCheckoutResult(null, $existingSession);
         }
+
+        $gateway = $this->activeExternalGateway($data->paymentSource);
 
         $payment = DB::transaction(function () use ($data, $quote, $gateway): Payment {
             $data->workspace->newQuery()
@@ -90,7 +93,7 @@ final readonly class StartPlanCheckoutAction
                     'billing_period' => $data->plan->billing_period,
                     'billing_interval' => $data->plan->billing_interval->value,
                     'recurring_consent_at' => now()->toISOString(),
-                    'payment_source' => SubscriptionPaymentSource::PAYSTACK->value,
+                    'payment_source' => $gateway->value,
                 ],
             ]);
         }, 3);
@@ -108,9 +111,10 @@ final readonly class StartPlanCheckoutAction
                     amount: $quote->money,
                     email: $data->user->email,
                     reference: $payment->reference,
+                    description: "{$data->plan->name} subscription",
                     callbackUrl: $data->callbackUrl,
                     metadata: $metadata,
-                    channels: ['card'],
+                    profile: PaymentCheckoutProfile::RECURRING_CARD,
                 ),
                 $gateway,
             );
@@ -121,7 +125,7 @@ final readonly class StartPlanCheckoutAction
         }
 
         $payment->update([
-            'provider_reference' => $session->reference,
+            'provider_reference' => $session->providerReference,
             'provider_metadata' => [
                 'gateway' => $session->gateway->value,
                 'authorization_url' => $session->authorizationUrl,
@@ -154,7 +158,9 @@ final readonly class StartPlanCheckoutAction
             $balance = Money::fromMajor($wallet->balance, $wallet->currency);
 
             if ($balance->amountInMinorUnits < $quote->money->amountInMinorUnits) {
-                throw new CheckoutUnavailable('Your wallet balance is insufficient. Choose Paystack to continue.');
+                throw new CheckoutUnavailable(
+                    "Your wallet balance is insufficient. Choose {$this->payments->gatewayName()->label()} to continue.",
+                );
             }
 
             $startsAt = now();
@@ -349,8 +355,21 @@ final readonly class StartPlanCheckoutAction
         return new CheckoutSession(
             gateway: $payment->gateway,
             reference: $payment->reference,
+            providerReference: $payment->provider_reference ?? $payment->reference,
             authorizationUrl: $authorizationUrl,
             accessCode: '',
         );
+    }
+
+    private function activeExternalGateway(SubscriptionPaymentSource $source): PaymentGatewayName
+    {
+        $gateway = $source->gateway();
+        $active = $this->payments->gatewayName();
+
+        if ($gateway === null || $gateway !== $active) {
+            throw new CheckoutUnavailable("{$active->label()} is the active external payment provider. Refresh and try again.");
+        }
+
+        return $active;
     }
 }
