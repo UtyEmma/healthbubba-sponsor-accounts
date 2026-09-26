@@ -17,7 +17,7 @@ final class AuthenticateWorkspaceLoginAction
     {
         $user = User::query()->where('email', Str::lower(trim($email)))->first();
 
-        if ($user === null || ! Hash::check($password, $user->password)) {
+        if ($user === null) {
             return null;
         }
 
@@ -31,8 +31,12 @@ final class AuthenticateWorkspaceLoginAction
 
         if ($membership === null) {
             throw ValidationException::withMessages([
-                'account_type' => 'Your credentials are correct, but you do not have active access to this account type. Set up a new account to continue.',
+                'account_type' => 'This email does not have active access to the selected account type. Set up a new account to continue.',
             ]);
+        }
+
+        if (! Hash::check($password, $user->password)) {
+            return null;
         }
 
         $membership->update(['last_selected_at' => now()]);

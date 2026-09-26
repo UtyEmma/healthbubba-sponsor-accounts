@@ -39,6 +39,7 @@ export default function Login({
     const accountLabel = accountTypeOptions.find(
         (option) => option.value === selectedType,
     )?.label;
+
     const setupError = selectedType ? form.errors.account_type : undefined;
     const credentialsError = form.errors.email || form.errors.password;
     const registrationUrl = register({
@@ -80,9 +81,8 @@ export default function Login({
                             onChange={chooseAccountType}
                             // compact
                         />
-                        {!selectedType && (
-                            <InputError error={form.errors.account_type} />
-                        )}
+
+                        <InputError error={form.errors?.account_type} />
                     </div>
 
                     <label
@@ -104,6 +104,7 @@ export default function Login({
                             autoComplete="email"
                             aria-invalid={Boolean(credentialsError)}
                         />
+                        <InputError error={form.errors?.email} />
                     </label>
 
                     <div className="grid gap-2 text-sm font-medium">
@@ -134,6 +135,7 @@ export default function Login({
                             autoComplete="current-password"
                             aria-invalid={Boolean(credentialsError)}
                         />
+                        <InputError error={form.errors?.password} />
                     </div>
 
                     {credentialsError && (
@@ -196,7 +198,7 @@ export default function Login({
                     <Button
                         type="submit"
                         className="h-11 w-full"
-                        disabled={form.processing || !selectedType}
+                        disabled={form.processing}
                     >
                         {form.processing ? 'Signing in…' : 'Continue to portal'}
                         <ArrowRight className="size-4" />

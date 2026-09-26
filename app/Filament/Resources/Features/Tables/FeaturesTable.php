@@ -17,6 +17,7 @@ class FeaturesTable
     {
         return $table
             ->defaultSort('sort_order')
+            ->reorderable('sort_order')
             ->columns([
                 TextColumn::make('name')
                     ->searchable()
