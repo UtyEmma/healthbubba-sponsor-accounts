@@ -331,7 +331,8 @@ final readonly class WorkspacePlanMapper
         );
         $includedFeatures = [];
         $excludedFeatures = [];
-        $quotas = [];
+        $includedQuotas = [];
+        $excludedQuotas = [];
 
         foreach ($featureCatalog as $feature) {
             $isIncluded = $planFeatures->has($feature->slug);
@@ -343,7 +344,7 @@ final readonly class WorkspacePlanMapper
             if ($feature->hasQuota()) {
                 $quota = $limits?->getValue();
 
-                $quotas[] = [
+                $mappedQuota = [
                     'name' => $this->featureName($plan, $feature),
                     'slug' => $feature->slug,
                     'quota' => $quota,
@@ -353,6 +354,14 @@ final readonly class WorkspacePlanMapper
                         plan: $plan,
                     ),
                 ];
+
+                if (! $isIncluded) {
+                    $excludedQuotas[] = $mappedQuota;
+
+                    continue;
+                }
+
+                $includedQuotas[] = $mappedQuota;
 
                 continue;
             }
@@ -378,7 +387,7 @@ final readonly class WorkspacePlanMapper
 
         return [
             'features' => [...$includedFeatures, ...$excludedFeatures],
-            'quotas' => $quotas,
+            'quotas' => [...$includedQuotas, ...$excludedQuotas],
         ];
     }
 
