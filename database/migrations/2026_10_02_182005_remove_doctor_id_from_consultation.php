@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('consultations', function (Blueprint $table) {
             if(Schema::hasColumn('consultations', 'doctor_id')){
-                $table->removeColumn('doctor_id');
+                $table->dropColumn('doctor_id');
             }
         });
     }
@@ -25,7 +25,7 @@ return new class extends Migration
     {
         Schema::table('consultations', function (Blueprint $table) {
             if(Schema::hasColumn('consultations', 'doctor_id')){
-                $table->removeColumn('doctor_id');
+                $table->dropColumn('doctor_id');
             }
         });
     }
