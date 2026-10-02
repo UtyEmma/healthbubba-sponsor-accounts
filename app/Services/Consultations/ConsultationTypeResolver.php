@@ -14,7 +14,7 @@ final class ConsultationTypeResolver
     {
         if(!$specialtyId) return ConsultationType::GeneralPractitioner;
 
-        if(!$specialty = DB::connection('main')->table('specialties')->whereSpecialtyId($specialtyId)->first()) return ConsultationType::GeneralPractitioner;
+        if(!$specialty = DB::connection('main_sql')->table('specialties')->whereSpecialtyId($specialtyId)->first()) return ConsultationType::GeneralPractitioner;
         
         return in_array($specialty->specialty_name, ['gp', 'general practitioner', 'General Practitioner (GP)'], true)
             ? ConsultationType::GeneralPractitioner
