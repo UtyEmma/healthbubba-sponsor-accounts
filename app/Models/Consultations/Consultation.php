@@ -42,7 +42,6 @@ final class Consultation extends Model
         'workspace_beneficiary_id',
         'plan_id',
         'beneficiary_id',
-        'doctor_id',
         'appointment_id',
         'consultation_type',
         'feature_slug',
@@ -90,7 +89,6 @@ final class Consultation extends Model
     {
         return [
             'beneficiary_id' => 'integer',
-            'doctor_id' => 'integer',
             'appointment_id' => 'integer',
             'consultation_type' => ConsultationType::class,
             'status' => ConsultationReservationStatus::class,

@@ -46,15 +46,8 @@ final readonly class ReserveConsultationAction
             return ConsultationEligibilityResult::unavailable('workspace_not_found');
         }
 
-        $doctor = Doctor::query()
-            ->select(['id', 'provider_type'])
-            ->find($data->doctorId);
+        $type = $this->types->resolve($data->appointment->urgent_consultation_specialty_id ?? $data->appointment->specialty_id);
 
-        if (! $doctor instanceof Doctor) {
-            return ConsultationEligibilityResult::unavailable('doctor_not_found');
-        }
-
-        $type = $this->types->resolve($doctor->provider_type);
         $patient = $workspace->type === AccountTypes::INDIVIDUAL
             ? Beneficiary::query()->select(['id', 'email'])->find($data->patientId)
             : null;
@@ -94,7 +87,6 @@ final readonly class ReserveConsultationAction
                 ->whereBelongsTo($workspaceBeneficiary)
                 ->where('appointment_id', $data->appointmentId)
                 ->where('beneficiary_id', $data->patientId)
-                ->where('doctor_id', $data->doctorId)
                 ->where('consultation_type', $type)
                 ->where('status', ConsultationReservationStatus::Reserved)
                 ->latest('id')
@@ -179,7 +171,6 @@ final readonly class ReserveConsultationAction
             ->whereBelongsTo($workspace)
             ->where('appointment_id', $data->appointmentId)
             ->where('beneficiary_id', $data->patientId)
-            ->where('doctor_id', $data->doctorId)
             ->where('consultation_type', $type)
             ->where('status', ConsultationReservationStatus::Reserved)
             ->latest('id')
@@ -315,7 +306,6 @@ final readonly class ReserveConsultationAction
             'workspace_beneficiary_id' => $workspaceBeneficiary->getKey(),
             'plan_id' => $allocation->planId,
             'beneficiary_id' => $data->patientId,
-            'doctor_id' => $data->doctorId,
             'appointment_id' => $data->appointmentId,
             'consultation_type' => $allocation->type,
             'feature_slug' => $allocation->featureSlug,

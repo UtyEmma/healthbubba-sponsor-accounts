@@ -5,18 +5,18 @@ namespace App\Services\Consultations;
 use App\Enums\AccountTypes;
 use App\Enums\Consultations\ConsultationType;
 use App\Enums\Subscriptions\Features;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 final class ConsultationTypeResolver
 {
-    public function resolve(?string $providerType): ConsultationType
+    public function resolve($specialtyId): ConsultationType
     {
-        $normalized = Str::of($providerType ?? '')
-            ->squish()
-            ->lower()
-            ->toString();
+        if(!$specialtyId) return ConsultationType::GeneralPractitioner;
 
-        return in_array($normalized, ['gp', 'general practitioner'], true)
+        if(!$specialty = DB::connection('main')->table('specialties')->whereSpecialtyId($specialtyId)->first()) return ConsultationType::GeneralPractitioner;
+        
+        return in_array($specialty->specialty_name, ['gp', 'general practitioner', 'General Practitioner (GP)'], true)
             ? ConsultationType::GeneralPractitioner
             : ConsultationType::Specialist;
     }

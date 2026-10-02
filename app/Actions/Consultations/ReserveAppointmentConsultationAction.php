@@ -62,9 +62,9 @@ final readonly class ReserveAppointmentConsultationAction
         $eligibility = $this->reserveConsultation->execute(
             new ConsultationEligibilityData(
                 sponsorId: $data->sponsorId,
+                appointment: $appointment,
                 appointmentId: (int) $appointment->getKey(),
                 patientId: $appointment->patient_id,
-                // doctorId: $appointment->doctor_id,
                 campaignId: $data->campaignId,
             ),
         );
