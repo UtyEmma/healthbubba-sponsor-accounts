@@ -47,11 +47,11 @@ final readonly class ReserveAppointmentConsultationAction
             return $existing->refresh();
         }
 
-        if ($appointment->status !== AppointmentStatus::Upcoming) {
-            throw ValidationException::withMessages([
-                'appointment_id' => 'Only an upcoming appointment can be reserved.',
-            ]);
-        }
+        // if ($appointment->status !== AppointmentStatus::Upcoming) {
+        //     throw ValidationException::withMessages([
+        //         'appointment_id' => 'Only an upcoming appointment can be reserved.',
+        //     ]);
+        // }
 
         // if ($appointment->doctor_id === null) {
         //     throw ValidationException::withMessages([
