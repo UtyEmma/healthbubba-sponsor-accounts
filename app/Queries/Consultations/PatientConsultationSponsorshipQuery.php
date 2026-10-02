@@ -4,6 +4,7 @@ namespace App\Queries\Consultations;
 
 use App\DTOs\Consultations\ConsultationCampaignAvailabilityData;
 use App\DTOs\Consultations\ConsultationSponsorAvailabilityData;
+use App\DTOs\Consultations\ConsultationSponsorPlanData;
 use App\DTOs\Consultations\ConsultationTypeAvailabilityData;
 use App\DTOs\Consultations\PatientConsultationSponsorshipData;
 use App\Enums\AccountTypes;
@@ -25,6 +26,7 @@ use App\Services\Funding\InstitutionalCoverageRulesResolver;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
+use Revoltify\Subscriptionify\Enums\SubscriptionStatus;
 
 final readonly class PatientConsultationSponsorshipQuery
 {
@@ -53,9 +55,31 @@ final readonly class PatientConsultationSponsorshipQuery
             ->orderBy('id')
             ->get();
 
+        $subscriptionWorkspaceIds = $memberships
+            ->map(fn (WorkspaceBeneficiary $membership): Workspace => $membership->workspace)
+            ->filter(fn (Workspace $workspace): bool => $workspace->type !== AccountTypes::INSTITUTION)
+            ->pluck('id')
+            ->map(fn (mixed $id): int => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+        $subscriptionWorkspaceIds = array_values($subscriptionWorkspaceIds);
+        $activeSubscriptions = $this->activeSubscriptions($subscriptionWorkspaceIds);
+        $latestSubscriptionWorkspaceIds = array_values(array_diff(
+            $subscriptionWorkspaceIds,
+            $activeSubscriptions->keys()
+                ->map(fn (mixed $id): int => (int) $id)
+                ->all(),
+        ));
+        $latestSubscriptions = $this->latestSubscriptions($latestSubscriptionWorkspaceIds);
+
         $sponsors = $memberships
             ->groupBy('workspace_id')
-            ->flatMap(function (Collection $workspaceMemberships) use ($patient): array {
+            ->flatMap(function (Collection $workspaceMemberships) use (
+                $patient,
+                $activeSubscriptions,
+                $latestSubscriptions,
+            ): array {
                 $membership = $workspaceMemberships->first();
 
                 if (! $membership instanceof WorkspaceBeneficiary) {
@@ -77,7 +101,16 @@ final readonly class PatientConsultationSponsorshipQuery
                     );
                 }
 
-                return [$this->subscriptionSponsor($workspace, $membership)];
+                $activeSubscription = $activeSubscriptions->get($workspace->getKey());
+                $currentSubscription = $activeSubscription
+                    ?? $latestSubscriptions->get($workspace->getKey());
+
+                return [$this->subscriptionSponsor(
+                    $workspace,
+                    $membership,
+                    $activeSubscription,
+                    $currentSubscription,
+                )];
             })
             ->values()
             ->all();
@@ -91,12 +124,13 @@ final readonly class PatientConsultationSponsorshipQuery
     private function subscriptionSponsor(
         Workspace $workspace,
         WorkspaceBeneficiary $membership,
+        ?Subscription $activeSubscription,
+        ?Subscription $currentSubscription,
     ): ConsultationSponsorAvailabilityData {
-        $subscription = $this->coverage->activeSubscription($workspace);
         $types = [];
 
         foreach (ConsultationType::cases() as $type) {
-            if (! $subscription instanceof Subscription) {
+            if (! $activeSubscription instanceof Subscription) {
                 $types[] = $this->unavailableType($type, 'no_active_subscription');
 
                 continue;
@@ -104,7 +138,7 @@ final readonly class PatientConsultationSponsorshipQuery
 
             $allocation = $this->coverage->allocation(
                 $workspace,
-                $subscription,
+                $activeSubscription,
                 $type,
                 $membership,
             );
@@ -113,7 +147,7 @@ final readonly class PatientConsultationSponsorshipQuery
                 $types[] = $this->unavailableType(
                     $type,
                     'feature_unavailable',
-                    $subscription->plan->name,
+                    $activeSubscription->plan->name,
                 );
 
                 continue;
@@ -138,7 +172,12 @@ final readonly class PatientConsultationSponsorshipQuery
             );
         }
 
-        return $this->sponsor($workspace, $types);
+        return $this->sponsor(
+            workspace: $workspace,
+            types: $types,
+            plan: $this->plan($currentSubscription),
+            isActive: $activeSubscription instanceof Subscription,
+        );
     }
 
     /** @param EloquentCollection<int, WorkspaceBeneficiary> $memberships */
@@ -168,11 +207,23 @@ final readonly class PatientConsultationSponsorshipQuery
             ->whereKey($campaignIds->all())
             ->orderBy('id')
             ->get()
-            ->filter(fn (Campaign $campaign): bool => $campaign->isActive())
             ->keyBy('id');
 
         if ($campaigns->isEmpty()) {
             return [];
+        }
+
+        $activeCampaigns = $campaigns
+            ->filter(fn (Campaign $campaign): bool => $campaign->isActive());
+
+        if ($activeCampaigns->isEmpty()) {
+            return array_values($campaigns
+                ->map(fn (Campaign $campaign): ConsultationSponsorAvailabilityData => $this->unavailableCampaignSponsor(
+                    workspace: $workspace,
+                    campaign: $campaign,
+                    reason: 'no_active_campaign',
+                ))
+                ->all());
         }
 
         $program = InstitutionalFundingProgram::query()
@@ -181,23 +232,19 @@ final readonly class PatientConsultationSponsorshipQuery
 
         if (! $program instanceof InstitutionalFundingProgram) {
             return array_values($campaigns
-                ->map(fn (Campaign $campaign): ConsultationSponsorAvailabilityData => $this->sponsor(
-                    $workspace,
-                    array_map(
-                        fn (ConsultationType $type): ConsultationTypeAvailabilityData => $this->unavailableType(
-                            $type,
-                            'no_funding_program',
-                            $campaign->name,
-                        ),
-                        ConsultationType::cases(),
-                    ),
-                    $campaign,
+                ->map(fn (Campaign $campaign): ConsultationSponsorAvailabilityData => $this->unavailableCampaignSponsor(
+                    workspace: $workspace,
+                    campaign: $campaign,
+                    reason: $campaign->isActive()
+                        ? 'no_funding_program'
+                        : 'no_active_campaign',
+                    isActive: $campaign->isActive(),
                 ))
                 ->all());
         }
 
         $activeCampaignIds = array_values(
-            $campaigns->keys()->map(fn (mixed $id): int => (int) $id)->all(),
+            $activeCampaigns->keys()->map(fn (mixed $id): int => (int) $id)->all(),
         );
         $campaignUsed = $this->campaignUsed($activeCampaignIds);
         $campaignReserved = $this->campaignReserved($activeCampaignIds);
@@ -230,6 +277,14 @@ final readonly class PatientConsultationSponsorshipQuery
                 $campaignReserved,
                 $dailyUsage,
             ): ConsultationSponsorAvailabilityData {
+                if (! $campaign->isActive()) {
+                    return $this->unavailableCampaignSponsor(
+                        workspace: $workspace,
+                        campaign: $campaign,
+                        reason: 'no_active_campaign',
+                    );
+                }
+
                 $rules = $this->institutionalRules->resolve($campaign, $program);
                 $beneficiaryUsed = $this->campaignUsed(
                     [(int) $campaign->getKey()],
@@ -257,7 +312,12 @@ final readonly class PatientConsultationSponsorshipQuery
                     ConsultationType::cases(),
                 );
 
-                return $this->sponsor($workspace, $types, $campaign);
+                return $this->sponsor(
+                    workspace: $workspace,
+                    types: $types,
+                    campaign: $campaign,
+                    isActive: true,
+                );
             })
             ->all());
     }
@@ -431,6 +491,8 @@ final readonly class PatientConsultationSponsorshipQuery
         Workspace $workspace,
         array $types,
         ?Campaign $campaign = null,
+        ?ConsultationSponsorPlanData $plan = null,
+        bool $isActive = false,
     ): ConsultationSponsorAvailabilityData {
         return new ConsultationSponsorAvailabilityData(
             id: (int) $workspace->getKey(),
@@ -450,7 +512,96 @@ final readonly class PatientConsultationSponsorshipQuery
                 startsAt: $campaign->start_date?->toImmutable(),
                 endsAt: $campaign->end_date?->toImmutable(),
             ),
+            plan: $plan,
+            isActive: $isActive,
         );
+    }
+
+    private function unavailableCampaignSponsor(
+        Workspace $workspace,
+        Campaign $campaign,
+        string $reason,
+        bool $isActive = false,
+    ): ConsultationSponsorAvailabilityData {
+        return $this->sponsor(
+            workspace: $workspace,
+            types: array_map(
+                fn (ConsultationType $type): ConsultationTypeAvailabilityData => $this->unavailableType(
+                    type: $type,
+                    reason: $reason,
+                    coverageName: $campaign->name,
+                ),
+                ConsultationType::cases(),
+            ),
+            campaign: $campaign,
+            isActive: $isActive,
+        );
+    }
+
+    private function plan(?Subscription $subscription): ?ConsultationSponsorPlanData
+    {
+        if (! $subscription instanceof Subscription) {
+            return null;
+        }
+
+        return new ConsultationSponsorPlanData(
+            id: (int) $subscription->plan->getKey(),
+            name: $subscription->plan->name,
+            slug: $subscription->plan->slug,
+        );
+    }
+
+    /**
+     * @param  list<int>  $workspaceIds
+     * @return EloquentCollection<int, Subscription>
+     */
+    private function activeSubscriptions(array $workspaceIds): EloquentCollection
+    {
+        if ($workspaceIds === []) {
+            return new EloquentCollection;
+        }
+
+        $workspaceMorph = (new Workspace)->getMorphClass();
+        $statuses = [SubscriptionStatus::Active, SubscriptionStatus::Trialing];
+        $latestActiveIds = Subscription::query()
+            ->selectRaw('MAX(id)')
+            ->where('subscribable_type', $workspaceMorph)
+            ->whereIn('subscribable_id', $workspaceIds)
+            ->whereIn('status', $statuses)
+            ->groupBy('subscribable_id');
+
+        return Subscription::query()
+            ->with('plan.features')
+            ->whereIn('id', $latestActiveIds)
+            ->get()
+            ->filter(
+                fn (Subscription $subscription): bool => $this->coverage->isUsableSubscription($subscription),
+            )
+            ->keyBy(fn (Subscription $subscription): int => (int) $subscription->subscribable_id);
+    }
+
+    /**
+     * @param  list<int>  $workspaceIds
+     * @return EloquentCollection<int, Subscription>
+     */
+    private function latestSubscriptions(array $workspaceIds): EloquentCollection
+    {
+        if ($workspaceIds === []) {
+            return new EloquentCollection;
+        }
+
+        $workspaceMorph = (new Workspace)->getMorphClass();
+        $latestIds = Subscription::query()
+            ->selectRaw('MAX(id)')
+            ->where('subscribable_type', $workspaceMorph)
+            ->whereIn('subscribable_id', $workspaceIds)
+            ->groupBy('subscribable_id');
+
+        return Subscription::query()
+            ->with('plan')
+            ->whereIn('id', $latestIds)
+            ->get()
+            ->keyBy(fn (Subscription $subscription): int => (int) $subscription->subscribable_id);
     }
 
     private function unavailableType(

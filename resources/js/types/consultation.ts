@@ -176,6 +176,12 @@ export interface ConsultationSponsorAvailability {
             label: string;
         };
     };
+    plan: {
+        id: number;
+        name: string;
+        slug: string;
+    } | null;
+    is_active: boolean;
     campaign: {
         id: number;
         name: string;

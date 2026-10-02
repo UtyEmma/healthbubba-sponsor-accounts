@@ -8,7 +8,7 @@ final readonly class ConsultationEligibilityData
         public int $sponsorId,
         public int $appointmentId,
         public int $patientId,
-        public int $doctorId,
+        // public int $doctorId,
         public ?int $campaignId = null,
     ) {}
 }

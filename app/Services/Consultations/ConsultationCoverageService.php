@@ -52,13 +52,33 @@ final readonly class ConsultationCoverageService
 
         $subscription = $query->first();
 
-        if (! $subscription instanceof Subscription || ! $this->hasUsableTerm($subscription)) {
+        if (! $subscription instanceof Subscription || ! $this->isUsableSubscription($subscription)) {
             return null;
         }
 
         $subscription->loadMissing('plan.features');
 
         return $subscription;
+    }
+
+    public function isUsableSubscription(Subscription $subscription): bool
+    {
+        if (! in_array($subscription->status, [
+            SubscriptionStatus::Active,
+            SubscriptionStatus::Trialing,
+        ], true)) {
+            return false;
+        }
+
+        if ($subscription->starts_at->isFuture()) {
+            return false;
+        }
+
+        if ($subscription->status === SubscriptionStatus::Trialing) {
+            return $subscription->trial_ends_at?->isFuture() === true;
+        }
+
+        return $subscription->ends_at === null || $subscription->ends_at->isFuture();
     }
 
     public function allocation(
@@ -647,18 +667,5 @@ final readonly class ConsultationCoverageService
         }
 
         return [$periodStart, $periodEnd];
-    }
-
-    private function hasUsableTerm(Subscription $subscription): bool
-    {
-        if ($subscription->starts_at->isFuture()) {
-            return false;
-        }
-
-        if ($subscription->status === SubscriptionStatus::Trialing) {
-            return $subscription->trial_ends_at?->isFuture() === true;
-        }
-
-        return $subscription->ends_at === null || $subscription->ends_at->isFuture();
     }
 }

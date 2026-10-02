@@ -27,6 +27,12 @@ final class PatientConsultationSponsorshipResource extends JsonResource
                         'label' => $sponsor->type->label(),
                     ],
                 ],
+                'plan' => $sponsor->plan === null ? null : [
+                    'id' => $sponsor->plan->id,
+                    'name' => $sponsor->plan->name,
+                    'slug' => $sponsor->plan->slug,
+                ],
+                'is_active' => $sponsor->isActive,
                 'campaign' => $sponsor->campaign === null ? null : [
                     'id' => $sponsor->campaign->id,
                     'name' => $sponsor->campaign->name,

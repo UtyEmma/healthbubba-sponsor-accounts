@@ -64,7 +64,7 @@ final readonly class ReserveAppointmentConsultationAction
                 sponsorId: $data->sponsorId,
                 appointmentId: (int) $appointment->getKey(),
                 patientId: $appointment->patient_id,
-                doctorId: $appointment->doctor_id,
+                // doctorId: $appointment->doctor_id,
                 campaignId: $data->campaignId,
             ),
         );
@@ -93,7 +93,7 @@ final readonly class ReserveAppointmentConsultationAction
     private function appointment(int $appointmentId): Appointment
     {
         $appointment = Appointment::query()
-            ->select(['appointment_id', 'patient_id', 'doctor_id', 'sponsor_id', 'status'])
+            ->select(['appointment_id', 'patient_id', 'sponsor_id', 'status'])
             ->lockForUpdate()
             ->find($appointmentId);
 
