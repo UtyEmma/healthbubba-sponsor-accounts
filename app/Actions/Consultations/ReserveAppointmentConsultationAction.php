@@ -53,11 +53,11 @@ final readonly class ReserveAppointmentConsultationAction
             ]);
         }
 
-        if ($appointment->doctor_id === null) {
-            throw ValidationException::withMessages([
-                'appointment_id' => 'The appointment must have a doctor before it can be reserved.',
-            ]);
-        }
+        // if ($appointment->doctor_id === null) {
+        //     throw ValidationException::withMessages([
+        //         'appointment_id' => 'The appointment must have a doctor before it can be reserved.',
+        //     ]);
+        // }
 
         $eligibility = $this->reserveConsultation->execute(
             new ConsultationEligibilityData(
