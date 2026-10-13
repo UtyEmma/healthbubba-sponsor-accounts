@@ -7,6 +7,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 uses(TestCase::class);
@@ -75,7 +76,7 @@ beforeEach(function (): void {
     });
 });
 
-it('redirects an accepted beneficiary with an existing patient account to login', function (): void {
+it('provides a login link after an existing patient accepts an invitation', function (): void {
     $invitation = pendingPatientInvitation('patient@example.com');
     $patientId = DB::connection('main_sql')->table('users')->insertGetId([
         'email' => 'PATIENT@example.com',
@@ -84,21 +85,52 @@ it('redirects an accepted beneficiary with an existing patient account to login'
 
     $this->post(app(InvitationUrlService::class)->decision($invitation), [
         'decision' => 'accept',
-    ])->assertRedirect('https://patients.example.test/login');
+    ])->assertRedirect(app(InvitationUrlService::class)->page($invitation->refresh()));
 
     expect($invitation->refresh()->beneficiary_id)->toBe($patientId)
         ->and($invitation->isActive())->toBeTrue();
+
+    $this->get(app(InvitationUrlService::class)->page($invitation))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('invitations/workspace-beneficiary')
+            ->where('patientAuthentication.url', 'https://patients.example.test/login')
+            ->where('patientAuthentication.action', 'login'));
 });
 
-it('redirects an accepted beneficiary without a patient account to registration', function (): void {
+it('provides a registration link after a new patient accepts an invitation', function (): void {
     $invitation = pendingPatientInvitation('new-patient@example.com');
 
     $this->post(app(InvitationUrlService::class)->decision($invitation), [
         'decision' => 'accept',
-    ])->assertRedirect('https://patients.example.test/register');
+    ])->assertRedirect(app(InvitationUrlService::class)->page($invitation->refresh()));
 
     expect($invitation->refresh()->beneficiary_id)->toBeNull()
         ->and($invitation->isActive())->toBeTrue();
+
+    $this->get(app(InvitationUrlService::class)->page($invitation))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('invitations/workspace-beneficiary')
+            ->where('patientAuthentication.url', 'https://patients.example.test/register')
+            ->where('patientAuthentication.action', 'register'));
+});
+
+it('orders beneficiaries by the date they were added with newest first', function (): void {
+    $older = pendingPatientInvitation('older@example.com');
+    $newer = pendingPatientInvitation('newer@example.com');
+
+    $older->forceFill([
+        'created_at' => now()->subDays(2),
+        'updated_at' => now()->subDays(2),
+    ])->saveQuietly();
+    $newer->forceFill([
+        'created_at' => now()->subDay(),
+        'updated_at' => now()->subDay(),
+    ])->saveQuietly();
+
+    expect(WorkspaceBeneficiary::query()->latestAdded()->pluck('id')->all())
+        ->toBe([$newer->getKey(), $older->getKey()]);
 });
 
 function pendingPatientInvitation(string $email): WorkspaceBeneficiary

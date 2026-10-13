@@ -141,7 +141,7 @@ export function AllocationFallbackCard() {
 
     return (
         <Card className="mt-5">
-            <CardHeader className="px-6 pt-7 pb-5">
+            <CardHeader className="px-6 pt-7">
                 <CardTitle className="text-base leading-5">
                     When allocations run out
                 </CardTitle>

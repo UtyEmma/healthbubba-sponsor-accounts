@@ -24,5 +24,5 @@ Set Up Subscription
 The sponsor will remain on the support onboarding page until an active or trialing institutional subscription is available.
 
 Thanks,  
-{{ config('app.name') }}
+{{ config('mail.brand.name') }}
 </x-mail::message>

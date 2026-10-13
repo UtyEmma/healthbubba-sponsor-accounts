@@ -1,9 +1,14 @@
 import { Form, Head } from '@inertiajs/react';
-import { CheckCircle2Icon, Clock3Icon, XCircleIcon } from 'lucide-react';
+import {
+    CheckCircle2Icon,
+    Clock3Icon,
+    ExternalLinkIcon,
+    XCircleIcon,
+} from 'lucide-react';
 
 import { BrandMark } from '@/components/brand-mark';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -21,6 +26,10 @@ interface InvitationPageProps {
         expiresAt: string;
     };
     decisionUrl: string | null;
+    patientAuthentication: {
+        url: string;
+        action: 'login' | 'register';
+    } | null;
 }
 
 const statusCopy: Record<WorkspaceBeneficiaryStatus, string> = {
@@ -38,6 +47,7 @@ const statusCopy: Record<WorkspaceBeneficiaryStatus, string> = {
 export default function WorkspaceBeneficiaryInvitationPage({
     invitation,
     decisionUrl,
+    patientAuthentication,
 }: InvitationPageProps) {
     const isPending = invitation.status === 'pending' && decisionUrl !== null;
 
@@ -108,37 +118,51 @@ export default function WorkspaceBeneficiaryInvitationPage({
                             </div>
                         </dl>
                     </CardContent>
-                    {isPending && (
+                    {(isPending || patientAuthentication !== null) && (
                         <CardFooter className="border-t px-6 py-5 sm:px-8">
-                            <Form
-                                action={decisionUrl}
-                                method="post"
-                                className="grid w-full gap-3 sm:grid-cols-2"
-                            >
-                                {({ processing }) => (
-                                    <>
-                                        <Button
-                                            name="decision"
-                                            value="decline"
-                                            type="submit"
-                                            variant="outline"
-                                            disabled={processing}
-                                        >
-                                            Decline
-                                        </Button>
-                                        <Button
-                                            name="decision"
-                                            value="accept"
-                                            type="submit"
-                                            disabled={processing}
-                                        >
-                                            {processing
-                                                ? 'Updating…'
-                                                : 'Accept invitation'}
-                                        </Button>
-                                    </>
-                                )}
-                            </Form>
+                            {isPending ? (
+                                <Form
+                                    action={decisionUrl}
+                                    method="post"
+                                    className="grid w-full gap-3 sm:grid-cols-2"
+                                >
+                                    {({ processing }) => (
+                                        <>
+                                            <Button
+                                                name="decision"
+                                                value="decline"
+                                                type="submit"
+                                                variant="outline"
+                                                disabled={processing}
+                                            >
+                                                Decline
+                                            </Button>
+                                            <Button
+                                                name="decision"
+                                                value="accept"
+                                                type="submit"
+                                                disabled={processing}
+                                            >
+                                                {processing
+                                                    ? 'Updating…'
+                                                    : 'Accept invitation'}
+                                            </Button>
+                                        </>
+                                    )}
+                                </Form>
+                            ) : patientAuthentication !== null ? (
+                                <a
+                                    href={patientAuthentication.url}
+                                    className={buttonVariants({
+                                        className: 'w-full',
+                                    })}
+                                >
+                                    {patientAuthentication.action === 'login'
+                                        ? 'Log in to HealthBubba'
+                                        : 'Create a HealthBubba account'}
+                                    <ExternalLinkIcon className="size-4" />
+                                </a>
+                            ) : null}
                         </CardFooter>
                     )}
                 </Card>

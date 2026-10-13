@@ -148,6 +148,15 @@ final class WorkspaceBeneficiary extends Model
         });
     }
 
+    /**
+     * @param  Builder<WorkspaceBeneficiary>  $query
+     * @return Builder<WorkspaceBeneficiary>
+     */
+    public function scopeLatestAdded(Builder $query): Builder
+    {
+        return $query->latest('created_at')->latest('id');
+    }
+
     public function isPending(): bool
     {
         return $this->status === WorkspaceBeneficiaryStatus::Pending;

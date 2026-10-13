@@ -36,8 +36,7 @@ final readonly class WorkspaceBeneficiaryIndexController
                 'relatable',
                 'primarySponsor:id,name,email,phone',
             ])
-            ->orderByDesc('primary_sponsor_user_id')
-            ->latest('id')
+            ->latestAdded()
             ->paginate(10)
             ->withQueryString();
 

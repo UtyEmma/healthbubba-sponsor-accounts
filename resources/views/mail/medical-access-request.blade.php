@@ -16,5 +16,5 @@ Review request
 This consent request expires {{ $expiresAt }}. If approved, access remains valid for 30 days from the time you approve it.
 
 Regards,<br>
-{{ config('app.name') }}
+{{ config('mail.brand.name') }}
 </x-mail::message>

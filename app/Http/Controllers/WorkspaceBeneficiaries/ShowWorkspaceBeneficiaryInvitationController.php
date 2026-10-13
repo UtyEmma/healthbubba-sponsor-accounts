@@ -4,6 +4,7 @@ namespace App\Http\Controllers\WorkspaceBeneficiaries;
 
 use App\Actions\WorkspaceBeneficiaries\DecideWorkspaceBeneficiaryInvitationAction;
 use App\Models\WorkspaceBeneficiary;
+use App\Services\HealthBubba\HealthBubbaWebUrlService;
 use App\Services\WorkspaceBeneficiaries\InvitationUrlService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
@@ -15,6 +16,7 @@ final readonly class ShowWorkspaceBeneficiaryInvitationController
     public function __construct(
         private DecideWorkspaceBeneficiaryInvitationAction $decide,
         private InvitationUrlService $urls,
+        private HealthBubbaWebUrlService $healthBubbaWebUrls,
     ) {}
 
     public function __invoke(Request $request, WorkspaceBeneficiary $workspaceBeneficiary): Response
@@ -39,6 +41,14 @@ final readonly class ShowWorkspaceBeneficiaryInvitationController
             ],
             'decisionUrl' => $workspaceBeneficiary->isPending()
                 ? $this->urls->decision($workspaceBeneficiary)
+                : null,
+            'patientAuthentication' => $workspaceBeneficiary->isActive()
+                ? [
+                    'url' => $this->healthBubbaWebUrls->patientAuthentication(
+                        $workspaceBeneficiary->beneficiary_id !== null,
+                    ),
+                    'action' => $workspaceBeneficiary->beneficiary_id !== null ? 'login' : 'register',
+                ]
                 : null,
         ]);
     }

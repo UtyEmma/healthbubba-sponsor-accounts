@@ -115,4 +115,13 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    'brand' => [
+        'name' => env('MAIL_BRAND_NAME', 'HealthBubba'),
+        'tagline' => env('MAIL_BRAND_TAGLINE', 'Sponsor Portal'),
+        'logo_url' => env(
+            'MAIL_BRAND_LOGO_URL',
+            rtrim((string) env('APP_URL', 'http://localhost'), '/').'/images/logo.svg',
+        ),
+    ],
+
 ];

@@ -75,6 +75,7 @@ export interface ConsultationAllocationSummary {
 }
 
 export interface ConsultationQuotaBreakdown {
+    available: boolean;
     base: number | null;
     additional: number | null;
     total: number | null;

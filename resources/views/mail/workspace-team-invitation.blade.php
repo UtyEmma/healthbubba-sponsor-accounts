@@ -12,5 +12,5 @@ Review invitation
 This invitation expires {{ $expiresAt }}.
 
 Regards,<br>
-{{ config('app.name') }}
+{{ config('mail.brand.name') }}
 </x-mail::message>

@@ -45,7 +45,7 @@ final class InstitutionalBeneficiaryQuery
                     ELSE 'active'
                 END = ?
                 SQL, [$status->value]))
-            ->latest('id');
+            ->latestAdded();
 
         $beneficiaries = $query->paginate(10)->withQueryString();
         $beneficiaries->getCollection()->each(function (WorkspaceBeneficiary $beneficiary): void {

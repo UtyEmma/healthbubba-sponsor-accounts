@@ -181,7 +181,7 @@ export function RecentActivityCard({
                     Recent activity
                 </CardTitle>
             </CardHeader>
-            <CardContent className="flex min-h-[94px] items-start justify-center px-6 pt-3 text-center">
+            <CardContent className="min-h-[94px] px-6 pt-3">
                 {activity ? (
                     <div>
                         <p className="text-[13px] leading-[18px] font-medium">

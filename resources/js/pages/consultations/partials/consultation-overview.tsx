@@ -116,24 +116,28 @@ function PoolProgress({
 }: {
     allocation: ConsultationAllocationSummary;
 }) {
+    const unavailable = allocation.unavailableReason !== null;
     const used = allocation.completed + allocation.reserved;
     const percentage =
-        allocation.limit === null
+        unavailable || allocation.limit === null
             ? 0
             : allocation.limit === 0
               ? 0
               : Math.min(100, (used / allocation.limit) * 100);
-    const remaining =
-        allocation.remaining === null ? 'Unlimited' : allocation.remaining;
-    const limit = allocation.limit === null ? 'Unlimited' : allocation.limit;
+    const remaining = unavailable
+        ? 'Unavailable'
+        : allocation.remaining === null
+          ? 'Unlimited'
+          : allocation.remaining;
+    const usage = unavailable
+        ? 'Unavailable'
+        : `${used}/${allocation.limit === null ? 'Unlimited' : allocation.limit} used`;
 
     return (
         <div>
             <div className="flex items-center justify-between gap-4 text-sm leading-5">
                 <span>{allocation.label}</span>
-                <strong className="font-semibold">
-                    {used}/{limit} used
-                </strong>
+                <strong className="font-semibold">{usage}</strong>
             </div>
             <Progress
                 value={percentage}
@@ -171,6 +175,10 @@ function formatQuotaBreakdown(
     breakdown: ConsultationQuotaBreakdown,
     label: string,
 ): string {
+    if (!breakdown.available) {
+        return 'Unavailable';
+    }
+
     if (breakdown.total === null) {
         return `Unlimited ${label}`;
     }

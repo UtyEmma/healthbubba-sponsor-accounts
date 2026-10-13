@@ -12,5 +12,5 @@ View invitation
 This invitation expires {{ $expiresAt }}. You can accept or decline it from the invitation page.
 
 Regards,<br>
-{{ config('app.name') }}
+{{ config('mail.brand.name') }}
 </x-mail::message>

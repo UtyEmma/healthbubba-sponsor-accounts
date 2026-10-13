@@ -118,9 +118,7 @@ final readonly class ConsultationCoverageService
         $scope = $workspace->type === AccountTypes::BUSINESS
             ? ConsultationAllocationScope::PerEmployee
             : ConsultationAllocationScope::Shared;
-        $limit = $workspace->type === AccountTypes::BUSINESS || $configuredLimit > 0
-            ? $configuredLimit
-            : null;
+        $limit = $configuredLimit > 0 ? $configuredLimit : null;
 
         if ($workspace->type === AccountTypes::INDIVIDUAL && $limit !== null) {
             $scaling = $this->scaling($workspace, $subscription);
@@ -319,11 +317,11 @@ final readonly class ConsultationCoverageService
         }
 
         $scheduledPerCapacity = $scheduledPerSeat instanceof FeaturePlan
-            ? $this->nonNegativeInteger($scheduledPerSeat) ?? 0
-            : 0;
+            ? $this->nonNegativeInteger($scheduledPerSeat)
+            : null;
         $instantPerCapacity = $instantPerSeat instanceof FeaturePlan
-            ? $this->nonNegativeInteger($instantPerSeat) ?? 0
-            : 0;
+            ? $this->nonNegativeInteger($instantPerSeat)
+            : null;
 
         if (! $capacity->purchasesEnabled) {
             return $this->unavailableScaling(
@@ -339,6 +337,8 @@ final readonly class ConsultationCoverageService
 
         $scheduledBase = null;
         $instantBase = null;
+        $scheduledAvailable = false;
+        $instantAvailable = false;
 
         if ($workspace->type === AccountTypes::INDIVIDUAL) {
             $scheduledBaseAssignment = $this->featureAssignment(
@@ -391,11 +391,19 @@ final readonly class ConsultationCoverageService
                 ? $this->nonNegativeInteger($instantBaseAssignment)
                 : null;
 
+            $scheduledAvailable = $scheduledBaseAssignment instanceof FeaturePlan;
+            $instantAvailable = $instantBaseAssignment instanceof FeaturePlan;
             $scheduledBase = $scheduledBaseValue === 0 ? null : $scheduledBaseValue;
             $instantBase = $instantBaseValue === 0 ? null : $instantBaseValue;
         } else {
-            $scheduledBase = $includedCapacity * $scheduledPerCapacity;
-            $instantBase = $includedCapacity * $instantPerCapacity;
+            $scheduledAvailable = $scheduledPerSeat instanceof FeaturePlan;
+            $instantAvailable = $instantPerSeat instanceof FeaturePlan;
+            $scheduledBase = $scheduledAvailable && $scheduledPerCapacity !== 0
+                ? $includedCapacity * ($scheduledPerCapacity ?? 0)
+                : null;
+            $instantBase = $instantAvailable && $instantPerCapacity !== 0
+                ? $includedCapacity * ($instantPerCapacity ?? 0)
+                : null;
         }
 
         $steps = [];
@@ -407,19 +415,25 @@ final readonly class ConsultationCoverageService
                 capacity: $projectedCapacity,
                 additionalCapacity: $additionalCapacity,
                 scheduled: $this->quotaBreakdown(
+                    $scheduledAvailable,
                     $scheduledBase,
-                    $additionalCapacity * $scheduledPerCapacity,
+                    $additionalCapacity * ($scheduledPerCapacity ?? 0),
                 ),
                 instant: $this->quotaBreakdown(
+                    $instantAvailable,
                     $instantBase,
-                    $additionalCapacity * $instantPerCapacity,
+                    $additionalCapacity * ($instantPerCapacity ?? 0),
                 ),
             );
         }
 
         $additions = collect([
-            $scheduledPerCapacity > 0 ? "+{$scheduledPerCapacity} scheduled" : null,
-            $instantPerCapacity > 0 ? "+{$instantPerCapacity} instant" : null,
+            $scheduledAvailable && ($scheduledPerCapacity ?? 0) > 0
+                ? "+{$scheduledPerCapacity} scheduled"
+                : null,
+            $instantAvailable && ($instantPerCapacity ?? 0) > 0
+                ? "+{$instantPerCapacity} instant"
+                : null,
         ])->filter()->implode(' and ');
         $description = $workspace->type === AccountTypes::BUSINESS
             ? "Each extra employee seat adds {$additions} consultations to the workspace total; employee allowances remain separate."
@@ -466,10 +480,14 @@ final readonly class ConsultationCoverageService
         );
     }
 
-    private function quotaBreakdown(?int $base, int $additional): ConsultationQuotaBreakdown
-    {
-        if ($base === null) {
+    private function quotaBreakdown(
+        bool $available,
+        ?int $base,
+        int $additional,
+    ): ConsultationQuotaBreakdown {
+        if (! $available || $base === null) {
             return new ConsultationQuotaBreakdown(
+                available: $available,
                 base: null,
                 additional: null,
                 total: null,
@@ -477,6 +495,7 @@ final readonly class ConsultationCoverageService
         }
 
         return new ConsultationQuotaBreakdown(
+            available: true,
             base: $base,
             additional: $additional,
             total: $base + $additional,
