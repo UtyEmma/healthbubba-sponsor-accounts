@@ -122,7 +122,6 @@ export default function InstitutionalFundingPage({
                         </TabsList>
 
                         <TabsContent value="allocation" className="space-y-4">
-                            <ProgramBalanceCard funding={funding} />
                             <CampaignAllocations
                                 campaigns={funding.campaigns}
                                 returned={funding.returnedFromEndedCampaigns}
