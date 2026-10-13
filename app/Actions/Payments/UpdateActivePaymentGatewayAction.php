@@ -2,7 +2,7 @@
 
 namespace App\Actions\Payments;
 
-use App\Enums\Payments\PaymentGatewayName;
+use App\DTOs\Payments\UpdatePaymentGatewaySettingsData;
 use App\Models\PaymentGatewaySetting;
 use App\Models\User;
 use App\Payments\ActivePaymentGatewayResolver;
@@ -18,19 +18,27 @@ final readonly class UpdateActivePaymentGatewayAction
         private ActivePaymentGatewayResolver $resolver,
     ) {}
 
-    public function execute(User $user, PaymentGatewayName $gateway): PaymentGatewaySetting
+    public function execute(User $user, UpdatePaymentGatewaySettingsData $data): PaymentGatewaySetting
     {
         if (! $user->isAdmin()) {
             throw new AuthorizationException;
         }
 
-        $issues = $this->configuration->issues($gateway);
+        $errors = [];
 
-        if ($issues !== []) {
-            throw ValidationException::withMessages(['gateway' => $issues]);
+        foreach ($data->all() as $accountType => $gateway) {
+            $issues = $this->configuration->issues($gateway);
+
+            if ($issues !== []) {
+                $errors["gateways.{$accountType}"] = $issues;
+            }
         }
 
-        $setting = DB::transaction(function () use ($user, $gateway): PaymentGatewaySetting {
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
+
+        $setting = DB::transaction(function () use ($user, $data): PaymentGatewaySetting {
             $setting = PaymentGatewaySetting::query()
                 ->whereKey(PaymentGatewaySetting::SINGLETON_ID)
                 ->lockForUpdate()
@@ -42,7 +50,10 @@ final readonly class UpdateActivePaymentGatewayAction
             }
 
             $setting->fill([
-                'active_gateway' => $gateway,
+                'active_gateway' => $data->individual,
+                'individual_gateway' => $data->individual,
+                'business_gateway' => $data->business,
+                'institution_gateway' => $data->institution,
                 'updated_by_user_id' => $user->getKey(),
             ])->save();
 

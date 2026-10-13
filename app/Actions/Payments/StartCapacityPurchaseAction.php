@@ -146,7 +146,7 @@ final readonly class StartCapacityPurchaseAction
 
                 $quote = $this->pricing->quote($subscription, $data->quantity);
                 $purchase = $this->createPurchase($data, $quote);
-                $gateway = $this->activeExternalGateway($data->paymentSource);
+                $gateway = $this->activeExternalGateway($data->paymentSource, $data->workspace->type);
                 $payment = Payment::query()->create([
                     'workspace_id' => $data->workspace->getKey(),
                     'user_id' => $data->user->getKey(),
@@ -313,10 +313,12 @@ final readonly class StartCapacityPurchaseAction
         );
     }
 
-    private function activeExternalGateway(CapacityPaymentSource $source): PaymentGatewayName
-    {
+    private function activeExternalGateway(
+        CapacityPaymentSource $source,
+        AccountTypes $accountType,
+    ): PaymentGatewayName {
         $gateway = $source->gateway();
-        $active = $this->payments->gatewayName();
+        $active = $this->payments->gatewayName($accountType);
 
         if ($gateway === null || $gateway !== $active) {
             throw new CheckoutUnavailable("{$active->label()} is the active external payment provider. Refresh and try again.");

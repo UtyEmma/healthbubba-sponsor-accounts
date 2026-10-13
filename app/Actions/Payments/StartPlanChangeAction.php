@@ -9,6 +9,7 @@ use App\DTOs\Payments\InitializePaymentData;
 use App\DTOs\Payments\PlanChangeQuote;
 use App\DTOs\Payments\PlanChangeResult;
 use App\DTOs\Payments\StartPlanChangeData;
+use App\Enums\AccountTypes;
 use App\Enums\Activity\WorkspaceActivityType;
 use App\Enums\CapacityPurchases\CapacityPurchaseStatus;
 use App\Enums\Payments\PaymentCheckoutProfile;
@@ -95,7 +96,7 @@ final readonly class StartPlanChangeAction
                     return [$quote, $existingPayment, false];
                 }
 
-                $gateway = $this->activeExternalGateway($data->paymentSource);
+                $gateway = $this->activeExternalGateway($data->paymentSource, $data->workspace->type);
                 $payment = Payment::query()->create([
                     'workspace_id' => $data->workspace->getKey(),
                     'user_id' => $data->user->getKey(),
@@ -295,7 +296,7 @@ final readonly class StartPlanChangeAction
 
         if ($balance->amountInMinorUnits < $quote->amountDueNow->amountInMinorUnits) {
             throw new CheckoutUnavailable(
-                "Your wallet balance is insufficient. Choose {$this->payments->gatewayName()->label()} to continue.",
+                "Your wallet balance is insufficient. Choose {$this->payments->gatewayName($data->workspace->type)->label()} to continue.",
             );
         }
 
@@ -410,10 +411,12 @@ final readonly class StartPlanChangeAction
         );
     }
 
-    private function activeExternalGateway(SubscriptionPaymentSource $source): PaymentGatewayName
-    {
+    private function activeExternalGateway(
+        SubscriptionPaymentSource $source,
+        AccountTypes $accountType,
+    ): PaymentGatewayName {
         $gateway = $source->gateway();
-        $active = $this->payments->gatewayName();
+        $active = $this->payments->gatewayName($accountType);
 
         if ($gateway === null || $gateway !== $active) {
             throw new CheckoutUnavailable("{$active->label()} is the active external payment provider. Refresh and try again.");

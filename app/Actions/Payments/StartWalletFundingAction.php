@@ -24,7 +24,7 @@ final readonly class StartWalletFundingAction
 
     public function execute(StartWalletFundingData $data): CheckoutSession
     {
-        $gateway = $this->payments->gatewayName();
+        $gateway = $this->payments->gatewayName($data->workspace->type);
         $wallet = $data->workspace->wallet()->firstOrCreate([], [
             'balance' => '0.00',
             'currency' => $data->amount->currency,

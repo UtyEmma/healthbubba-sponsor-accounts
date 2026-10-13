@@ -62,7 +62,7 @@ final readonly class StartPlanCheckoutAction
             return new SubscriptionCheckoutResult(null, $existingSession);
         }
 
-        $gateway = $this->activeExternalGateway($data->paymentSource);
+        $gateway = $this->activeExternalGateway($data->paymentSource, $data->workspace->type);
 
         $payment = DB::transaction(function () use ($data, $quote, $gateway): Payment {
             $data->workspace->newQuery()
@@ -159,7 +159,7 @@ final readonly class StartPlanCheckoutAction
 
             if ($balance->amountInMinorUnits < $quote->money->amountInMinorUnits) {
                 throw new CheckoutUnavailable(
-                    "Your wallet balance is insufficient. Choose {$this->payments->gatewayName()->label()} to continue.",
+                    "Your wallet balance is insufficient. Choose {$this->payments->gatewayName($data->workspace->type)->label()} to continue.",
                 );
             }
 
@@ -361,10 +361,12 @@ final readonly class StartPlanCheckoutAction
         );
     }
 
-    private function activeExternalGateway(SubscriptionPaymentSource $source): PaymentGatewayName
-    {
+    private function activeExternalGateway(
+        SubscriptionPaymentSource $source,
+        AccountTypes $accountType,
+    ): PaymentGatewayName {
         $gateway = $source->gateway();
-        $active = $this->payments->gatewayName();
+        $active = $this->payments->gatewayName($accountType);
 
         if ($gateway === null || $gateway !== $active) {
             throw new CheckoutUnavailable("{$active->label()} is the active external payment provider. Refresh and try again.");

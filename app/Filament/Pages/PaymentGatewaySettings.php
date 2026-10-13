@@ -3,6 +3,8 @@
 namespace App\Filament\Pages;
 
 use App\Actions\Payments\UpdateActivePaymentGatewayAction;
+use App\DTOs\Payments\UpdatePaymentGatewaySettingsData;
+use App\Enums\AccountTypes;
 use App\Enums\Payments\PaymentGatewayName;
 use App\Models\User;
 use App\Payments\ActivePaymentGatewayResolver;
@@ -25,9 +27,13 @@ final class PaymentGatewaySettings extends Page
 
     protected static ?int $navigationSort = 4;
 
-    protected static ?string $title = 'Payment Gateway';
+    protected static ?string $title = 'Payment Gateways';
 
-    public string $gateway = PaymentGatewayName::PAYSTACK->value;
+    /** @var array<string, string> */
+    public array $gateways = [];
+
+    /** @var array<string, string> */
+    public array $accountTypeOptions = [];
 
     /** @var array<string, array{label: string, configured: bool, issues: list<string>}> */
     public array $gatewayOptions = [];
@@ -36,7 +42,12 @@ final class PaymentGatewaySettings extends Page
         ActivePaymentGatewayResolver $resolver,
         PaymentGatewayConfiguration $configuration,
     ): void {
-        $this->gateway = $resolver->resolve()->value;
+        $this->gateways = collect(AccountTypes::cases())
+            ->mapWithKeys(fn (AccountTypes $accountType): array => [
+                $accountType->value => $resolver->resolve($accountType)->value,
+            ])
+            ->all();
+        $this->accountTypeOptions = AccountTypes::options();
         $this->gatewayOptions = collect(PaymentGatewayName::cases())
             ->mapWithKeys(fn (PaymentGatewayName $gateway): array => [
                 $gateway->value => [
@@ -56,19 +67,29 @@ final class PaymentGatewaySettings extends Page
     public function save(UpdateActivePaymentGatewayAction $action): void
     {
         $validated = $this->validate([
-            'gateway' => ['required', Rule::enum(PaymentGatewayName::class)],
+            'gateways' => ['required', 'array'],
+            'gateways.'.AccountTypes::INDIVIDUAL->value => ['required', Rule::enum(PaymentGatewayName::class)],
+            'gateways.'.AccountTypes::BUSINESS->value => ['required', Rule::enum(PaymentGatewayName::class)],
+            'gateways.'.AccountTypes::INSTITUTION->value => ['required', Rule::enum(PaymentGatewayName::class)],
         ]);
         $user = Auth::user();
 
         abort_unless($user instanceof User, 403);
 
-        $setting = $action->execute($user, PaymentGatewayName::from($validated['gateway']));
+        $setting = $action->execute(
+            $user,
+            UpdatePaymentGatewaySettingsData::fromArray($validated['gateways']),
+        );
 
-        $this->gateway = $setting->active_gateway->value;
+        $this->gateways = collect(AccountTypes::cases())
+            ->mapWithKeys(fn (AccountTypes $accountType): array => [
+                $accountType->value => $setting->gatewayFor($accountType)->value,
+            ])
+            ->all();
 
         Notification::make()
-            ->title("{$setting->active_gateway->label()} is now active")
-            ->body('New external payments will use this provider. Existing pending payments and mandates keep their recorded provider.')
+            ->title('Payment gateways updated')
+            ->body('New external payments will use the provider selected for their account type. Existing pending payments and mandates keep their recorded provider.')
             ->success()
             ->send();
     }

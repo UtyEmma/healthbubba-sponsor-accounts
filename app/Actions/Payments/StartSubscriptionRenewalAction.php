@@ -6,6 +6,7 @@ use App\DTOs\Payments\CheckoutSession;
 use App\DTOs\Payments\InitializePaymentData;
 use App\DTOs\Payments\StartSubscriptionRenewalData;
 use App\DTOs\Payments\SubscriptionCheckoutResult;
+use App\Enums\AccountTypes;
 use App\Enums\Payments\PaymentCheckoutProfile;
 use App\Enums\Payments\PaymentGatewayName;
 use App\Enums\Payments\PaymentPurpose;
@@ -45,7 +46,7 @@ final readonly class StartSubscriptionRenewalAction
                     null,
                 ),
                 WalletRenewalResult::INSUFFICIENT => throw new CheckoutUnavailable(
-                    "Your wallet balance is insufficient. Choose {$this->payments->gatewayName()->label()} to continue.",
+                    "Your wallet balance is insufficient. Choose {$this->payments->gatewayName($data->workspace->type)->label()} to continue.",
                 ),
                 WalletRenewalResult::NOT_DUE => throw new CheckoutUnavailable(
                     'This subscription is not due for renewal.',
@@ -87,7 +88,7 @@ final readonly class StartSubscriptionRenewalAction
             }
 
             $quote = $this->pricing->renewal($subscription);
-            $gateway = $this->activeExternalGateway($data->paymentSource);
+            $gateway = $this->activeExternalGateway($data->paymentSource, $data->workspace->type);
             $payment = Payment::query()->create([
                 'workspace_id' => $data->workspace->getKey(),
                 'user_id' => $data->user->getKey(),
@@ -177,10 +178,12 @@ final readonly class StartSubscriptionRenewalAction
             || $subscription->next_charge_at?->isPast() === true;
     }
 
-    private function activeExternalGateway(SubscriptionPaymentSource $source): PaymentGatewayName
-    {
+    private function activeExternalGateway(
+        SubscriptionPaymentSource $source,
+        AccountTypes $accountType,
+    ): PaymentGatewayName {
         $gateway = $source->gateway();
-        $active = $this->payments->gatewayName();
+        $active = $this->payments->gatewayName($accountType);
 
         if ($gateway === null || $gateway !== $active) {
             throw new CheckoutUnavailable("{$active->label()} is the active external payment provider. Refresh and try again.");

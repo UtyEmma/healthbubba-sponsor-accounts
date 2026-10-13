@@ -8,6 +8,7 @@ use App\DTOs\Payments\GatewayWebhook;
 use App\DTOs\Payments\InitializePaymentData;
 use App\DTOs\Payments\PaymentVerification;
 use App\DTOs\Payments\RecurringChargeData;
+use App\Enums\AccountTypes;
 use App\Enums\Payments\PaymentGatewayName;
 use App\Exceptions\Payments\UnsupportedGatewayOperationException;
 
@@ -18,35 +19,37 @@ final readonly class PaymentService
         private ActivePaymentGatewayResolver $activeGateway,
     ) {}
 
-    public function gatewayName(?PaymentGatewayName $gateway = null): PaymentGatewayName
-    {
-        return $this->gateways->gatewayName($gateway ?? $this->activeGateway->resolve());
+    public function gatewayName(
+        AccountTypes $accountType,
+        ?PaymentGatewayName $gateway = null,
+    ): PaymentGatewayName {
+        return $this->gateways->gatewayName($gateway ?? $this->activeGateway->resolve($accountType));
     }
 
     public function initialize(
         InitializePaymentData $data,
-        ?PaymentGatewayName $gateway = null,
+        PaymentGatewayName $gateway,
     ): CheckoutSession {
         return $this->gateways
-            ->resolve($gateway ?? $this->activeGateway->resolve())
+            ->resolve($gateway)
             ->initialize($data);
     }
 
     public function verify(
         string $reference,
-        ?PaymentGatewayName $gateway = null,
+        PaymentGatewayName $gateway,
         ?string $providerReference = null,
     ): PaymentVerification {
         return $this->gateways
-            ->resolve($gateway ?? $this->activeGateway->resolve())
+            ->resolve($gateway)
             ->verify($reference, $providerReference);
     }
 
     public function charge(
         RecurringChargeData $data,
-        ?PaymentGatewayName $gateway = null,
+        PaymentGatewayName $gateway,
     ): PaymentVerification {
-        $resolvedGateway = $this->gateways->resolve($gateway ?? $this->activeGateway->resolve());
+        $resolvedGateway = $this->gateways->resolve($gateway);
 
         if (! $resolvedGateway instanceof RecurringPaymentGateway) {
             throw new UnsupportedGatewayOperationException(
@@ -62,10 +65,10 @@ final readonly class PaymentService
     public function parseWebhook(
         string $rawPayload,
         array $headers,
-        ?PaymentGatewayName $gateway = null,
+        PaymentGatewayName $gateway,
     ): GatewayWebhook {
         return $this->gateways
-            ->resolve($gateway ?? $this->activeGateway->resolve())
+            ->resolve($gateway)
             ->parseWebhook($rawPayload, $headers);
     }
 }

@@ -2,28 +2,42 @@
 
 namespace App\Payments;
 
+use App\Enums\AccountTypes;
 use App\Enums\Payments\PaymentGatewayName;
 use App\Models\PaymentGatewaySetting;
 use Illuminate\Support\Facades\Cache;
 
 final class ActivePaymentGatewayResolver
 {
-    public const string CACHE_KEY = 'payments.active_gateway';
+    public const string CACHE_KEY_PREFIX = 'payments.active_gateway.';
 
-    public function resolve(): PaymentGatewayName
+    public function resolve(AccountTypes $accountType): PaymentGatewayName
     {
-        $value = Cache::rememberForever(self::CACHE_KEY, function (): string {
+        $value = Cache::rememberForever($this->cacheKey($accountType), function () use ($accountType): string {
             $setting = PaymentGatewaySetting::query()->find(PaymentGatewaySetting::SINGLETON_ID);
 
-            return $setting?->active_gateway->value ?? $this->configuredFallback()->value;
+            return $setting?->gatewayFor($accountType)->value ?? $this->configuredFallback()->value;
         });
 
         return $this->fromCachedValue($value);
     }
 
-    public function forget(): void
+    public function forget(?AccountTypes $accountType = null): void
     {
-        Cache::forget(self::CACHE_KEY);
+        if ($accountType instanceof AccountTypes) {
+            Cache::forget($this->cacheKey($accountType));
+
+            return;
+        }
+
+        foreach (AccountTypes::cases() as $type) {
+            Cache::forget($this->cacheKey($type));
+        }
+    }
+
+    private function cacheKey(AccountTypes $accountType): string
+    {
+        return self::CACHE_KEY_PREFIX.$accountType->value;
     }
 
     private function configuredFallback(): PaymentGatewayName

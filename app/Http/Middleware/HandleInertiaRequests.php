@@ -92,8 +92,8 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $user instanceof User ? new UserResource($user) : null,
             ],
-            'activePaymentGateway' => $user instanceof User
-                ? new ActivePaymentGatewayResource($this->paymentGateway->resolve())
+            'activePaymentGateway' => $user instanceof User && $workspace instanceof Workspace
+                ? new ActivePaymentGatewayResource($this->paymentGateway->resolve($workspace->type))
                 : null,
             'activityNotifications' => $activityNotifications,
             'flash' => [
