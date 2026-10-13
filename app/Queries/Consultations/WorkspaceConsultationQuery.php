@@ -34,6 +34,7 @@ final readonly class WorkspaceConsultationQuery
                 'date',
                 'time',
                 'status',
+                'is_urgent_consultation',
                 'created_at',
             ])
             ->with([
@@ -69,7 +70,7 @@ final readonly class WorkspaceConsultationQuery
             $snapshot = $snapshots[$appointment->getKey()] ?? null;
             $type = $snapshot instanceof Consultation
                 ? $snapshot->consultation_type
-                : $this->types->resolve($appointment->doctor?->provider_type);
+                : $this->types->resolve($appointment->is_urgent_consultation);
             $scope = $snapshot instanceof Consultation
                 ? $snapshot->allocation_scope
                 : ($workspace->type === AccountTypes::BUSINESS

@@ -48,8 +48,17 @@ final readonly class InstitutionalConsultationQuery
         }
 
         $appointmentQuery = Appointment::query()
-            ->select(['appointment_id', 'patient_id', 'doctor_id', 'sponsor_id', 'date', 'time', 'status', 'created_at'])
-            ->with(['patient:id,first_name,last_name', 'doctor:id,provider_type'])
+            ->select([
+                'appointment_id',
+                'patient_id',
+                'sponsor_id',
+                'date',
+                'time',
+                'status',
+                'is_urgent_consultation',
+                'created_at',
+            ])
+            ->with('patient:id,first_name,last_name')
             ->sponsoredBy($workspace)
             ->whereIn('appointment_id', $appointmentIds);
 
@@ -74,7 +83,7 @@ final readonly class InstitutionalConsultationQuery
                 : null;
             $type = $snapshot instanceof Consultation
                 ? $snapshot->consultation_type
-                : $this->types->resolve($appointment->doctor?->provider_type);
+                : $this->types->resolve($appointment->is_urgent_consultation);
 
             return new InstitutionalConsultationRow(
                 id: (int) $appointment->getKey(),

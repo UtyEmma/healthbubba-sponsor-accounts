@@ -18,8 +18,8 @@ export default function IndividualDashboard({ dashboard }: DashboardPageProps) {
     const {
         auth: { user },
     } = usePage().props;
-    const gpAllocation = dashboard.coverage.allocations.find(
-        (allocation) => allocation.type === 'gp',
+    const scheduledAllocation = dashboard.coverage.allocations.find(
+        (allocation) => allocation.type === 'scheduled',
     );
     const statistics: DashboardStatistic[] = [
         {
@@ -43,13 +43,13 @@ export default function IndividualDashboard({ dashboard }: DashboardPageProps) {
             icon: 'dashboard-consults.svg',
             label: 'Scheduled consultations left',
             value:
-                gpAllocation?.remaining === null
+                scheduledAllocation?.remaining === null
                     ? '∞'
-                    : String(gpAllocation?.remaining ?? 0),
+                    : String(scheduledAllocation?.remaining ?? 0),
             detail:
-                gpAllocation?.limit === null
+                scheduledAllocation?.limit === null
                     ? 'Unlimited shared pool'
-                    : `Shared pool of ${gpAllocation?.limit ?? 0}`,
+                    : `Shared pool of ${scheduledAllocation?.limit ?? 0}`,
         },
         {
             icon: 'dashboard-renewal.svg',

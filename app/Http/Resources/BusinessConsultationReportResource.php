@@ -16,10 +16,10 @@ final class BusinessConsultationReportResource extends JsonResource
         return [
             'stats' => [
                 'activeEmployees' => $this->activeEmployees,
-                'gpConsultations' => [
-                    'remaining' => $this->gpConsultationsRemaining,
-                    'unlimited' => $this->gpConsultationsUnlimited,
-                    'unavailableReason' => $this->gpConsultationsUnavailableReason,
+                'scheduledConsultations' => [
+                    'remaining' => $this->scheduledConsultationsRemaining,
+                    'unlimited' => $this->scheduledConsultationsUnlimited,
+                    'unavailableReason' => $this->scheduledConsultationsUnavailableReason,
                 ],
                 'activationRate' => $this->activationRate,
             ],

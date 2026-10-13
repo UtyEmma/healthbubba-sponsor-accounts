@@ -12,8 +12,8 @@ final readonly class UpdateInstitutionalCoverageRulesData
     public function __construct(
         public InstitutionalFundingProgram $program,
         public InstitutionalCoverageType $coverageType,
-        public int $gpLimitPerBeneficiary,
-        public int $specialistLimitPerBeneficiary,
+        public int $scheduledConsultationLimitPerBeneficiary,
+        public int $instantConsultationLimitPerBeneficiary,
         public int $dailyConsultationLimit,
         public InstitutionalCoverageExpiry $expiryCadence,
         public InstitutionalPaymentPreference $paymentPreference,

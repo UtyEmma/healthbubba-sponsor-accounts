@@ -33,8 +33,8 @@ final class WorkspaceDashboardResource extends JsonResource
             'departmentUtilization' => array_map(
                 static fn (DepartmentUtilization $row): array => [
                     'department' => $row->department,
-                    'gp' => $row->gp,
-                    'specialist' => $row->specialist,
+                    'scheduled' => $row->scheduled,
+                    'instant' => $row->instant,
                 ],
                 $this->departmentUtilization,
             ),

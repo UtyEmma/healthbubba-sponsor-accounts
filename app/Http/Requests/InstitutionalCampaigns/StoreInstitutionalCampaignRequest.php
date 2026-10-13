@@ -29,8 +29,8 @@ final class StoreInstitutionalCampaignRequest extends AuthorizedInstitutionalWor
             'end_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:start_date'],
             'enrollment_method' => ['required', Rule::enum(CampaignEnrollmentMethod::class)],
             'estimated_beneficiaries' => ['required', 'integer', 'min:1', 'max:1000000'],
-            'gp_units' => ['required', 'integer', 'min:0', 'max:10000000'],
-            'specialist_units' => ['required', 'integer', 'min:0', 'max:10000000'],
+            'scheduled_units' => ['required', 'integer', 'min:0', 'max:10000000'],
+            'instant_units' => ['required', 'integer', 'min:0', 'max:10000000'],
             'medication_budget' => ['required', 'decimal:0,2', 'min:0', 'max:999999999999.99'],
             'laboratory_budget' => ['required', 'decimal:0,2', 'min:0', 'max:999999999999.99'],
             'booth_required' => ['required', 'boolean'],
@@ -53,8 +53,8 @@ final class StoreInstitutionalCampaignRequest extends AuthorizedInstitutionalWor
     {
         return [
             function (Validator $validator): void {
-                $hasAllocation = $this->integer('gp_units') > 0
-                    || $this->integer('specialist_units') > 0
+                $hasAllocation = $this->integer('scheduled_units') > 0
+                    || $this->integer('instant_units') > 0
                     || (float) $this->input('medication_budget', 0) > 0
                     || (float) $this->input('laboratory_budget', 0) > 0;
 
@@ -107,8 +107,8 @@ final class StoreInstitutionalCampaignRequest extends AuthorizedInstitutionalWor
                 estimatedBeneficiaries: (int) $this->validated('estimated_beneficiaries'),
             ),
             healthcare: new CampaignHealthcareAllocationData(
-                gpUnits: (int) $this->validated('gp_units'),
-                specialistUnits: (int) $this->validated('specialist_units'),
+                scheduledUnits: (int) $this->validated('scheduled_units'),
+                instantUnits: (int) $this->validated('instant_units'),
                 medicationBudget: (string) $this->validated('medication_budget'),
                 laboratoryBudget: (string) $this->validated('laboratory_budget'),
             ),

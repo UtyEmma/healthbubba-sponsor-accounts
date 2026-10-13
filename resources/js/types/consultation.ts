@@ -1,6 +1,6 @@
 import type { ApiResponse } from './api';
 
-export type ConsultationType = 'gp' | 'specialist';
+export type ConsultationType = 'scheduled' | 'instant';
 export type ConsultationStatus = 'upcoming' | 'completed' | 'cancelled';
 export type ConsultationAllocationScope = 'shared' | 'per_employee';
 export type ConsultationReservationStatus =
@@ -83,8 +83,8 @@ export interface ConsultationQuotaBreakdown {
 export interface ConsultationScalingStep {
     capacity: number;
     additionalCapacity: number;
-    gp: ConsultationQuotaBreakdown;
-    specialist: ConsultationQuotaBreakdown;
+    scheduled: ConsultationQuotaBreakdown;
+    instant: ConsultationQuotaBreakdown;
 }
 
 export interface ConsultationAllocationScaling {
@@ -96,8 +96,8 @@ export interface ConsultationAllocationScaling {
     includedCapacity: number | null;
     currentCapacity: number | null;
     maximumCapacity: number | null;
-    gpPerCapacity: number | null;
-    specialistPerCapacity: number | null;
+    scheduledPerCapacity: number | null;
+    instantPerCapacity: number | null;
     description: string;
     steps: ConsultationScalingStep[];
 }

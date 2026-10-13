@@ -95,18 +95,18 @@ final readonly class ReconcileCampaignRefundAction
         Collection $counts,
         ConsultationReservationStatus $status,
     ): Money {
-        $gpCount = (int) $counts
-            ->first(fn (Consultation $row): bool => $row->consultation_type === ConsultationType::GeneralPractitioner && $row->status === $status)
+        $scheduledCount = (int) $counts
+            ->first(fn (Consultation $row): bool => $row->consultation_type === ConsultationType::Scheduled && $row->status === $status)
             ?->getAttribute('aggregate');
-        $specialistCount = (int) $counts
-            ->first(fn (Consultation $row): bool => $row->consultation_type === ConsultationType::Specialist && $row->status === $status)
+        $instantCount = (int) $counts
+            ->first(fn (Consultation $row): bool => $row->consultation_type === ConsultationType::Instant && $row->status === $status)
             ?->getAttribute('aggregate');
 
-        return Money::fromMajor($campaign->gp_fee ?? '0.00', $campaign->currency)
-            ->multiply($gpCount)
+        return Money::fromMajor($campaign->scheduled_consultation_fee ?? '0.00', $campaign->currency)
+            ->multiply($scheduledCount)
             ->add(
-                Money::fromMajor($campaign->specialist_fee ?? '0.00', $campaign->currency)
-                    ->multiply($specialistCount),
+                Money::fromMajor($campaign->instant_consultation_fee ?? '0.00', $campaign->currency)
+                    ->multiply($instantCount),
             );
     }
 }

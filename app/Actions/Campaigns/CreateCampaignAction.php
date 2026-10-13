@@ -31,15 +31,15 @@ final readonly class CreateCampaignAction
 
     public function execute(CreateCampaignData $data): Campaign
     {
-        $gpFee = Money::fromMajor((string) config('campaigns.default_gp_fee'), 'NGN');
-        $specialistFee = Money::fromMajor((string) config('campaigns.default_specialist_fee'), 'NGN');
+        $scheduledFee = Money::fromMajor((string) config('campaigns.default_scheduled_consultation_fee'), 'NGN');
+        $instantFee = Money::fromMajor((string) config('campaigns.default_instant_consultation_fee'), 'NGN');
         $boothSetupFee = Money::fromMajor((string) config('campaigns.booth_setup_fee'), 'NGN');
         $boothMonthlyFee = Money::fromMajor((string) config('campaigns.booth_monthly_fee'), 'NGN');
-        $gpAllocation = $gpFee->multiply($data->healthcare->gpUnits);
-        $specialistAllocation = $specialistFee->multiply($data->healthcare->specialistUnits);
+        $scheduledAllocation = $scheduledFee->multiply($data->healthcare->scheduledUnits);
+        $instantAllocation = $instantFee->multiply($data->healthcare->instantUnits);
         $medication = Money::fromMajor($data->healthcare->medicationBudget, 'NGN');
         $laboratory = Money::fromMajor($data->healthcare->laboratoryBudget, 'NGN');
-        $healthcareAllocation = $gpAllocation->add($specialistAllocation)->add($medication)->add($laboratory);
+        $healthcareAllocation = $scheduledAllocation->add($instantAllocation)->add($medication)->add($laboratory);
         $boothSetupTotal = $data->booth->required
             ? $boothSetupFee->multiply($data->booth->count ?? 0)
             : new Money(0, 'NGN');
@@ -47,8 +47,8 @@ final readonly class CreateCampaignAction
 
         return DB::transaction(function () use (
             $data,
-            $gpFee,
-            $specialistFee,
+            $scheduledFee,
+            $instantFee,
             $boothSetupFee,
             $boothMonthlyFee,
             $healthcareAllocation,
@@ -88,8 +88,8 @@ final readonly class CreateCampaignAction
                 'status' => $startDate->isAfter(CarbonImmutable::today())
                     ? CampaignStatus::PENDING
                     : CampaignStatus::IN_PROGRESS,
-                'gp_fee' => $gpFee->toMajorAmount(),
-                'specialist_fee' => $specialistFee->toMajorAmount(),
+                'scheduled_consultation_fee' => $scheduledFee->toMajorAmount(),
+                'instant_consultation_fee' => $instantFee->toMajorAmount(),
                 'currency' => $launchTotal->currency,
                 'medication_budget' => $data->healthcare->medicationBudget,
                 'laboratory_budget' => $data->healthcare->laboratoryBudget,
@@ -115,8 +115,8 @@ final readonly class CreateCampaignAction
                 'expires_at' => $data->details->endDate,
             ]);
 
-            $this->createQuota($campaign, $workspace, ConsultationType::GeneralPractitioner, $data->healthcare->gpUnits, $gpFee);
-            $this->createQuota($campaign, $workspace, ConsultationType::Specialist, $data->healthcare->specialistUnits, $specialistFee);
+            $this->createQuota($campaign, $workspace, ConsultationType::Scheduled, $data->healthcare->scheduledUnits, $scheduledFee);
+            $this->createQuota($campaign, $workspace, ConsultationType::Instant, $data->healthcare->instantUnits, $instantFee);
 
             if ($data->booth->required && $data->booth->count !== null) {
                 $this->createBooths(

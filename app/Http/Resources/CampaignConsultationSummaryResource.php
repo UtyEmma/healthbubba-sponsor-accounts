@@ -26,8 +26,8 @@ final class CampaignConsultationSummaryResource extends JsonResource
                     'includedCapacity' => null,
                     'currentCapacity' => null,
                     'maximumCapacity' => null,
-                    'gpPerCapacity' => null,
-                    'specialistPerCapacity' => null,
+                    'scheduledPerCapacity' => null,
+                    'instantPerCapacity' => null,
                     'description' => 'Campaign consultation coverage uses purchased units.',
                     'steps' => [],
                 ],
@@ -35,8 +35,8 @@ final class CampaignConsultationSummaryResource extends JsonResource
             'financialSummary' => [
                 'currency' => $this->currency,
                 'walletBalance' => $this->walletBalance,
-                'gpSpent' => $this->gpSpent,
-                'specialistSpent' => $this->specialistSpent,
+                'scheduledSpent' => $this->scheduledSpent,
+                'instantSpent' => $this->instantSpent,
                 'totalSpent' => $this->totalSpent,
             ],
         ];

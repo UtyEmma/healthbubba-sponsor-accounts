@@ -22,8 +22,8 @@ export interface DashboardSubscription {
 
 export interface DashboardDepartmentUtilization {
     department: string;
-    gp: number;
-    specialist: number;
+    scheduled: number;
+    instant: number;
 }
 
 export interface DashboardConsultationTrend {
@@ -105,8 +105,8 @@ export interface InstitutionalDashboardRemainingCampaign {
     name: string;
     slug: string;
     currency: string;
-    gp: CampaignConsultationMetric;
-    specialist: CampaignConsultationMetric;
+    scheduled: CampaignConsultationMetric;
+    instant: CampaignConsultationMetric;
     medication: CampaignBudgetMetric;
 }
 
@@ -134,8 +134,8 @@ export interface InstitutionalDashboardData {
     };
     campaignPerformance: InstitutionalDashboardCampaign[];
     consultations: {
-        gp: InstitutionalDashboardConsultationMetric;
-        specialist: InstitutionalDashboardConsultationMetric;
+        scheduled: InstitutionalDashboardConsultationMetric;
+        instant: InstitutionalDashboardConsultationMetric;
     };
     consultationTrends: DashboardConsultationTrend[];
     activities: InstitutionalDashboardActivity[];

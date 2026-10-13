@@ -37,8 +37,8 @@ export interface CampaignFinancialMetrics {
     returned: string;
     utilizationPercentage: number;
     consultations: {
-        gp: CampaignConsultationMetric;
-        specialist: CampaignConsultationMetric;
+        scheduled: CampaignConsultationMetric;
+        instant: CampaignConsultationMetric;
     };
     budgets: {
         medication: CampaignBudgetMetric;
@@ -140,8 +140,8 @@ export interface Campaign {
     statusLabel: string;
     boothRequired: boolean;
     booth: CampaignBooth | null;
-    gpFee: string | null;
-    specialistFee: string | null;
+    scheduledFee: string | null;
+    instantFee: string | null;
     beneficiaryCount?: number;
     activeBeneficiaryCount?: number;
     capacityUsed?: number;
@@ -165,8 +165,8 @@ export interface CampaignIndexSummary {
 export interface CampaignCreationConfiguration {
     currency: string;
     walletBalance: string;
-    gpUnitFee: string;
-    specialistUnitFee: string;
+    scheduledUnitFee: string;
+    instantUnitFee: string;
     boothSetupUnitFee: string;
     boothMonthlyUnitFee: string;
 }
@@ -184,8 +184,8 @@ export interface CampaignConsultationQuota {
 export interface CampaignFinancialSummary {
     currency: string;
     walletBalance: string;
-    gpSpent: string;
-    specialistSpent: string;
+    scheduledSpent: string;
+    instantSpent: string;
     totalSpent: string;
 }
 

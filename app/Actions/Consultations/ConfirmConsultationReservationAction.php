@@ -59,7 +59,7 @@ final class ConfirmConsultationReservationAction
             ]);
         }
 
-        return DB::transaction(function () use ($reservation): Consultation {
+        $confirmed = DB::transaction(function () use ($reservation): Consultation {
             $locked = Consultation::query()
                 ->whereKey($reservation->getKey())
                 ->lockForUpdate()
@@ -82,6 +82,10 @@ final class ConfirmConsultationReservationAction
 
             return $locked->refresh();
         });
+
+        $confirmed->setAttribute('doctor_id', $appointment->doctor_id);
+
+        return $confirmed;
     }
 
     private function recordCampaignUsage(Consultation $consultation): void
@@ -101,9 +105,9 @@ final class ConfirmConsultationReservationAction
 
         $benefit = CampaignUsageBenefit::from($consultation->consultation_type->value);
         $fee = Money::fromMajor(
-            $benefit === CampaignUsageBenefit::GeneralPractitioner
-                ? ($campaign->gp_fee ?? '0.00')
-                : ($campaign->specialist_fee ?? '0.00'),
+            $benefit === CampaignUsageBenefit::ScheduledConsultation
+                ? ($campaign->scheduled_consultation_fee ?? '0.00')
+                : ($campaign->instant_consultation_fee ?? '0.00'),
             $campaign->currency,
         );
 
@@ -133,9 +137,9 @@ final class ConfirmConsultationReservationAction
             ]);
         }
 
-        if ($appointment->doctor_id !== $reservation->doctor_id) {
+        if ($appointment->doctor_id === null) {
             throw ValidationException::withMessages([
-                'appointment_id' => 'The appointment doctor does not match this reservation.',
+                'appointment_id' => 'The appointment must have a doctor before usage can be recorded.',
             ]);
         }
 

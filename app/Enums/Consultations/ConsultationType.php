@@ -4,14 +4,14 @@ namespace App\Enums\Consultations;
 
 enum ConsultationType: string
 {
-    case GeneralPractitioner = 'gp';
-    case Specialist = 'specialist';
+    case Scheduled = 'scheduled';
+    case Instant = 'instant';
 
     public function label(): string
     {
         return match ($this) {
-            self::GeneralPractitioner => 'Scheduled Consultation',
-            self::Specialist => 'Instant Consultation',
+            self::Scheduled => 'Scheduled Consultation',
+            self::Instant => 'Instant Consultation',
         };
     }
 }

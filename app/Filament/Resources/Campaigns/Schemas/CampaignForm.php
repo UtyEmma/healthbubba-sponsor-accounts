@@ -117,20 +117,20 @@ class CampaignForm
                         Section::make('Consultation fees')
                             ->description('Set the per-consultation fee for scheduled and instant consultations. These fees are charged when the workspace purchases consultation quotas.')
                             ->schema([
-                                TextInput::make('gp_fee')
+                                TextInput::make('scheduled_consultation_fee')
                                     ->label('Scheduled consultation fee (₦)')
                                     ->helperText('Fee per scheduled consultation in Naira.')
                                     ->numeric()
                                     ->minValue(0)
                                     ->prefix('₦')
-                                    ->default(config('campaigns.default_gp_fee', 0)),
-                                TextInput::make('specialist_fee')
+                                    ->default(config('campaigns.default_scheduled_consultation_fee', 0)),
+                                TextInput::make('instant_consultation_fee')
                                     ->label('Instant consultation fee (₦)')
                                     ->helperText('Fee per instant consultation in Naira.')
                                     ->numeric()
                                     ->minValue(0)
                                     ->prefix('₦')
-                                    ->default(config('campaigns.default_specialist_fee', 0)),
+                                    ->default(config('campaigns.default_instant_consultation_fee', 0)),
                             ])
                             ->columnSpanFull(),
                         Section::make('Healthcare budgets')
@@ -147,9 +147,9 @@ class CampaignForm
                                         ->mapWithKeys(fn (InstitutionalCoverageType $type): array => [$type->value => $type->label()])
                                         ->all())
                                     ->nullable(),
-                                TextInput::make('gp_limit_per_beneficiary_override')
+                                TextInput::make('scheduled_consultation_limit_per_beneficiary_override')
                                     ->numeric()->integer()->minValue(1)->nullable(),
-                                TextInput::make('specialist_limit_per_beneficiary_override')
+                                TextInput::make('instant_consultation_limit_per_beneficiary_override')
                                     ->numeric()->integer()->minValue(1)->nullable(),
                                 TextInput::make('daily_consultation_limit_override')
                                     ->numeric()->integer()->minValue(1)->nullable(),

@@ -141,7 +141,7 @@ final readonly class WorkspaceCampaignQuery
         $appointment = new Appointment([
             'appointment_id' => $consultation->appointment_id ?? 0,
             'patient_id' => $consultation->beneficiary_id,
-            'doctor_id' => $consultation->doctor_id,
+            'doctor_id' => null,
             'status' => $consultation->status->value === 'confirmed'
                 ? AppointmentStatus::Upcoming
                 : AppointmentStatus::Upcoming,

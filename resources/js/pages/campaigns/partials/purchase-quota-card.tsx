@@ -36,16 +36,18 @@ export function PurchaseQuotaCard({ campaign }: { campaign: Campaign }) {
             quantity: '',
         });
 
-    const gpFee = campaign.gpFee ? parseFloat(campaign.gpFee) : 0;
-    const specialistFee = campaign.specialistFee
-        ? parseFloat(campaign.specialistFee)
+    const scheduledFee = campaign.scheduledFee
+        ? parseFloat(campaign.scheduledFee)
+        : 0;
+    const instantFee = campaign.instantFee
+        ? parseFloat(campaign.instantFee)
         : 0;
 
     const unitFee =
-        data.consultation_type === 'gp'
-            ? gpFee
-            : data.consultation_type === 'specialist'
-              ? specialistFee
+        data.consultation_type === 'scheduled'
+            ? scheduledFee
+            : data.consultation_type === 'instant'
+              ? instantFee
               : 0;
     const quantity = parseInt(data.quantity, 10) || 0;
     const totalCost = unitFee * quantity;
@@ -96,16 +98,16 @@ export function PurchaseQuotaCard({ campaign }: { campaign: Campaign }) {
                                 }
                             >
                                 <option value="">Select type</option>
-                                <option value="gp">
+                                <option value="scheduled">
                                     Scheduled Consultation
-                                    {gpFee > 0
-                                        ? ` (${formatter.format(gpFee)}/unit)`
+                                    {scheduledFee > 0
+                                        ? ` (${formatter.format(scheduledFee)}/unit)`
                                         : ''}
                                 </option>
-                                <option value="specialist">
+                                <option value="instant">
                                     Instant Consultation
-                                    {specialistFee > 0
-                                        ? ` (${formatter.format(specialistFee)}/unit)`
+                                    {instantFee > 0
+                                        ? ` (${formatter.format(instantFee)}/unit)`
                                         : ''}
                                 </option>
                             </Select>

@@ -7,8 +7,8 @@ final readonly class ConsultationScalingStep
     public function __construct(
         public int $capacity,
         public int $additionalCapacity,
-        public ConsultationQuotaBreakdown $gp,
-        public ConsultationQuotaBreakdown $specialist,
+        public ConsultationQuotaBreakdown $scheduled,
+        public ConsultationQuotaBreakdown $instant,
     ) {}
 
     /** @return array<string, mixed> */
@@ -17,8 +17,8 @@ final readonly class ConsultationScalingStep
         return [
             'capacity' => $this->capacity,
             'additionalCapacity' => $this->additionalCapacity,
-            'gp' => $this->gp->toArray(),
-            'specialist' => $this->specialist->toArray(),
+            'scheduled' => $this->scheduled->toArray(),
+            'instant' => $this->instant->toArray(),
         ];
     }
 }

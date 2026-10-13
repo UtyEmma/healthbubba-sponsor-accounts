@@ -78,8 +78,8 @@ final readonly class CampaignConsultationSummaryQuery
             ConsultationType::cases(),
         );
 
-        $gpSpent = (string) ($purchases->get(ConsultationType::GeneralPractitioner->value)?->getAttribute('spent') ?? '0.00');
-        $specialistSpent = (string) ($purchases->get(ConsultationType::Specialist->value)?->getAttribute('spent') ?? '0.00');
+        $scheduledSpent = (string) ($purchases->get(ConsultationType::Scheduled->value)?->getAttribute('spent') ?? '0.00');
+        $instantSpent = (string) ($purchases->get(ConsultationType::Instant->value)?->getAttribute('spent') ?? '0.00');
         $wallet = $workspace->wallet()->firstOrNew([], [
             'balance' => '0.00',
             'currency' => 'NGN',
@@ -99,9 +99,9 @@ final readonly class CampaignConsultationSummaryQuery
             allocations: $allocations,
             currency: $wallet->currency,
             walletBalance: $wallet->balance,
-            gpSpent: $gpSpent,
-            specialistSpent: $specialistSpent,
-            totalSpent: $this->addDecimalAmounts($gpSpent, $specialistSpent),
+            scheduledSpent: $scheduledSpent,
+            instantSpent: $instantSpent,
+            totalSpent: $this->addDecimalAmounts($scheduledSpent, $instantSpent),
         );
     }
 

@@ -47,13 +47,13 @@ final class PatientConsultationSponsorshipResource extends JsonResource
                     'endsAt' => $sponsor->campaign->endsAt?->toISOString(),
                 ],
                 'limits' => [
-                    ConsultationType::GeneralPractitioner->value => $this->availability(
+                    ConsultationType::Scheduled->value => $this->availability(
                         $sponsor,
-                        ConsultationType::GeneralPractitioner,
+                        ConsultationType::Scheduled,
                     ),
-                    ConsultationType::Specialist->value => $this->availability(
+                    ConsultationType::Instant->value => $this->availability(
                         $sponsor,
-                        ConsultationType::Specialist,
+                        ConsultationType::Instant,
                     ),
                 ],
             ],

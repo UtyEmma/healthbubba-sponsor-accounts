@@ -78,7 +78,7 @@ export interface InstitutionalConsultation {
     date: string | null;
     beneficiary: string;
     campaign: { name: string; slug: string } | null;
-    type: 'gp' | 'specialist';
+    type: 'scheduled' | 'instant';
     typeLabel: string;
     status: InstitutionalConsultationStatus;
     statusLabel: string;
@@ -122,12 +122,12 @@ export interface InstitutionalCampaignReportRow {
     location: string | null;
     status: string;
     statusLabel: string;
-    gpUsed: number;
-    gpAllocated: number;
-    specialistUsed: number;
-    specialistAllocated: number;
-    specialistUnitFee: string;
-    gpUnitFee: string;
+    scheduledUsed: number;
+    scheduledAllocated: number;
+    instantUsed: number;
+    instantAllocated: number;
+    instantUnitFee: string;
+    scheduledUnitFee: string;
     medicationUsed: string;
     medicationAllocated: string;
     laboratoryUsed: string;

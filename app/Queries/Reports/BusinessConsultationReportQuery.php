@@ -28,21 +28,21 @@ final readonly class BusinessConsultationReportQuery
             ? 0
             : (int) round(($active / $currentRoster) * 100);
         $coverage = $this->coverage->summary($workspace);
-        $gpAllocation = collect($coverage['allocations'])
-            ->firstWhere('type', ConsultationType::GeneralPractitioner->value);
-        $unavailableReason = is_array($gpAllocation)
-            ? data_get($gpAllocation, 'unavailableReason')
+        $scheduledAllocation = collect($coverage['allocations'])
+            ->firstWhere('type', ConsultationType::Scheduled->value);
+        $unavailableReason = is_array($scheduledAllocation)
+            ? data_get($scheduledAllocation, 'unavailableReason')
             : 'Scheduled consultation coverage is unavailable.';
-        $remaining = is_array($gpAllocation)
-            ? data_get($gpAllocation, 'remaining')
+        $remaining = is_array($scheduledAllocation)
+            ? data_get($scheduledAllocation, 'remaining')
             : 0;
         $isUnavailable = is_string($unavailableReason) && $unavailableReason !== '';
 
         return new BusinessConsultationReport(
             activeEmployees: $active,
-            gpConsultationsRemaining: is_numeric($remaining) ? (int) $remaining : null,
-            gpConsultationsUnlimited: ! $isUnavailable && $remaining === null,
-            gpConsultationsUnavailableReason: $isUnavailable ? $unavailableReason : null,
+            scheduledConsultationsRemaining: is_numeric($remaining) ? (int) $remaining : null,
+            scheduledConsultationsUnlimited: ! $isUnavailable && $remaining === null,
+            scheduledConsultationsUnavailableReason: $isUnavailable ? $unavailableReason : null,
             activationRate: $activationRate,
             workforce: $this->workforceRows($counts),
         );

@@ -10,7 +10,7 @@ export interface WorkforceStatusSummary {
 export interface BusinessConsultationReport {
     stats: {
         activeEmployees: number;
-        gpConsultations: {
+        scheduledConsultations: {
             remaining: number | null;
             unlimited: boolean;
             unavailableReason: string | null;

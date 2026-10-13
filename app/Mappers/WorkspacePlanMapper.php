@@ -399,11 +399,11 @@ final readonly class WorkspacePlanMapper
             return $feature->name;
         }
 
-        if ($featureType === Features::SPECIALIST_CONSULTATIONS_PER_SEAT) {
+        if ($featureType === Features::INSTANT_CONSULTATIONS_PER_SEAT) {
             return 'Instant Consultations per Added Beneficiary';
         }
 
-        if ($featureType === Features::GP_CONSULTATIONS_PER_SEAT) {
+        if ($featureType === Features::SCHEDULED_CONSULTATIONS_PER_SEAT) {
             return 'Scheduled Consultations per Added Beneficiary';
         }
 

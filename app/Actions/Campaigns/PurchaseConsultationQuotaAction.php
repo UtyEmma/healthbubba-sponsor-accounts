@@ -95,8 +95,8 @@ final readonly class PurchaseConsultationQuotaAction
     private function resolveFee(Campaign $campaign, ConsultationType $type): string
     {
         $fee = match ($type) {
-            ConsultationType::GeneralPractitioner => $campaign->gp_fee,
-            ConsultationType::Specialist => $campaign->specialist_fee,
+            ConsultationType::Scheduled => $campaign->scheduled_consultation_fee,
+            ConsultationType::Instant => $campaign->instant_consultation_fee,
         };
 
         if ($fee === null || (float) $fee <= 0) {

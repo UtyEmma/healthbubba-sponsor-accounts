@@ -19,7 +19,7 @@ use Illuminate\Support\Carbon;
  * @property int $workspace_beneficiary_id
  * @property int|null $plan_id
  * @property int $beneficiary_id
- * @property int $doctor_id
+ * @property int|null $doctor_id Transient API snapshot loaded from the appointment.
  * @property int|null $appointment_id
  * @property ConsultationType $consultation_type
  * @property string $feature_slug

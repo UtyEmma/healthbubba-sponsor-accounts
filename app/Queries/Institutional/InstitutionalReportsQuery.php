@@ -34,7 +34,7 @@ final readonly class InstitutionalReportsQuery
             ->map(fn (InstitutionalCommunityReportRow $row): array => $row->toArray());
         $allocated = $byCampaign->sum(fn (array $row): float => (float) $row['allocated']);
         $utilized = $byCampaign->sum(fn (array $row): float => (float) $row['utilized']);
-        $consultations = $byCampaign->sum(fn (array $row): int => (int) $row['gpUsed'] + (int) $row['specialistUsed']);
+        $consultations = $byCampaign->sum(fn (array $row): int => (int) $row['scheduledUsed'] + (int) $row['instantUsed']);
         $reservationCounts = Consultation::query()
             ->whereBelongsTo($workspace)
             ->toBase()
@@ -84,12 +84,12 @@ final readonly class InstitutionalReportsQuery
             'location' => $campaign->location,
             'status' => $campaign->lifecycleStatus()->value,
             'statusLabel' => $campaign->lifecycleStatus()->label(),
-            'gpUsed' => (int) data_get($financial, 'consultations.gp.confirmed', 0),
-            'gpAllocated' => (int) data_get($financial, 'consultations.gp.units', 0),
-            'specialistUsed' => (int) data_get($financial, 'consultations.specialist.confirmed', 0),
-            'specialistAllocated' => (int) data_get($financial, 'consultations.specialist.units', 0),
-            'specialistUnitFee' => (string) data_get($financial, 'consultations.specialist.unitFee', '0.00'),
-            'gpUnitFee' => (string) data_get($financial, 'consultations.gp.unitFee', '0.00'),
+            'scheduledUsed' => (int) data_get($financial, 'consultations.scheduled.confirmed', 0),
+            'scheduledAllocated' => (int) data_get($financial, 'consultations.scheduled.units', 0),
+            'instantUsed' => (int) data_get($financial, 'consultations.instant.confirmed', 0),
+            'instantAllocated' => (int) data_get($financial, 'consultations.instant.units', 0),
+            'instantUnitFee' => (string) data_get($financial, 'consultations.instant.unitFee', '0.00'),
+            'scheduledUnitFee' => (string) data_get($financial, 'consultations.scheduled.unitFee', '0.00'),
             'medicationUsed' => (string) data_get($financial, 'budgets.medication.used', '0.00'),
             'medicationAllocated' => (string) data_get($financial, 'budgets.medication.allocated', '0.00'),
             'laboratoryUsed' => (string) data_get($financial, 'budgets.laboratory.used', '0.00'),
@@ -120,8 +120,8 @@ final readonly class InstitutionalReportsQuery
             ->whereBelongsTo($workspace)
             ->join($beneficiaryTable, 'campaign_usage_entries.workspace_beneficiary_id', '=', 'workspace_beneficiaries.id')
             ->whereIn('campaign_usage_entries.benefit', [
-                CampaignUsageBenefit::GeneralPractitioner->value,
-                CampaignUsageBenefit::Specialist->value,
+                CampaignUsageBenefit::ScheduledConsultation->value,
+                CampaignUsageBenefit::InstantConsultation->value,
             ])
             ->selectRaw("campaign_usage_entries.campaign_id, COALESCE(NULLIF(workspace_beneficiaries.community, ''), 'Unspecified') AS community, SUM(COALESCE(campaign_usage_entries.quantity, 0)) AS consultations")
             ->groupBy('campaign_usage_entries.campaign_id')
@@ -150,8 +150,8 @@ final readonly class InstitutionalReportsQuery
     /** @param Collection<int, array<string, mixed>> $rows */
     private function consultationUtilized(Collection $rows): float
     {
-        return $rows->sum(static fn (array $row): float => ((int) $row['gpUsed'] * (float) $row['gpUnitFee'])
-            + ((int) $row['specialistUsed'] * (float) $row['specialistUnitFee'])
+        return $rows->sum(static fn (array $row): float => ((int) $row['scheduledUsed'] * (float) $row['scheduledUnitFee'])
+            + ((int) $row['instantUsed'] * (float) $row['instantUnitFee'])
         );
     }
 

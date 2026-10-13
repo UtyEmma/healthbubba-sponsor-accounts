@@ -9,11 +9,12 @@ export function ReportOverview({
 }: {
     stats: BusinessConsultationReport['stats'];
 }) {
-    const gpConsultations = stats.gpConsultations.unavailableReason
+    const scheduledConsultations = stats.scheduledConsultations
+        .unavailableReason
         ? 'Unavailable'
-        : stats.gpConsultations.unlimited
+        : stats.scheduledConsultations.unlimited
           ? 'Unlimited'
-          : String(stats.gpConsultations.remaining ?? 0);
+          : String(stats.scheduledConsultations.remaining ?? 0);
 
     return (
         <section
@@ -28,7 +29,7 @@ export function ReportOverview({
             />
             <BusinessMetricCard
                 label="Scheduled consultations left"
-                value={gpConsultations}
+                value={scheduledConsultations}
                 icon={StethoscopeIcon}
                 tone="blue"
             />

@@ -43,11 +43,11 @@ class CampaignInfolist
                         IconEntry::make('booth_required')
                             ->label('Booth required')
                             ->boolean(),
-                        TextEntry::make('gp_fee')
+                        TextEntry::make('scheduled_consultation_fee')
                             ->label('Scheduled consultation fee')
                             ->prefix('₦')
                             ->placeholder('Not set'),
-                        TextEntry::make('specialist_fee')
+                        TextEntry::make('instant_consultation_fee')
                             ->label('Instant consultation fee')
                             ->prefix('₦')
                             ->placeholder('Not set'),

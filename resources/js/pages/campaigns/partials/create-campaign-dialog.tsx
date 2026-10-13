@@ -41,8 +41,8 @@ interface CampaignFormData {
     end_date: string;
     enrollment_method: CampaignEnrollmentMethod;
     estimated_beneficiaries: string;
-    gp_units: string;
-    specialist_units: string;
+    scheduled_units: string;
+    instant_units: string;
     medication_budget: string;
     laboratory_budget: string;
     booth_required: boolean;
@@ -63,8 +63,8 @@ const initialData: CampaignFormData = {
     end_date: '',
     enrollment_method: 'upload',
     estimated_beneficiaries: '',
-    gp_units: '0',
-    specialist_units: '0',
+    scheduled_units: '0',
+    instant_units: '0',
     medication_budget: '0',
     laboratory_budget: '0',
     booth_required: false,
@@ -420,22 +420,25 @@ function AllocationStep({
             </div>
             <AllocationCard
                 title="Scheduled consultations"
-                amount={number(data.gp_units) * number(configuration.gpUnitFee)}
-                units={data.gp_units}
-                price={configuration.gpUnitFee}
-                onUnitsChange={(value) => form.setData('gp_units', value)}
+                amount={
+                    number(data.scheduled_units) *
+                    number(configuration.scheduledUnitFee)
+                }
+                units={data.scheduled_units}
+                price={configuration.scheduledUnitFee}
+                onUnitsChange={(value) =>
+                    form.setData('scheduled_units', value)
+                }
             />
             <AllocationCard
                 title="Instant consultations"
                 amount={
-                    number(data.specialist_units) *
-                    number(configuration.specialistUnitFee)
+                    number(data.instant_units) *
+                    number(configuration.instantUnitFee)
                 }
-                units={data.specialist_units}
-                price={configuration.specialistUnitFee}
-                onUnitsChange={(value) =>
-                    form.setData('specialist_units', value)
-                }
+                units={data.instant_units}
+                price={configuration.instantUnitFee}
+                onUnitsChange={(value) => form.setData('instant_units', value)}
             />
             <div className="grid gap-3 sm:grid-cols-2">
                 <FormField
@@ -683,12 +686,12 @@ function SummaryStep({
             </div>
             <SummarySection title="Healthcare allocation">
                 <SummaryRow
-                    label={`Scheduled consultations × ${number(data.gp_units).toLocaleString('en-NG')}`}
-                    value={formatMoney(totals.gp)}
+                    label={`Scheduled consultations × ${number(data.scheduled_units).toLocaleString('en-NG')}`}
+                    value={formatMoney(totals.scheduled)}
                 />
                 <SummaryRow
-                    label={`Instant consultations × ${number(data.specialist_units).toLocaleString('en-NG')}`}
-                    value={formatMoney(totals.specialist)}
+                    label={`Instant consultations × ${number(data.instant_units).toLocaleString('en-NG')}`}
+                    value={formatMoney(totals.instant)}
                 />
                 <SummaryRow
                     label="Medication budget"
@@ -1012,8 +1015,8 @@ function FormField({
 }
 
 interface CampaignTotals {
-    gp: number;
-    specialist: number;
+    scheduled: number;
+    instant: number;
     healthcare: number;
     boothSetup: number;
     boothMonthly: number;
@@ -1024,12 +1027,13 @@ function calculateTotals(
     data: CampaignFormData,
     configuration: CampaignCreationConfiguration,
 ): CampaignTotals {
-    const gp = number(data.gp_units) * number(configuration.gpUnitFee);
-    const specialist =
-        number(data.specialist_units) * number(configuration.specialistUnitFee);
+    const scheduled =
+        number(data.scheduled_units) * number(configuration.scheduledUnitFee);
+    const instant =
+        number(data.instant_units) * number(configuration.instantUnitFee);
     const healthcare =
-        gp +
-        specialist +
+        scheduled +
+        instant +
         number(data.medication_budget) +
         number(data.laboratory_budget);
     const boothSetup = data.booth_required
@@ -1040,8 +1044,8 @@ function calculateTotals(
         : 0;
 
     return {
-        gp,
-        specialist,
+        scheduled,
+        instant,
         healthcare,
         boothSetup,
         boothMonthly,
@@ -1092,8 +1096,8 @@ function validateStep(
 
     if (step === 3) {
         const healthcare =
-            number(data.gp_units) +
-            number(data.specialist_units) +
+            number(data.scheduled_units) +
+            number(data.instant_units) +
             number(data.medication_budget) +
             number(data.laboratory_budget);
 
@@ -1146,8 +1150,8 @@ function stepForErrors(fields: string[]): number {
     if (
         fields.some((field) =>
             [
-                'gp_units',
-                'specialist_units',
+                'scheduled_units',
+                'instant_units',
                 'medication_budget',
                 'laboratory_budget',
                 'allocation',

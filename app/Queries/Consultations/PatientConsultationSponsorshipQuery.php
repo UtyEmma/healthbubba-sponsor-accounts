@@ -261,8 +261,8 @@ final readonly class PatientConsultationSponsorshipQuery
                 ->where('beneficiary_id', $patientId)
                 ->select('id'))
             ->whereIn('benefit', [
-                CampaignUsageBenefit::GeneralPractitioner,
-                CampaignUsageBenefit::Specialist,
+                CampaignUsageBenefit::ScheduledConsultation,
+                CampaignUsageBenefit::InstantConsultation,
             ])
             ->whereBetween('occurred_at', [now()->startOfDay(), now()->endOfDay()])
             ->sum('quantity');
@@ -399,8 +399,8 @@ final readonly class PatientConsultationSponsorshipQuery
             ->where('workspace_beneficiaries.relatable_type', (new Campaign)->getMorphClass())
             ->whereIn('workspace_beneficiaries.relatable_id', $campaignIds)
             ->whereIn('campaign_usage_entries.benefit', [
-                CampaignUsageBenefit::GeneralPractitioner,
-                CampaignUsageBenefit::Specialist,
+                CampaignUsageBenefit::ScheduledConsultation,
+                CampaignUsageBenefit::InstantConsultation,
             ]);
 
         if ($patientId !== null) {

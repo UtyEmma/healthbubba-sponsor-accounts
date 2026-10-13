@@ -23,7 +23,7 @@ final class CancelConsultationReservationAction
             ]);
         }
 
-        return DB::transaction(function () use ($appointment, $reservation): Consultation {
+        $cancelled = DB::transaction(function () use ($appointment, $reservation): Consultation {
             $locked = Consultation::query()
                 ->whereKey($reservation->getKey())
                 ->lockForUpdate()
@@ -47,5 +47,9 @@ final class CancelConsultationReservationAction
 
             return $locked->refresh();
         });
+
+        $cancelled->setAttribute('doctor_id', $appointment->doctor_id);
+
+        return $cancelled;
     }
 }

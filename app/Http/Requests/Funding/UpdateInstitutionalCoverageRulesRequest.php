@@ -15,8 +15,8 @@ final class UpdateInstitutionalCoverageRulesRequest extends AuthorizedInstitutio
     {
         return [
             'coverage_type' => ['required', Rule::enum(InstitutionalCoverageType::class)],
-            'gp_limit_per_beneficiary' => ['required', 'integer', 'min:1', 'max:1000'],
-            'specialist_limit_per_beneficiary' => ['required', 'integer', 'min:1', 'max:1000'],
+            'scheduled_consultation_limit_per_beneficiary' => ['required', 'integer', 'min:1', 'max:1000'],
+            'instant_consultation_limit_per_beneficiary' => ['required', 'integer', 'min:1', 'max:1000'],
             'daily_consultation_limit' => ['required', 'integer', 'min:1', 'max:100'],
             'expiry_cadence' => ['required', Rule::enum(InstitutionalCoverageExpiry::class)],
             'payment_preference' => ['required', Rule::enum(InstitutionalPaymentPreference::class)],
@@ -30,8 +30,8 @@ final class UpdateInstitutionalCoverageRulesRequest extends AuthorizedInstitutio
         return new UpdateInstitutionalCoverageRulesData(
             program: $program,
             coverageType: InstitutionalCoverageType::from((string) $this->validated('coverage_type')),
-            gpLimitPerBeneficiary: (int) $this->validated('gp_limit_per_beneficiary'),
-            specialistLimitPerBeneficiary: (int) $this->validated('specialist_limit_per_beneficiary'),
+            scheduledConsultationLimitPerBeneficiary: (int) $this->validated('scheduled_consultation_limit_per_beneficiary'),
+            instantConsultationLimitPerBeneficiary: (int) $this->validated('instant_consultation_limit_per_beneficiary'),
             dailyConsultationLimit: (int) $this->validated('daily_consultation_limit'),
             expiryCadence: InstitutionalCoverageExpiry::from((string) $this->validated('expiry_cadence')),
             paymentPreference: InstitutionalPaymentPreference::from((string) $this->validated('payment_preference')),

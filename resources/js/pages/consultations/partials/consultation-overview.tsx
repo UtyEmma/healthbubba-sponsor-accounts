@@ -28,7 +28,7 @@ export function ConsultationOverview({
             className="grid gap-4 pt-6 lg:grid-cols-[416px_minmax(0,1fr)]"
             aria-label="Consultation allocation overview"
         >
-            <Card className="min-h-[319px]">
+            <Card>
                 <CardHeader className="px-6 pt-7 pb-3">
                     <CardTitle className="text-base leading-5">
                         Current pool
@@ -47,7 +47,7 @@ export function ConsultationOverview({
                 </CardContent>
             </Card>
 
-            <Card className="min-h-[319px] overflow-hidden">
+            <Card className="overflow-hidden">
                 <CardHeader className="px-6 pt-6 pb-4">
                     <CardTitle className="text-base leading-5">
                         Allocation scaling
@@ -81,13 +81,13 @@ export function ConsultationOverview({
                                         </TableCell>
                                         <TableCell className="h-12 text-muted-foreground">
                                             {formatQuotaBreakdown(
-                                                step.gp,
+                                                step.scheduled,
                                                 'scheduled',
                                             )}
                                         </TableCell>
                                         <TableCell className="h-12 text-muted-foreground">
                                             {formatQuotaBreakdown(
-                                                step.specialist,
+                                                step.instant,
                                                 'instant',
                                             )}
                                         </TableCell>

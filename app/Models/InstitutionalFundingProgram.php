@@ -16,8 +16,8 @@ use Illuminate\Support\Carbon;
  * @property Carbon $starts_on
  * @property Carbon $ends_on
  * @property InstitutionalCoverageType $coverage_type
- * @property int $gp_limit_per_beneficiary
- * @property int $specialist_limit_per_beneficiary
+ * @property int $scheduled_consultation_limit_per_beneficiary
+ * @property int $instant_consultation_limit_per_beneficiary
  * @property int $daily_consultation_limit
  * @property InstitutionalCoverageExpiry $expiry_cadence
  * @property InstitutionalPaymentPreference $payment_preference
@@ -28,8 +28,8 @@ final class InstitutionalFundingProgram extends Model
     /** @var array<string, mixed> */
     protected $attributes = [
         'coverage_type' => InstitutionalCoverageType::SharedPool->value,
-        'gp_limit_per_beneficiary' => 4,
-        'specialist_limit_per_beneficiary' => 2,
+        'scheduled_consultation_limit_per_beneficiary' => 4,
+        'instant_consultation_limit_per_beneficiary' => 2,
         'daily_consultation_limit' => 1,
         'expiry_cadence' => InstitutionalCoverageExpiry::Annual->value,
         'payment_preference' => InstitutionalPaymentPreference::UserChoice->value,
@@ -38,7 +38,7 @@ final class InstitutionalFundingProgram extends Model
     /** @var list<string> */
     protected $fillable = [
         'workspace_id', 'name', 'starts_on', 'ends_on', 'coverage_type',
-        'gp_limit_per_beneficiary', 'specialist_limit_per_beneficiary',
+        'scheduled_consultation_limit_per_beneficiary', 'instant_consultation_limit_per_beneficiary',
         'daily_consultation_limit', 'expiry_cadence', 'payment_preference',
     ];
 
@@ -55,8 +55,8 @@ final class InstitutionalFundingProgram extends Model
             'starts_on' => 'date',
             'ends_on' => 'date',
             'coverage_type' => InstitutionalCoverageType::class,
-            'gp_limit_per_beneficiary' => 'integer',
-            'specialist_limit_per_beneficiary' => 'integer',
+            'scheduled_consultation_limit_per_beneficiary' => 'integer',
+            'instant_consultation_limit_per_beneficiary' => 'integer',
             'daily_consultation_limit' => 'integer',
             'expiry_cadence' => InstitutionalCoverageExpiry::class,
             'payment_preference' => InstitutionalPaymentPreference::class,

@@ -5,20 +5,14 @@ namespace App\Services\Consultations;
 use App\Enums\AccountTypes;
 use App\Enums\Consultations\ConsultationType;
 use App\Enums\Subscriptions\Features;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 final class ConsultationTypeResolver
 {
-    public function resolve($specialtyId): ConsultationType
+    public function resolve(?bool $isUrgentConsultation): ConsultationType
     {
-        if(!$specialtyId) return ConsultationType::GeneralPractitioner;
-
-        if(!$specialty = DB::connection('main_sql')->table('specialties')->whereSpecialtyId($specialtyId)->first()) return ConsultationType::GeneralPractitioner;
-        
-        return in_array($specialty->specialty_name, ['gp', 'general practitioner', 'General Practitioner (GP)'], true)
-            ? ConsultationType::GeneralPractitioner
-            : ConsultationType::Specialist;
+        return $isUrgentConsultation === true
+            ? ConsultationType::Instant
+            : ConsultationType::Scheduled;
     }
 
     public function feature(AccountTypes $accountType, ConsultationType $type): Features
@@ -32,15 +26,15 @@ final class ConsultationTypeResolver
 
     public function baseFeature(ConsultationType $type): Features
     {
-        return $type === ConsultationType::GeneralPractitioner
-            ? Features::GP_CONSULTATIONS
-            : Features::SPECIALIST_CONSULTATIONS;
+        return $type === ConsultationType::Scheduled
+            ? Features::SCHEDULED_CONSULTATIONS
+            : Features::INSTANT_CONSULTATIONS;
     }
 
     public function perSeatFeature(ConsultationType $type): Features
     {
-        return $type === ConsultationType::GeneralPractitioner
-            ? Features::GP_CONSULTATIONS_PER_SEAT
-            : Features::SPECIALIST_CONSULTATIONS_PER_SEAT;
+        return $type === ConsultationType::Scheduled
+            ? Features::SCHEDULED_CONSULTATIONS_PER_SEAT
+            : Features::INSTANT_CONSULTATIONS_PER_SEAT;
     }
 }

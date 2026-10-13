@@ -133,9 +133,11 @@ export function EditCoverageRulesDialog({
 }) {
     const form = useForm({
         coverage_type: program.coverageType,
-        gp_limit_per_beneficiary: String(program.gpLimitPerBeneficiary),
-        specialist_limit_per_beneficiary: String(
-            program.specialistLimitPerBeneficiary,
+        scheduled_consultation_limit_per_beneficiary: String(
+            program.scheduledConsultationLimitPerBeneficiary,
+        ),
+        instant_consultation_limit_per_beneficiary: String(
+            program.instantConsultationLimitPerBeneficiary,
         ),
         daily_consultation_limit: String(program.dailyConsultationLimit),
         expiry_cadence: program.expiryCadence,
@@ -192,15 +194,21 @@ export function EditCoverageRulesDialog({
                 <div className="grid gap-4 sm:grid-cols-2">
                     <Field
                         label="Scheduled consultation limit / beneficiary"
-                        error={form.errors.gp_limit_per_beneficiary}
+                        error={
+                            form.errors
+                                .scheduled_consultation_limit_per_beneficiary
+                        }
                     >
                         <Input
                             type="number"
                             min="1"
-                            value={form.data.gp_limit_per_beneficiary}
+                            value={
+                                form.data
+                                    .scheduled_consultation_limit_per_beneficiary
+                            }
                             onChange={(event) =>
                                 form.setData(
-                                    'gp_limit_per_beneficiary',
+                                    'scheduled_consultation_limit_per_beneficiary',
                                     event.target.value,
                                 )
                             }
@@ -208,15 +216,21 @@ export function EditCoverageRulesDialog({
                     </Field>
                     <Field
                         label="Instant consultation limit / beneficiary"
-                        error={form.errors.specialist_limit_per_beneficiary}
+                        error={
+                            form.errors
+                                .instant_consultation_limit_per_beneficiary
+                        }
                     >
                         <Input
                             type="number"
                             min="1"
-                            value={form.data.specialist_limit_per_beneficiary}
+                            value={
+                                form.data
+                                    .instant_consultation_limit_per_beneficiary
+                            }
                             onChange={(event) =>
                                 form.setData(
-                                    'specialist_limit_per_beneficiary',
+                                    'instant_consultation_limit_per_beneficiary',
                                     event.target.value,
                                 )
                             }

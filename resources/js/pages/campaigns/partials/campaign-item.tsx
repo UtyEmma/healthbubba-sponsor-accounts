@@ -38,13 +38,13 @@ export default function CampaignItem({ campaign }: { campaign: Campaign }) {
         .join(', ');
     const campaignDate = formatDateRange(campaign);
     const ended = campaign.status === 'COMPLETED';
-    const gp = financial.consultations.gp;
-    const specialist = financial.consultations.specialist;
+    const scheduled = financial.consultations.scheduled;
+    const instant = financial.consultations.instant;
     const remainingMessage = [
-        gp.units > 0 &&
-            `${gp.remaining.toLocaleString('en-NG')} scheduled consultations`,
-        specialist.units > 0 &&
-            `${specialist.remaining.toLocaleString('en-NG')} instant consultations`,
+        scheduled.units > 0 &&
+            `${scheduled.remaining.toLocaleString('en-NG')} scheduled consultations`,
+        instant.units > 0 &&
+            `${instant.remaining.toLocaleString('en-NG')} instant consultations`,
     ]
         .filter(Boolean)
         .join(' and ');
@@ -116,16 +116,16 @@ export default function CampaignItem({ campaign }: { campaign: Campaign }) {
                 </div>
 
                 <div className="mt-4 grid gap-5 border-t pt-4 lg:grid-cols-2">
-                    {gp.units > 0 && (
+                    {scheduled.units > 0 && (
                         <ConsultationProgress
                             label="Scheduled consultations"
-                            metric={gp}
+                            metric={scheduled}
                         />
                     )}
-                    {specialist.units > 0 && (
+                    {instant.units > 0 && (
                         <ConsultationProgress
                             label="Instant consultations"
-                            metric={specialist}
+                            metric={instant}
                         />
                     )}
                     {number(financial.budgets.medication.allocated) > 0 && (

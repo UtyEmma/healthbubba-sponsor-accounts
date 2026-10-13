@@ -44,7 +44,7 @@ final readonly class ReserveAppointmentConsultationAction
             );
             $this->assignSponsor($appointment, $data->sponsorId);
 
-            return $existing->refresh();
+            return $this->withAppointmentDoctor($existing->refresh(), $appointment);
         }
 
         // if ($appointment->status !== AppointmentStatus::Upcoming) {
@@ -87,13 +87,20 @@ final readonly class ReserveAppointmentConsultationAction
             throw $exception;
         }
 
-        return $eligibility->reservation->refresh();
+        return $this->withAppointmentDoctor($eligibility->reservation->refresh(), $appointment);
     }
 
     private function appointment(int $appointmentId): Appointment
     {
         $appointment = Appointment::query()
-            ->select(['appointment_id', 'patient_id', 'sponsor_id', 'status'])
+            ->select([
+                'appointment_id',
+                'patient_id',
+                'doctor_id',
+                'sponsor_id',
+                'status',
+                'is_urgent_consultation',
+            ])
             ->lockForUpdate()
             ->find($appointmentId);
 
@@ -163,6 +170,15 @@ final readonly class ReserveAppointmentConsultationAction
                 'sponsor_id' => 'This appointment is already assigned to another sponsor.',
             ]);
         }
+    }
+
+    private function withAppointmentDoctor(
+        Consultation $reservation,
+        Appointment $appointment,
+    ): Consultation {
+        $reservation->setAttribute('doctor_id', $appointment->doctor_id);
+
+        return $reservation;
     }
 
     private function unavailableMessage(?string $reason): string

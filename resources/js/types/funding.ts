@@ -23,8 +23,8 @@ export interface InstitutionalFundingProgram {
     statusLabel: string;
     coverageType: InstitutionalCoverageType;
     coverageTypeLabel: string;
-    gpLimitPerBeneficiary: number;
-    specialistLimitPerBeneficiary: number;
+    scheduledConsultationLimitPerBeneficiary: number;
+    instantConsultationLimitPerBeneficiary: number;
     dailyConsultationLimit: number;
     expiryCadence: InstitutionalCoverageExpiry;
     expiryCadenceLabel: string;

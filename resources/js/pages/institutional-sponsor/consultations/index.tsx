@@ -132,7 +132,7 @@ export default function InstitutionalConsultationsPage({
                                                             variant="secondary"
                                                             className={
                                                                 consultation.type ===
-                                                                'specialist'
+                                                                'instant'
                                                                     ? 'bg-blue-50 text-blue-700'
                                                                     : undefined
                                                             }

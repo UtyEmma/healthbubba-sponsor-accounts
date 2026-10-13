@@ -15,8 +15,8 @@ final class CampaignCreationConfigurationResource extends JsonResource
         return [
             'currency' => $this->currency,
             'walletBalance' => $this->walletBalance,
-            'gpUnitFee' => $this->gpUnitFee,
-            'specialistUnitFee' => $this->specialistUnitFee,
+            'scheduledUnitFee' => $this->scheduledUnitFee,
+            'instantUnitFee' => $this->instantUnitFee,
             'boothSetupUnitFee' => $this->boothSetupUnitFee,
             'boothMonthlyUnitFee' => $this->boothMonthlyUnitFee,
         ];

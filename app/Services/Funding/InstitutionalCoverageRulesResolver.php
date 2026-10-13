@@ -20,8 +20,8 @@ final readonly class InstitutionalCoverageRulesResolver
 
         return new ResolvedInstitutionalCoverageRules(
             coverageType: $campaign->coverage_type_override ?? $program->coverage_type,
-            gpLimitPerBeneficiary: $campaign->gp_limit_per_beneficiary_override ?? $program->gp_limit_per_beneficiary,
-            specialistLimitPerBeneficiary: $campaign->specialist_limit_per_beneficiary_override ?? $program->specialist_limit_per_beneficiary,
+            scheduledConsultationLimitPerBeneficiary: $campaign->scheduled_consultation_limit_per_beneficiary_override ?? $program->scheduled_consultation_limit_per_beneficiary,
+            instantConsultationLimitPerBeneficiary: $campaign->instant_consultation_limit_per_beneficiary_override ?? $program->instant_consultation_limit_per_beneficiary,
             dailyConsultationLimit: $campaign->daily_consultation_limit_override ?? $program->daily_consultation_limit,
             expiryCadence: $campaign->coverage_expiry_override ?? $program->expiry_cadence,
             paymentPreference: $campaign->payment_preference_override ?? $program->payment_preference,
@@ -34,9 +34,9 @@ final readonly class InstitutionalCoverageRulesResolver
         ResolvedInstitutionalCoverageRules $rules,
         ConsultationType $type,
     ): int {
-        return $type === ConsultationType::GeneralPractitioner
-            ? $rules->gpLimitPerBeneficiary
-            : $rules->specialistLimitPerBeneficiary;
+        return $type === ConsultationType::Scheduled
+            ? $rules->scheduledConsultationLimitPerBeneficiary
+            : $rules->instantConsultationLimitPerBeneficiary;
     }
 
     /** @return array{CarbonImmutable, CarbonImmutable} */

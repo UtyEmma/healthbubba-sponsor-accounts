@@ -185,16 +185,16 @@ final readonly class InstitutionalDashboardQuery
 
     /**
      * @param  Collection<int, Campaign>  $campaigns
-     * @return array{gp: array{allocated: int, used: int, reserved: int, remaining: int}, specialist: array{allocated: int, used: int, reserved: int, remaining: int}}
+     * @return array{scheduled: array{allocated: int, used: int, reserved: int, remaining: int}, instant: array{allocated: int, used: int, reserved: int, remaining: int}}
      */
     private function consultationTotals(Collection $campaigns): array
     {
-        $totals = ['gp' => ['allocated' => 0, 'used' => 0, 'reserved' => 0, 'remaining' => 0], 'specialist' => ['allocated' => 0, 'used' => 0, 'reserved' => 0, 'remaining' => 0]];
+        $totals = ['scheduled' => ['allocated' => 0, 'used' => 0, 'reserved' => 0, 'remaining' => 0], 'instant' => ['allocated' => 0, 'used' => 0, 'reserved' => 0, 'remaining' => 0]];
 
         foreach ($campaigns->where('status', '!=', CampaignStatus::COMPLETED) as $campaign) {
             $metrics = $this->financial($campaign)['consultations'];
 
-            foreach (['gp', 'specialist'] as $type) {
+            foreach (['scheduled', 'instant'] as $type) {
                 $totals[$type]['allocated'] += (int) $metrics[$type]['units'];
                 $totals[$type]['used'] += (int) $metrics[$type]['confirmed'];
                 $totals[$type]['reserved'] += (int) $metrics[$type]['reserved'];
@@ -332,8 +332,8 @@ final readonly class InstitutionalDashboardQuery
                 'name' => $campaign->name,
                 'slug' => $campaign->slug,
                 'currency' => $campaign->currency,
-                'gp' => $financial['consultations']['gp'],
-                'specialist' => $financial['consultations']['specialist'],
+                'scheduled' => $financial['consultations']['scheduled'],
+                'instant' => $financial['consultations']['instant'],
                 'medication' => $financial['budgets']['medication'],
             ];
         })->values()->all());

@@ -51,8 +51,8 @@ final readonly class CampaignDetailQuery
             'configuration' => [
                 'currency' => $campaign->currency,
                 'walletBalance' => (string) $workspace->wallet->balance,
-                'gpUnitFee' => (string) config('campaigns.default_gp_fee'),
-                'specialistUnitFee' => (string) config('campaigns.default_specialist_fee'),
+                'scheduledUnitFee' => (string) config('campaigns.default_scheduled_consultation_fee'),
+                'instantUnitFee' => (string) config('campaigns.default_instant_consultation_fee'),
                 'boothSetupUnitFee' => (string) config('campaigns.booth_setup_fee'),
                 'boothMonthlyUnitFee' => (string) config('campaigns.booth_monthly_fee'),
             ],

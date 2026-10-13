@@ -118,16 +118,16 @@ export function AllocateMoreDialog({
     onOpenChange,
 }: DialogProps & { detail: CampaignDetail }) {
     const form = useForm({
-        gp_units: '0',
-        specialist_units: '0',
+        scheduled_units: '0',
+        instant_units: '0',
         medication_budget: '0',
         laboratory_budget: '0',
     });
     const total =
-        Number(form.data.gp_units || 0) *
-            Number(detail.configuration.gpUnitFee) +
-        Number(form.data.specialist_units || 0) *
-            Number(detail.configuration.specialistUnitFee) +
+        Number(form.data.scheduled_units || 0) *
+            Number(detail.configuration.scheduledUnitFee) +
+        Number(form.data.instant_units || 0) *
+            Number(detail.configuration.instantUnitFee) +
         Number((form.data.medication_budget || '0').replaceAll(',', '')) +
         Number((form.data.laboratory_budget || '0').replaceAll(',', ''));
     const after = Number(detail.configuration.walletBalance) - total;
@@ -166,13 +166,13 @@ export function AllocateMoreDialog({
                     [
                         [
                             'Scheduled consultations',
-                            'gp_units',
-                            detail.configuration.gpUnitFee,
+                            'scheduled_units',
+                            detail.configuration.scheduledUnitFee,
                         ],
                         [
                             'Instant consultations',
-                            'specialist_units',
-                            detail.configuration.specialistUnitFee,
+                            'instant_units',
+                            detail.configuration.instantUnitFee,
                         ],
                     ] as const
                 ).map(([label, field, price]) => (
@@ -270,7 +270,7 @@ export function RecordUsageDialog({
     onOpenChange,
 }: DialogProps & { beneficiaries: WorkspaceBeneficiary[] }) {
     const form = useForm({
-        benefit: 'gp',
+        benefit: 'scheduled',
         beneficiary_id: '',
         quantity: '1',
         amount: '',
@@ -312,8 +312,10 @@ export function RecordUsageDialog({
                             form.setData('benefit', event.target.value)
                         }
                     >
-                        <option value="gp">Scheduled consultation</option>
-                        <option value="specialist">Instant consultation</option>
+                        <option value="scheduled">
+                            Scheduled consultation
+                        </option>
+                        <option value="instant">Instant consultation</option>
                         <option value="medication">Medication</option>
                         <option value="laboratory">Laboratory</option>
                     </Select>

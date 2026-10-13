@@ -343,24 +343,24 @@ function AllocationTab({
     const rows = [
         {
             label: 'Scheduled consultations',
-            note: `${money(financial.consultations.gp.unitFee)} each`,
-            allocated: financial.consultations.gp.units,
-            used: financial.consultations.gp.confirmed,
-            remaining: financial.consultations.gp.remaining,
+            note: `${money(financial.consultations.scheduled.unitFee)} each`,
+            allocated: financial.consultations.scheduled.units,
+            used: financial.consultations.scheduled.confirmed,
+            remaining: financial.consultations.scheduled.remaining,
             value: money(
-                financial.consultations.gp.remaining *
-                    Number(financial.consultations.gp.unitFee),
+                financial.consultations.scheduled.remaining *
+                    Number(financial.consultations.scheduled.unitFee),
             ),
         },
         {
             label: 'Instant consultations',
-            note: `${money(financial.consultations.specialist.unitFee)} each`,
-            allocated: financial.consultations.specialist.units,
-            used: financial.consultations.specialist.confirmed,
-            remaining: financial.consultations.specialist.remaining,
+            note: `${money(financial.consultations.instant.unitFee)} each`,
+            allocated: financial.consultations.instant.units,
+            used: financial.consultations.instant.confirmed,
+            remaining: financial.consultations.instant.remaining,
             value: money(
-                financial.consultations.specialist.remaining *
-                    Number(financial.consultations.specialist.unitFee),
+                financial.consultations.instant.remaining *
+                    Number(financial.consultations.instant.unitFee),
             ),
         },
         {
@@ -435,15 +435,15 @@ function AllocationTab({
             <div className="grid gap-3 sm:grid-cols-2">
                 <ProgressCard
                     label="Scheduled consultations"
-                    text={`${financial.consultations.gp.remaining} / ${financial.consultations.gp.units} left`}
-                    remaining={financial.consultations.gp.remaining}
-                    allocated={financial.consultations.gp.units}
+                    text={`${financial.consultations.scheduled.remaining} / ${financial.consultations.scheduled.units} left`}
+                    remaining={financial.consultations.scheduled.remaining}
+                    allocated={financial.consultations.scheduled.units}
                 />
                 <ProgressCard
                     label="Instant consultations"
-                    text={`${financial.consultations.specialist.remaining} / ${financial.consultations.specialist.units} left`}
-                    remaining={financial.consultations.specialist.remaining}
-                    allocated={financial.consultations.specialist.units}
+                    text={`${financial.consultations.instant.remaining} / ${financial.consultations.instant.units} left`}
+                    remaining={financial.consultations.instant.remaining}
+                    allocated={financial.consultations.instant.units}
                 />
                 <ProgressCard
                     label="Medication budget"

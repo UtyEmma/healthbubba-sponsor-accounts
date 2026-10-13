@@ -5,11 +5,11 @@ namespace App\Enums\Subscriptions;
 enum Features: string
 {
     case ON_DEMAND_CONSULTATIONS = 'on-demand-consultations';
-    case SCHEDULED_APPOINTMENTS = 'scheduled-appointments';
+    case INSTANT_CONSULTATION_ACCESS = 'instant-consultation-access';
     case BENEFICIARIES_INCLUDED = 'beneficiaries-included';
     case MAXIMUM_BENEFICIARIES = 'maximum-beneficiaries';
-    case GP_CONSULTATIONS = 'gp-consultations';
-    case SPECIALIST_CONSULTATIONS = 'specialist-consultations';
+    case SCHEDULED_CONSULTATIONS = 'scheduled-consultations';
+    case INSTANT_CONSULTATIONS = 'instant-consultations';
     case SHARED_CONSULTATION_POOL = 'shared-consultation-pool';
     case ADDITIONAL_BENEFICIARIES = 'additional-beneficiaries';
     case FOLLOW_UP_TRACKING = 'follow-up-tracking';
@@ -17,8 +17,8 @@ enum Features: string
     case DEDICATED_COORDINATOR = 'dedicated-coordinator';
     case CHRONIC_DISEASE_MONITORING = 'chronic-disease-monitoring';
     case CONCIERGE_DOCTOR_HOME_VISIT = 'concierge-doctor-home-visit';
-    case GP_CONSULTATIONS_PER_SEAT = 'gp-consultations-per-seat';
-    case SPECIALIST_CONSULTATIONS_PER_SEAT = 'specialist-consultations-per-seat';
+    case SCHEDULED_CONSULTATIONS_PER_SEAT = 'scheduled-consultations-per-seat';
+    case INSTANT_CONSULTATIONS_PER_SEAT = 'instant-consultations-per-seat';
     case EMPLOYEE_SEAT_MANAGEMENT = 'employee-seat-management';
     case BULK_HR_UPLOAD_AND_LIST_EXPORT = 'bulk-hr-upload-and-list-export';
     case ACTIVITY_AND_COVERAGE_LOGS = 'activity-and-coverage-logs';
@@ -35,11 +35,11 @@ enum Features: string
     {
         return match ($this) {
             self::ON_DEMAND_CONSULTATIONS => 'On-Demand Consultations',
-            self::SCHEDULED_APPOINTMENTS => 'Instant Consultations',
+            self::INSTANT_CONSULTATION_ACCESS => 'Instant Consultation Access',
             self::BENEFICIARIES_INCLUDED => 'Included Beneficiaries',
             self::MAXIMUM_BENEFICIARIES => 'Maximum Beneficiaries',
-            self::GP_CONSULTATIONS => 'Scheduled Consultations',
-            self::SPECIALIST_CONSULTATIONS => 'Instant Consultations',
+            self::SCHEDULED_CONSULTATIONS => 'Scheduled Consultations',
+            self::INSTANT_CONSULTATIONS => 'Instant Consultations',
             self::SHARED_CONSULTATION_POOL => 'Shared Consultation Pool',
             self::ADDITIONAL_BENEFICIARIES => 'Additional Beneficiaries',
             self::FOLLOW_UP_TRACKING => 'Follow-Up Tracking',
@@ -47,8 +47,8 @@ enum Features: string
             self::DEDICATED_COORDINATOR => 'Dedicated Care Coordinator',
             self::CHRONIC_DISEASE_MONITORING => 'Chronic Care Support',
             self::CONCIERGE_DOCTOR_HOME_VISIT => 'Optional Concierge Doctor Home Visit — ₦50,000/visit',
-            self::GP_CONSULTATIONS_PER_SEAT => 'Scheduled Consultations per seat',
-            self::SPECIALIST_CONSULTATIONS_PER_SEAT => 'Instant Consultations per seat',
+            self::SCHEDULED_CONSULTATIONS_PER_SEAT => 'Scheduled Consultations per seat',
+            self::INSTANT_CONSULTATIONS_PER_SEAT => 'Instant Consultations per seat',
             self::EMPLOYEE_SEAT_MANAGEMENT => 'Employee Seat Management',
             self::BULK_HR_UPLOAD_AND_LIST_EXPORT => 'Bulk HR Upload and List Export',
             self::ACTIVITY_AND_COVERAGE_LOGS => 'Activity and Coverage Logs',

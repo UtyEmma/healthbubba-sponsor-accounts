@@ -13,8 +13,8 @@ final readonly class CampaignConsultationSummaryData
         public array $allocations,
         public string $currency,
         public string $walletBalance,
-        public string $gpSpent,
-        public string $specialistSpent,
+        public string $scheduledSpent,
+        public string $instantSpent,
         public string $totalSpent,
     ) {}
 }

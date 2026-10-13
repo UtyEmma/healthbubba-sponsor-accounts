@@ -75,13 +75,13 @@ final class CampaignMetricsQuery
         Collection $usages,
         Collection $consultations,
     ): array {
-        $gp = $this->consultationMetrics($campaign, ConsultationType::GeneralPractitioner, $quotas, $usages, $consultations);
-        $specialist = $this->consultationMetrics($campaign, ConsultationType::Specialist, $quotas, $usages, $consultations);
+        $scheduled = $this->consultationMetrics($campaign, ConsultationType::Scheduled, $quotas, $usages, $consultations);
+        $instant = $this->consultationMetrics($campaign, ConsultationType::Instant, $quotas, $usages, $consultations);
         $medication = $this->budgetMetrics($campaign, CampaignBudgetCategory::Medication, $usages);
         $laboratory = $this->budgetMetrics($campaign, CampaignBudgetCategory::Laboratory, $usages);
-        $allocatedMinor = $gp['allocated_minor'] + $specialist['allocated_minor']
+        $allocatedMinor = $scheduled['allocated_minor'] + $instant['allocated_minor']
             + $medication['allocated_minor'] + $laboratory['allocated_minor'];
-        $utilizedMinor = $gp['utilized_minor'] + $specialist['utilized_minor']
+        $utilizedMinor = $scheduled['utilized_minor'] + $instant['utilized_minor']
             + $medication['used_minor'] + $laboratory['used_minor'];
 
         return [
@@ -94,21 +94,21 @@ final class CampaignMetricsQuery
                 ? 0
                 : (int) round(($utilizedMinor / $allocatedMinor) * 100),
             'consultations' => [
-                'gp' => [
-                    'units' => $gp['units'],
-                    'confirmed' => $gp['confirmed'],
-                    'reserved' => $gp['reserved'],
-                    'remaining' => $gp['remaining'],
-                    'unitFee' => $gp['unitFee'],
-                    'allocated' => $gp['allocated'],
+                'scheduled' => [
+                    'units' => $scheduled['units'],
+                    'confirmed' => $scheduled['confirmed'],
+                    'reserved' => $scheduled['reserved'],
+                    'remaining' => $scheduled['remaining'],
+                    'unitFee' => $scheduled['unitFee'],
+                    'allocated' => $scheduled['allocated'],
                 ],
-                'specialist' => [
-                    'units' => $specialist['units'],
-                    'confirmed' => $specialist['confirmed'],
-                    'reserved' => $specialist['reserved'],
-                    'remaining' => $specialist['remaining'],
-                    'unitFee' => $specialist['unitFee'],
-                    'allocated' => $specialist['allocated'],
+                'instant' => [
+                    'units' => $instant['units'],
+                    'confirmed' => $instant['confirmed'],
+                    'reserved' => $instant['reserved'],
+                    'remaining' => $instant['remaining'],
+                    'unitFee' => $instant['unitFee'],
+                    'allocated' => $instant['allocated'],
                 ],
             ],
             'budgets' => [

@@ -603,33 +603,34 @@ function ConsultationAllocation({
             <CardContent className="space-y-5 pt-0">
                 <MetricProgress
                     label="Scheduled consultations"
-                    value={`${consultations.gp.remaining} / ${consultations.gp.allocated} left`}
+                    value={`${consultations.scheduled.remaining} / ${consultations.scheduled.allocated} left`}
                     progress={usedPercent(
-                        consultations.gp.used + consultations.gp.reserved,
-                        consultations.gp.allocated,
+                        consultations.scheduled.used +
+                            consultations.scheduled.reserved,
+                        consultations.scheduled.allocated,
                     )}
                 />
                 <MetricProgress
                     label="Instant consultations"
-                    value={`${consultations.specialist.remaining} / ${consultations.specialist.allocated} left`}
+                    value={`${consultations.instant.remaining} / ${consultations.instant.allocated} left`}
                     progress={usedPercent(
-                        consultations.specialist.used +
-                            consultations.specialist.reserved,
-                        consultations.specialist.allocated,
+                        consultations.instant.used +
+                            consultations.instant.reserved,
+                        consultations.instant.allocated,
                     )}
                 />
                 <div className="overflow-hidden rounded-xl border text-sm">
                     <InfoRow
                         label="Allocated"
-                        value={`${consultations.gp.allocated} scheduled consultations`}
+                        value={`${consultations.scheduled.allocated} scheduled consultations`}
                     />
                     <InfoRow
                         label="Used"
-                        value={String(consultations.gp.used)}
+                        value={String(consultations.scheduled.used)}
                     />
                     <InfoRow
                         label="Remaining"
-                        value={String(consultations.gp.remaining)}
+                        value={String(consultations.scheduled.remaining)}
                         success
                     />
                 </div>
@@ -673,19 +674,19 @@ function RemainingCampaignCard({
             <div className="mt-4 space-y-4">
                 <MetricProgress
                     label="Scheduled consultations"
-                    value={`${campaign.gp.remaining} of ${campaign.gp.units} left`}
+                    value={`${campaign.scheduled.remaining} of ${campaign.scheduled.units} left`}
                     progress={usedPercent(
-                        campaign.gp.confirmed + campaign.gp.reserved,
-                        campaign.gp.units,
+                        campaign.scheduled.confirmed +
+                            campaign.scheduled.reserved,
+                        campaign.scheduled.units,
                     )}
                 />
                 <MetricProgress
                     label="Instant consultations"
-                    value={`${campaign.specialist.remaining} of ${campaign.specialist.units} left`}
+                    value={`${campaign.instant.remaining} of ${campaign.instant.units} left`}
                     progress={usedPercent(
-                        campaign.specialist.confirmed +
-                            campaign.specialist.reserved,
-                        campaign.specialist.units,
+                        campaign.instant.confirmed + campaign.instant.reserved,
+                        campaign.instant.units,
                     )}
                 />
                 <MetricProgress

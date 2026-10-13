@@ -34,8 +34,8 @@ use Illuminate\Support\Str;
  * @property CampaignEnrollmentMethod|null $enrollment_method
  * @property int|null $estimated_beneficiaries
  * @property bool $booth_required
- * @property string|null $gp_fee
- * @property string|null $specialist_fee
+ * @property string|null $scheduled_consultation_fee
+ * @property string|null $instant_consultation_fee
  * @property string $currency
  * @property string $medication_budget
  * @property string $laboratory_budget
@@ -44,8 +44,8 @@ use Illuminate\Support\Str;
  * @property string $returned_amount
  * @property CampaignStatus $status
  * @property InstitutionalCoverageType|null $coverage_type_override
- * @property int|null $gp_limit_per_beneficiary_override
- * @property int|null $specialist_limit_per_beneficiary_override
+ * @property int|null $scheduled_consultation_limit_per_beneficiary_override
+ * @property int|null $instant_consultation_limit_per_beneficiary_override
  * @property int|null $daily_consultation_limit_override
  * @property InstitutionalCoverageExpiry|null $coverage_expiry_override
  * @property InstitutionalPaymentPreference|null $payment_preference_override
@@ -102,8 +102,8 @@ final class Campaign extends Model
         'estimated_beneficiaries',
         'beneficiary_limit',
         'booth_required',
-        'gp_fee',
-        'specialist_fee',
+        'scheduled_consultation_fee',
+        'instant_consultation_fee',
         'currency',
         'medication_budget',
         'laboratory_budget',
@@ -127,8 +127,8 @@ final class Campaign extends Model
         'end_date',
         'status',
         'coverage_type_override',
-        'gp_limit_per_beneficiary_override',
-        'specialist_limit_per_beneficiary_override',
+        'scheduled_consultation_limit_per_beneficiary_override',
+        'instant_consultation_limit_per_beneficiary_override',
         'daily_consultation_limit_override',
         'coverage_expiry_override',
         'payment_preference_override',
@@ -260,13 +260,13 @@ final class Campaign extends Model
             'enrollment_method' => CampaignEnrollmentMethod::class,
             'status' => CampaignStatus::class,
             'coverage_type_override' => InstitutionalCoverageType::class,
-            'gp_limit_per_beneficiary_override' => 'integer',
-            'specialist_limit_per_beneficiary_override' => 'integer',
+            'scheduled_consultation_limit_per_beneficiary_override' => 'integer',
+            'instant_consultation_limit_per_beneficiary_override' => 'integer',
             'daily_consultation_limit_override' => 'integer',
             'coverage_expiry_override' => InstitutionalCoverageExpiry::class,
             'payment_preference_override' => InstitutionalPaymentPreference::class,
-            'gp_fee' => 'decimal:2',
-            'specialist_fee' => 'decimal:2',
+            'scheduled_consultation_fee' => 'decimal:2',
+            'instant_consultation_fee' => 'decimal:2',
             'medication_budget' => 'decimal:2',
             'laboratory_budget' => 'decimal:2',
             'returned_amount' => 'decimal:2',

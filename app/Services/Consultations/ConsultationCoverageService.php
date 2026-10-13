@@ -128,9 +128,9 @@ final readonly class ConsultationCoverageService
             if ($scaling->available
                 && $scaling->includedCapacity !== null
                 && $scaling->currentCapacity !== null) {
-                $perCapacity = $type === ConsultationType::GeneralPractitioner
-                    ? $scaling->gpPerCapacity
-                    : $scaling->specialistPerCapacity;
+                $perCapacity = $type === ConsultationType::Scheduled
+                    ? $scaling->scheduledPerCapacity
+                    : $scaling->instantPerCapacity;
                 $limit += max(0, $scaling->currentCapacity - $scaling->includedCapacity)
                     * ($perCapacity ?? 0);
             }
@@ -292,21 +292,21 @@ final readonly class ConsultationCoverageService
             );
         }
 
-        $gpPerSeat = $this->featureAssignment(
+        $scheduledPerSeat = $this->featureAssignment(
             $subscription,
-            $this->types->perSeatFeature(ConsultationType::GeneralPractitioner),
+            $this->types->perSeatFeature(ConsultationType::Scheduled),
         );
-        $specialistPerSeat = $this->featureAssignment(
+        $instantPerSeat = $this->featureAssignment(
             $subscription,
-            $this->types->perSeatFeature(ConsultationType::Specialist),
+            $this->types->perSeatFeature(ConsultationType::Instant),
         );
 
-        if (($gpPerSeat instanceof FeaturePlan
-                && (! $this->hasValidResetCadence($gpPerSeat)
-                    || $this->nonNegativeInteger($gpPerSeat) === null))
-            || ($specialistPerSeat instanceof FeaturePlan
-                && (! $this->hasValidResetCadence($specialistPerSeat)
-                    || $this->nonNegativeInteger($specialistPerSeat) === null))) {
+        if (($scheduledPerSeat instanceof FeaturePlan
+                && (! $this->hasValidResetCadence($scheduledPerSeat)
+                    || $this->nonNegativeInteger($scheduledPerSeat) === null))
+            || ($instantPerSeat instanceof FeaturePlan
+                && (! $this->hasValidResetCadence($instantPerSeat)
+                    || $this->nonNegativeInteger($instantPerSeat) === null))) {
             return $this->unavailableScaling(
                 capacityLabel: $capacityLabel,
                 capacityUnit: $capacityUnit,
@@ -318,11 +318,11 @@ final readonly class ConsultationCoverageService
             );
         }
 
-        $gpPerCapacity = $gpPerSeat instanceof FeaturePlan
-            ? $this->nonNegativeInteger($gpPerSeat) ?? 0
+        $scheduledPerCapacity = $scheduledPerSeat instanceof FeaturePlan
+            ? $this->nonNegativeInteger($scheduledPerSeat) ?? 0
             : 0;
-        $specialistPerCapacity = $specialistPerSeat instanceof FeaturePlan
-            ? $this->nonNegativeInteger($specialistPerSeat) ?? 0
+        $instantPerCapacity = $instantPerSeat instanceof FeaturePlan
+            ? $this->nonNegativeInteger($instantPerSeat) ?? 0
             : 0;
 
         if (! $capacity->purchasesEnabled) {
@@ -337,25 +337,25 @@ final readonly class ConsultationCoverageService
             );
         }
 
-        $gpBase = null;
-        $specialistBase = null;
+        $scheduledBase = null;
+        $instantBase = null;
 
         if ($workspace->type === AccountTypes::INDIVIDUAL) {
-            $gpBaseAssignment = $this->featureAssignment(
+            $scheduledBaseAssignment = $this->featureAssignment(
                 $subscription,
-                $this->types->baseFeature(ConsultationType::GeneralPractitioner),
+                $this->types->baseFeature(ConsultationType::Scheduled),
             );
-            $specialistBaseAssignment = $this->featureAssignment(
+            $instantBaseAssignment = $this->featureAssignment(
                 $subscription,
-                $this->types->baseFeature(ConsultationType::Specialist),
+                $this->types->baseFeature(ConsultationType::Instant),
             );
 
-            if (($gpBaseAssignment instanceof FeaturePlan
-                    && (! $this->hasValidResetCadence($gpBaseAssignment)
-                        || $this->nonNegativeInteger($gpBaseAssignment) === null))
-                || ($specialistBaseAssignment instanceof FeaturePlan
-                    && (! $this->hasValidResetCadence($specialistBaseAssignment)
-                        || $this->nonNegativeInteger($specialistBaseAssignment) === null))) {
+            if (($scheduledBaseAssignment instanceof FeaturePlan
+                    && (! $this->hasValidResetCadence($scheduledBaseAssignment)
+                        || $this->nonNegativeInteger($scheduledBaseAssignment) === null))
+                || ($instantBaseAssignment instanceof FeaturePlan
+                    && (! $this->hasValidResetCadence($instantBaseAssignment)
+                        || $this->nonNegativeInteger($instantBaseAssignment) === null))) {
                 return $this->unavailableScaling(
                     capacityLabel: $capacityLabel,
                     capacityUnit: $capacityUnit,
@@ -367,12 +367,12 @@ final readonly class ConsultationCoverageService
                 );
             }
 
-            if (($gpBaseAssignment instanceof FeaturePlan
-                    && $gpPerSeat instanceof FeaturePlan
-                    && ! $this->hasMatchingCadence($gpBaseAssignment, $gpPerSeat))
-                || ($specialistBaseAssignment instanceof FeaturePlan
-                    && $specialistPerSeat instanceof FeaturePlan
-                    && ! $this->hasMatchingCadence($specialistBaseAssignment, $specialistPerSeat))) {
+            if (($scheduledBaseAssignment instanceof FeaturePlan
+                    && $scheduledPerSeat instanceof FeaturePlan
+                    && ! $this->hasMatchingCadence($scheduledBaseAssignment, $scheduledPerSeat))
+                || ($instantBaseAssignment instanceof FeaturePlan
+                    && $instantPerSeat instanceof FeaturePlan
+                    && ! $this->hasMatchingCadence($instantBaseAssignment, $instantPerSeat))) {
                 return $this->unavailableScaling(
                     capacityLabel: $capacityLabel,
                     capacityUnit: $capacityUnit,
@@ -384,18 +384,18 @@ final readonly class ConsultationCoverageService
                 );
             }
 
-            $gpBaseValue = $gpBaseAssignment instanceof FeaturePlan
-                ? $this->nonNegativeInteger($gpBaseAssignment)
+            $scheduledBaseValue = $scheduledBaseAssignment instanceof FeaturePlan
+                ? $this->nonNegativeInteger($scheduledBaseAssignment)
                 : null;
-            $specialistBaseValue = $specialistBaseAssignment instanceof FeaturePlan
-                ? $this->nonNegativeInteger($specialistBaseAssignment)
+            $instantBaseValue = $instantBaseAssignment instanceof FeaturePlan
+                ? $this->nonNegativeInteger($instantBaseAssignment)
                 : null;
 
-            $gpBase = $gpBaseValue === 0 ? null : $gpBaseValue;
-            $specialistBase = $specialistBaseValue === 0 ? null : $specialistBaseValue;
+            $scheduledBase = $scheduledBaseValue === 0 ? null : $scheduledBaseValue;
+            $instantBase = $instantBaseValue === 0 ? null : $instantBaseValue;
         } else {
-            $gpBase = $includedCapacity * $gpPerCapacity;
-            $specialistBase = $includedCapacity * $specialistPerCapacity;
+            $scheduledBase = $includedCapacity * $scheduledPerCapacity;
+            $instantBase = $includedCapacity * $instantPerCapacity;
         }
 
         $steps = [];
@@ -406,20 +406,20 @@ final readonly class ConsultationCoverageService
             $steps[] = new ConsultationScalingStep(
                 capacity: $projectedCapacity,
                 additionalCapacity: $additionalCapacity,
-                gp: $this->quotaBreakdown(
-                    $gpBase,
-                    $additionalCapacity * $gpPerCapacity,
+                scheduled: $this->quotaBreakdown(
+                    $scheduledBase,
+                    $additionalCapacity * $scheduledPerCapacity,
                 ),
-                specialist: $this->quotaBreakdown(
-                    $specialistBase,
-                    $additionalCapacity * $specialistPerCapacity,
+                instant: $this->quotaBreakdown(
+                    $instantBase,
+                    $additionalCapacity * $instantPerCapacity,
                 ),
             );
         }
 
         $additions = collect([
-            $gpPerCapacity > 0 ? "+{$gpPerCapacity} scheduled" : null,
-            $specialistPerCapacity > 0 ? "+{$specialistPerCapacity} instant" : null,
+            $scheduledPerCapacity > 0 ? "+{$scheduledPerCapacity} scheduled" : null,
+            $instantPerCapacity > 0 ? "+{$instantPerCapacity} instant" : null,
         ])->filter()->implode(' and ');
         $description = $workspace->type === AccountTypes::BUSINESS
             ? "Each extra employee seat adds {$additions} consultations to the workspace total; employee allowances remain separate."
@@ -434,8 +434,8 @@ final readonly class ConsultationCoverageService
             includedCapacity: $includedCapacity,
             currentCapacity: $currentCapacity,
             maximumCapacity: $maximumCapacity,
-            gpPerCapacity: $gpPerCapacity,
-            specialistPerCapacity: $specialistPerCapacity,
+            scheduledPerCapacity: $scheduledPerCapacity,
+            instantPerCapacity: $instantPerCapacity,
             description: $description,
             steps: $steps,
         );
@@ -459,8 +459,8 @@ final readonly class ConsultationCoverageService
             includedCapacity: $includedCapacity,
             currentCapacity: $currentCapacity,
             maximumCapacity: $maximumCapacity,
-            gpPerCapacity: null,
-            specialistPerCapacity: null,
+            scheduledPerCapacity: null,
+            instantPerCapacity: null,
             description: $reason,
             steps: [],
         );
@@ -545,7 +545,7 @@ final readonly class ConsultationCoverageService
         $ledgerAppointments = $ledgerAppointmentIds->isEmpty()
             ? new Collection
             : Appointment::query()
-                ->select(['appointment_id', 'patient_id', 'doctor_id', 'status'])
+                ->select(['appointment_id', 'patient_id', 'status', 'is_urgent_consultation'])
                 ->whereKey($ledgerAppointmentIds->all())
                 ->get()
                 ->keyBy('appointment_id');
@@ -573,7 +573,7 @@ final readonly class ConsultationCoverageService
             ->reject(static fn (Appointment $appointment): bool => $ledgerAppointmentIds->contains($appointment->getKey()));
 
         foreach ($legacyAppointments as $appointment) {
-            $appointmentType = $this->types->resolve($appointment->doctor?->provider_type);
+            $appointmentType = $this->types->resolve($appointment->is_urgent_consultation);
 
             if ($appointmentType !== $allocation->type) {
                 continue;
@@ -615,8 +615,13 @@ final readonly class ConsultationCoverageService
         ConsultationAllocation $allocation,
     ): Collection {
         $query = Appointment::query()
-            ->select(['appointment_id', 'patient_id', 'doctor_id', 'status', 'created_at'])
-            ->with(['doctor:id,first_name,last_name,provider_type'])
+            ->select([
+                'appointment_id',
+                'patient_id',
+                'status',
+                'is_urgent_consultation',
+                'created_at',
+            ])
             ->sponsoredBy($workspace)
             ->whereIn('status', [AppointmentStatus::Upcoming, AppointmentStatus::Completed])
             ->whereBetween('created_at', [$allocation->periodStart, $allocation->periodEnd]);

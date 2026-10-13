@@ -25,7 +25,7 @@ final class RecordCampaignUsageRequest extends ManageInstitutionalCampaignReques
                         ->where('relatable_id', $this->campaign()->getKey()),
                 ),
             ],
-            'quantity' => ['nullable', 'required_if:benefit,gp,specialist', 'integer', 'min:1', 'max:100000'],
+            'quantity' => ['nullable', 'required_if:benefit,scheduled,instant', 'integer', 'min:1', 'max:100000'],
             'amount' => ['nullable', 'required_if:benefit,medication,laboratory', 'numeric', 'min:0.01', 'max:100000000000'],
         ];
     }

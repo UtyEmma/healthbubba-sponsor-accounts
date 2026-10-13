@@ -28,14 +28,14 @@ final readonly class QuotaDescriptionFormatter
             Features::MAXIMUM_BENEFICIARIES => $plan->account_type === AccountTypes::INDIVIDUAL
                 ? "Sponsor + up to {$quota} beneficiaries"
                 : "Up to {$quota}",
-            Features::GP_CONSULTATIONS,
-            Features::SPECIALIST_CONSULTATIONS => $this->consultationAllowance(
+            Features::SCHEDULED_CONSULTATIONS,
+            Features::INSTANT_CONSULTATIONS => $this->consultationAllowance(
                 quota: $quota,
                 assignment: $assignment,
                 perEmployee: false,
             ),
-            Features::GP_CONSULTATIONS_PER_SEAT,
-            Features::SPECIALIST_CONSULTATIONS_PER_SEAT => $plan->account_type === AccountTypes::BUSINESS
+            Features::SCHEDULED_CONSULTATIONS_PER_SEAT,
+            Features::INSTANT_CONSULTATIONS_PER_SEAT => $plan->account_type === AccountTypes::BUSINESS
                 ? $this->consultationAllowance(
                     quota: $quota,
                     assignment: $assignment,

@@ -18,8 +18,8 @@ final readonly class UpdateInstitutionalCoverageRulesAction
 
             $program->update([
                 'coverage_type' => $data->coverageType,
-                'gp_limit_per_beneficiary' => $data->gpLimitPerBeneficiary,
-                'specialist_limit_per_beneficiary' => $data->specialistLimitPerBeneficiary,
+                'scheduled_consultation_limit_per_beneficiary' => $data->scheduledConsultationLimitPerBeneficiary,
+                'instant_consultation_limit_per_beneficiary' => $data->instantConsultationLimitPerBeneficiary,
                 'daily_consultation_limit' => $data->dailyConsultationLimit,
                 'expiry_cadence' => $data->expiryCadence,
                 'payment_preference' => $data->paymentPreference,

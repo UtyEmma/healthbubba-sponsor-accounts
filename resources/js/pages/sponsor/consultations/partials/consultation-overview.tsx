@@ -72,16 +72,16 @@ export function ConsultationOverview({
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {allocations.map(([users, gp, specialist]) => (
-                                <TableRow key={`${users}-${gp}`}>
+                            {allocations.map(([users, scheduled, instant]) => (
+                                <TableRow key={`${users}-${scheduled}`}>
                                     <TableCell className="h-12 pl-8 font-medium">
                                         {users}
                                     </TableCell>
                                     <TableCell className="h-12 text-muted-foreground">
-                                        {gp}
+                                        {scheduled}
                                     </TableCell>
                                     <TableCell className="h-12 text-muted-foreground">
-                                        {specialist}
+                                        {instant}
                                     </TableCell>
                                 </TableRow>
                             ))}

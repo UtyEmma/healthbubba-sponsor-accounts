@@ -179,8 +179,13 @@ final readonly class PlanChangeEligibilityService
         }
 
         $legacyAppointments = Appointment::query()
-            ->select(['appointment_id', 'patient_id', 'doctor_id', 'status', 'created_at'])
-            ->with('doctor:id,provider_type')
+            ->select([
+                'appointment_id',
+                'patient_id',
+                'status',
+                'is_urgent_consultation',
+                'created_at',
+            ])
             ->sponsoredBy($workspace)
             ->whereIn('status', [AppointmentStatus::Upcoming, AppointmentStatus::Completed])
             ->whereBetween('created_at', [$allocation->periodStart, $allocation->periodEnd])
@@ -188,7 +193,7 @@ final readonly class PlanChangeEligibilityService
             ->get();
 
         foreach ($legacyAppointments as $appointment) {
-            if ($this->consultationTypes->resolve($appointment->doctor?->provider_type) !== $allocation->type) {
+            if ($this->consultationTypes->resolve($appointment->is_urgent_consultation) !== $allocation->type) {
                 continue;
             }
 

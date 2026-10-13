@@ -16,8 +16,8 @@ final readonly class ConsultationAllocationScaling
         public ?int $includedCapacity,
         public ?int $currentCapacity,
         public ?int $maximumCapacity,
-        public ?int $gpPerCapacity,
-        public ?int $specialistPerCapacity,
+        public ?int $scheduledPerCapacity,
+        public ?int $instantPerCapacity,
         public string $description,
         public array $steps,
     ) {}
@@ -34,8 +34,8 @@ final readonly class ConsultationAllocationScaling
             'includedCapacity' => $this->includedCapacity,
             'currentCapacity' => $this->currentCapacity,
             'maximumCapacity' => $this->maximumCapacity,
-            'gpPerCapacity' => $this->gpPerCapacity,
-            'specialistPerCapacity' => $this->specialistPerCapacity,
+            'scheduledPerCapacity' => $this->scheduledPerCapacity,
+            'instantPerCapacity' => $this->instantPerCapacity,
             'description' => $this->description,
             'steps' => array_map(
                 static fn (ConsultationScalingStep $step): array => $step->toArray(),

@@ -8,7 +8,6 @@ import {
     Info,
     Landmark,
     Plus,
-    RotateCw,
     SlidersHorizontal,
     WalletCards,
 } from 'lucide-react';
@@ -49,7 +48,10 @@ export default function InstitutionalFundingPage({
     const { errors, flash } = usePage().props;
     const [fundOpen, setFundOpen] = useState(Boolean(errors.funding_payment));
     const [rulesOpen, setRulesOpen] = useState(
-        Boolean(errors.coverage_type || errors.gp_limit_per_beneficiary),
+        Boolean(
+            errors.coverage_type ||
+            errors.scheduled_consultation_limit_per_beneficiary,
+        ),
     );
     const [extendOpen, setExtendOpen] = useState(Boolean(errors.months));
 
@@ -433,11 +435,11 @@ function CoverageRules({
         ['Coverage type', funding.program.coverageTypeLabel],
         [
             'Scheduled consultation limit / beneficiary',
-            funding.program.gpLimitPerBeneficiary,
+            funding.program.scheduledConsultationLimitPerBeneficiary,
         ],
         [
             'Instant consultation limit / beneficiary',
-            funding.program.specialistLimitPerBeneficiary,
+            funding.program.instantConsultationLimitPerBeneficiary,
         ],
         ['Daily usage limit', funding.program.dailyConsultationLimit],
         ['Expiry', funding.program.expiryCadenceLabel],

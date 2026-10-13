@@ -19,7 +19,7 @@ it('places unavailable toggle and limited features at the bottom of their lists'
         1,
     );
     $scheduledConsultations = billingFeature(
-        Features::GP_CONSULTATIONS,
+        Features::SCHEDULED_CONSULTATIONS,
         FeatureType::Consumable,
         2,
         '9',
@@ -36,7 +36,7 @@ it('places unavailable toggle and limited features at the bottom of their lists'
         '1',
     );
     $instantConsultations = billingFeature(
-        Features::SPECIALIST_CONSULTATIONS,
+        Features::INSTANT_CONSULTATIONS,
         FeatureType::Consumable,
         5,
         '3',
@@ -86,8 +86,8 @@ it('places unavailable toggle and limited features at the bottom of their lists'
     $quotaDescriptions = array_column($mapped['quotas'], 'description');
 
     expect(array_column($mapped['quotas'], 'slug'))->toBe([
-        Features::GP_CONSULTATIONS->value,
-        Features::SPECIALIST_CONSULTATIONS->value,
+        Features::SCHEDULED_CONSULTATIONS->value,
+        Features::INSTANT_CONSULTATIONS->value,
         Features::MAXIMUM_BENEFICIARIES->value,
         Features::BENEFICIARIES_INCLUDED->value,
     ])->and(array_slice($quotaDescriptions, -2))->toBe([

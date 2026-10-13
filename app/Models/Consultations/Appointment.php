@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $sponsor_id
  * @property Carbon|null $date
  * @property string|null $time
+ * @property bool|null $is_urgent_consultation
  * @property AppointmentStatus $status
  * @property Carbon|null $created_at
  * @property-read Beneficiary|null $patient
@@ -61,6 +62,7 @@ final class Appointment extends Model
             'appointment_id' => 'integer',
             'patient_id' => 'integer',
             'doctor_id' => 'integer',
+            'is_urgent_consultation' => 'boolean',
             'date' => 'date',
             'status' => AppointmentStatus::class,
             'created_at' => 'datetime',

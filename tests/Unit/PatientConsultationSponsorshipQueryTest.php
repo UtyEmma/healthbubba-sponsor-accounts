@@ -216,14 +216,14 @@ it('returns active and inactive institutional campaign associations', function (
     ])->and($rows->get('paused-campaign'))->toMatchArray([
         'plan' => null,
         'is_active' => false,
-    ])->and(data_get($rows->get('active-campaign'), 'limits.gp.reason'))->toBe('no_funding_program')
-        ->and(data_get($rows->get('active-campaign'), 'limits.specialist.reason'))->toBe('no_funding_program')
-        ->and(data_get($rows->get('paused-campaign'), 'limits.gp.reason'))->toBe('no_active_campaign')
-        ->and(data_get($rows->get('paused-campaign'), 'limits.specialist.reason'))->toBe('no_active_campaign')
+    ])->and(data_get($rows->get('active-campaign'), 'limits.scheduled.reason'))->toBe('no_funding_program')
+        ->and(data_get($rows->get('active-campaign'), 'limits.instant.reason'))->toBe('no_funding_program')
+        ->and(data_get($rows->get('paused-campaign'), 'limits.scheduled.reason'))->toBe('no_active_campaign')
+        ->and(data_get($rows->get('paused-campaign'), 'limits.instant.reason'))->toBe('no_active_campaign')
         ->and(data_get($rows->get('upcoming-campaign'), 'is_active'))->toBeFalse()
-        ->and(data_get($rows->get('upcoming-campaign'), 'limits.gp.reason'))->toBe('no_active_campaign')
+        ->and(data_get($rows->get('upcoming-campaign'), 'limits.scheduled.reason'))->toBe('no_active_campaign')
         ->and(data_get($rows->get('ended-campaign'), 'is_active'))->toBeFalse()
-        ->and(data_get($rows->get('ended-campaign'), 'limits.gp.reason'))->toBe('no_active_campaign');
+        ->and(data_get($rows->get('ended-campaign'), 'limits.scheduled.reason'))->toBe('no_active_campaign');
 });
 
 function sponsorshipPatient(): Beneficiary

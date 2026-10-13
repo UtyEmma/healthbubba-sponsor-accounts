@@ -219,11 +219,12 @@ function CampaignReport({ rows }: { rows: InstitutionalCampaignReportRow[] }) {
                                             </p>
                                         </TableCell>
                                         <TableCell className="text-right text-muted-foreground">
-                                            {row.gpUsed} / {row.gpAllocated}
+                                            {row.scheduledUsed} /{' '}
+                                            {row.scheduledAllocated}
                                         </TableCell>
                                         <TableCell className="text-right text-muted-foreground">
-                                            {row.specialistUsed} /{' '}
-                                            {row.specialistAllocated}
+                                            {row.instantUsed} /{' '}
+                                            {row.instantAllocated}
                                         </TableCell>
                                         <TableCell className="text-right text-muted-foreground">
                                             {formatMoney(row.medicationUsed)} /{' '}

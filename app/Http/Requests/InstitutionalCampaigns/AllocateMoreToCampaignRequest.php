@@ -10,8 +10,8 @@ final class AllocateMoreToCampaignRequest extends ManageInstitutionalCampaignReq
     public function rules(): array
     {
         return [
-            'gp_units' => ['required', 'integer', 'min:0', 'max:1000000'],
-            'specialist_units' => ['required', 'integer', 'min:0', 'max:1000000'],
+            'scheduled_units' => ['required', 'integer', 'min:0', 'max:1000000'],
+            'instant_units' => ['required', 'integer', 'min:0', 'max:1000000'],
             'medication_budget' => ['required', 'numeric', 'min:0', 'max:100000000000'],
             'laboratory_budget' => ['required', 'numeric', 'min:0', 'max:100000000000'],
         ];
@@ -32,8 +32,8 @@ final class AllocateMoreToCampaignRequest extends ManageInstitutionalCampaignReq
             workspace: $this->workspace(),
             user: $this->onboardingUser(),
             campaign: $this->campaign(),
-            gpUnits: (int) $this->validated('gp_units'),
-            specialistUnits: (int) $this->validated('specialist_units'),
+            scheduledUnits: (int) $this->validated('scheduled_units'),
+            instantUnits: (int) $this->validated('instant_units'),
             medicationBudget: (string) $this->validated('medication_budget'),
             laboratoryBudget: (string) $this->validated('laboratory_budget'),
         );

@@ -18,7 +18,6 @@ use App\Models\Campaign;
 use App\Models\CampaignConsultationQuota;
 use App\Models\CampaignUsageEntry;
 use App\Models\Consultations\Consultation;
-use App\Models\Doctor;
 use App\Models\InstitutionalFundingProgram;
 use App\Models\Subscription;
 use App\Models\Workspace;
@@ -46,7 +45,7 @@ final readonly class ReserveConsultationAction
             return ConsultationEligibilityResult::unavailable('workspace_not_found');
         }
 
-        $type = $this->types->resolve($data->appointment->urgent_consultation_specialty_id ?? $data->appointment->specialty_id);
+        $type = $this->types->resolve($data->appointment->is_urgent_consultation);
 
         $patient = $workspace->type === AccountTypes::INDIVIDUAL
             ? Beneficiary::query()->select(['id', 'email'])->find($data->patientId)
@@ -207,8 +206,8 @@ final readonly class ReserveConsultationAction
                 ->where('beneficiary_id', $data->patientId)
                 ->select('id'))
             ->whereIn('benefit', [
-                CampaignUsageBenefit::GeneralPractitioner,
-                CampaignUsageBenefit::Specialist,
+                CampaignUsageBenefit::ScheduledConsultation,
+                CampaignUsageBenefit::InstantConsultation,
             ])
             ->whereBetween('occurred_at', [now()->startOfDay(), now()->endOfDay()])
             ->sum('quantity');
@@ -322,8 +321,8 @@ final readonly class ReserveConsultationAction
     private function campaignFeatureSlug(ConsultationType $type): string
     {
         return match ($type) {
-            ConsultationType::GeneralPractitioner => 'campaign-gp-consultations',
-            ConsultationType::Specialist => 'campaign-specialist-consultations',
+            ConsultationType::Scheduled => 'campaign-scheduled-consultations',
+            ConsultationType::Instant => 'campaign-instant-consultations',
         };
     }
 }

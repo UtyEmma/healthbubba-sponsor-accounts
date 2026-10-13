@@ -34,12 +34,12 @@ final readonly class AllocateMoreToCampaignAction
                 throw ValidationException::withMessages(['campaign' => 'An ended campaign cannot receive another allocation.']);
             }
 
-            $gpFee = Money::fromMajor($campaign->gp_fee ?? (string) config('campaigns.default_gp_fee'), $campaign->currency);
-            $specialistFee = Money::fromMajor($campaign->specialist_fee ?? (string) config('campaigns.default_specialist_fee'), $campaign->currency);
+            $scheduledFee = Money::fromMajor($campaign->scheduled_consultation_fee ?? (string) config('campaigns.default_scheduled_consultation_fee'), $campaign->currency);
+            $instantFee = Money::fromMajor($campaign->instant_consultation_fee ?? (string) config('campaigns.default_instant_consultation_fee'), $campaign->currency);
             $medication = Money::fromMajor($data->medicationBudget, $campaign->currency);
             $laboratory = Money::fromMajor($data->laboratoryBudget, $campaign->currency);
-            $total = $gpFee->multiply($data->gpUnits)
-                ->add($specialistFee->multiply($data->specialistUnits))
+            $total = $scheduledFee->multiply($data->scheduledUnits)
+                ->add($instantFee->multiply($data->instantUnits))
                 ->add($medication)
                 ->add($laboratory);
 
@@ -56,8 +56,8 @@ final readonly class AllocateMoreToCampaignAction
             }
 
             $reference = $this->references->generateCampaignAllocation();
-            $this->createQuota($campaign, $data, ConsultationType::GeneralPractitioner, $data->gpUnits, $gpFee);
-            $this->createQuota($campaign, $data, ConsultationType::Specialist, $data->specialistUnits, $specialistFee);
+            $this->createQuota($campaign, $data, ConsultationType::Scheduled, $data->scheduledUnits, $scheduledFee);
+            $this->createQuota($campaign, $data, ConsultationType::Instant, $data->instantUnits, $instantFee);
             $campaign->update([
                 'medication_budget' => Money::fromMajor($campaign->medication_budget, $campaign->currency)->add($medication)->toMajorAmount(),
                 'laboratory_budget' => Money::fromMajor($campaign->laboratory_budget, $campaign->currency)->add($laboratory)->toMajorAmount(),
@@ -79,8 +79,8 @@ final readonly class AllocateMoreToCampaignAction
                     'description' => "Additional healthcare allocation for {$campaign->name}",
                     'campaign_id' => $campaign->getKey(),
                     'created_by_user_id' => $data->user->getKey(),
-                    'gp_units' => $data->gpUnits,
-                    'specialist_units' => $data->specialistUnits,
+                    'scheduled_units' => $data->scheduledUnits,
+                    'instant_units' => $data->instantUnits,
                     'medication_budget' => $medication->toMajorAmount(),
                     'laboratory_budget' => $laboratory->toMajorAmount(),
                 ],

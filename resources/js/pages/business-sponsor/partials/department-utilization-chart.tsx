@@ -9,8 +9,8 @@ import type { ChartConfig } from '@/components/ui/chart';
 import type { DashboardDepartmentUtilization } from '@/types';
 
 const chartConfig = {
-    gp: { label: 'Scheduled consultations', color: '#2f66df' },
-    specialist: { label: 'Instant consultations', color: '#2ac17e' },
+    scheduled: { label: 'Scheduled consultations', color: '#2f66df' },
+    instant: { label: 'Instant consultations', color: '#2ac17e' },
 } satisfies ChartConfig;
 
 export function DepartmentUtilizationChart({
@@ -19,7 +19,7 @@ export function DepartmentUtilizationChart({
     data: DashboardDepartmentUtilization[];
 }) {
     const ticks = chartTicks(
-        Math.max(0, ...data.map((row) => row.gp + row.specialist)),
+        Math.max(0, ...data.map((row) => row.scheduled + row.instant)),
     );
 
     return (
@@ -52,15 +52,15 @@ export function DepartmentUtilizationChart({
                     content={<ChartTooltipContent />}
                 />
                 <Bar
-                    dataKey="gp"
+                    dataKey="scheduled"
                     stackId="consults"
-                    fill="var(--color-gp)"
+                    fill="var(--color-scheduled)"
                     maxBarSize={43}
                 />
                 <Bar
-                    dataKey="specialist"
+                    dataKey="instant"
                     stackId="consults"
-                    fill="var(--color-specialist)"
+                    fill="var(--color-instant)"
                     maxBarSize={43}
                 />
             </BarChart>

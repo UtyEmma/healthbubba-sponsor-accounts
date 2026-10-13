@@ -6,7 +6,7 @@ final readonly class DepartmentUtilization
 {
     public function __construct(
         public string $department,
-        public int $gp,
-        public int $specialist,
+        public int $scheduled,
+        public int $instant,
     ) {}
 }

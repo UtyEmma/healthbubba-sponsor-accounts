@@ -22,8 +22,8 @@ import { DepartmentUtilizationChart } from './partials/department-utilization-ch
 export default function BusinessDashboard({ dashboard }: DashboardPageProps) {
     const [announcement, setAnnouncement] = useState('');
     const { workspace } = usePage().props;
-    const gpAllocation = dashboard.coverage.allocations.find(
-        (allocation) => allocation.type === 'gp',
+    const scheduledAllocation = dashboard.coverage.allocations.find(
+        (allocation) => allocation.type === 'scheduled',
     );
 
     return (
@@ -65,9 +65,11 @@ export default function BusinessDashboard({ dashboard }: DashboardPageProps) {
                         <BusinessMetricCard
                             label="Scheduled consultations left"
                             value={
-                                gpAllocation?.remaining === null
+                                scheduledAllocation?.remaining === null
                                     ? '∞'
-                                    : String(gpAllocation?.remaining ?? 0)
+                                    : String(
+                                          scheduledAllocation?.remaining ?? 0,
+                                      )
                             }
                             icon={StethoscopeIcon}
                             tone="blue"

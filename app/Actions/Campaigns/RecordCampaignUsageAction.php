@@ -60,12 +60,12 @@ final readonly class RecordCampaignUsageAction
     /** @return array{0: int|null, 1: Money|null, 2: Money} */
     private function amounts(Campaign $campaign, RecordCampaignUsageData $data): array
     {
-        if (in_array($data->benefit, [CampaignUsageBenefit::GeneralPractitioner, CampaignUsageBenefit::Specialist], true)) {
+        if (in_array($data->benefit, [CampaignUsageBenefit::ScheduledConsultation, CampaignUsageBenefit::InstantConsultation], true)) {
             $quantity = $data->quantity ?? 0;
             $fee = Money::fromMajor(
-                $data->benefit === CampaignUsageBenefit::GeneralPractitioner
-                    ? ($campaign->gp_fee ?? '0.00')
-                    : ($campaign->specialist_fee ?? '0.00'),
+                $data->benefit === CampaignUsageBenefit::ScheduledConsultation
+                    ? ($campaign->scheduled_consultation_fee ?? '0.00')
+                    : ($campaign->instant_consultation_fee ?? '0.00'),
                 $campaign->currency,
             );
 
@@ -77,10 +77,10 @@ final readonly class RecordCampaignUsageAction
 
     private function ensureAvailable(Campaign $campaign, CampaignUsageBenefit $benefit, ?int $quantity, Money $total): void
     {
-        if (in_array($benefit, [CampaignUsageBenefit::GeneralPractitioner, CampaignUsageBenefit::Specialist], true)) {
-            $type = $benefit === CampaignUsageBenefit::GeneralPractitioner
-                ? ConsultationType::GeneralPractitioner
-                : ConsultationType::Specialist;
+        if (in_array($benefit, [CampaignUsageBenefit::ScheduledConsultation, CampaignUsageBenefit::InstantConsultation], true)) {
+            $type = $benefit === CampaignUsageBenefit::ScheduledConsultation
+                ? ConsultationType::Scheduled
+                : ConsultationType::Instant;
             $allocated = (int) $campaign->consultationQuotas()->where('consultation_type', $type)->sum('quantity');
             $used = (int) $campaign->usageEntries()->where('benefit', $benefit)->sum('quantity');
             $reserved = Consultation::query()

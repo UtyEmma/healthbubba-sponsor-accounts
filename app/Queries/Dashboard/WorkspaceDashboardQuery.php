@@ -199,20 +199,20 @@ final readonly class WorkspaceDashboardQuery
         foreach ($usage as $row) {
             $department = $departments->get($row->workspace_beneficiary_id);
             $department = is_string($department) && $department !== '' ? $department : 'Unassigned';
-            $totals[$department] ??= ['gp' => 0, 'specialist' => 0];
-            $key = $row->consultation_type === ConsultationType::GeneralPractitioner
-                ? 'gp'
-                : 'specialist';
+            $totals[$department] ??= ['scheduled' => 0, 'instant' => 0];
+            $key = $row->consultation_type === ConsultationType::Scheduled
+                ? 'scheduled'
+                : 'instant';
             $totals[$department][$key] += (int) $row->getAttribute('aggregate');
         }
 
         return array_values(collect($totals)
             ->map(static fn (array $values, string $department): DepartmentUtilization => new DepartmentUtilization(
                 department: $department,
-                gp: $values['gp'],
-                specialist: $values['specialist'],
+                scheduled: $values['scheduled'],
+                instant: $values['instant'],
             ))
-            ->sortByDesc(static fn (DepartmentUtilization $row): int => $row->gp + $row->specialist)
+            ->sortByDesc(static fn (DepartmentUtilization $row): int => $row->scheduled + $row->instant)
             ->take(5)
             ->values()
             ->all());
