@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\DTOs\Campaigns\CampaignCreationConfigurationData;
+use App\DTOs\Campaigns\CampaignPricingTierData;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -19,6 +20,17 @@ final class CampaignCreationConfigurationResource extends JsonResource
             'instantUnitFee' => $this->instantUnitFee,
             'boothSetupUnitFee' => $this->boothSetupUnitFee,
             'boothMonthlyUnitFee' => $this->boothMonthlyUnitFee,
+            'pricingTiers' => array_map(
+                static fn (CampaignPricingTierData $tier): array => [
+                    'id' => $tier->id,
+                    'minimumBeneficiaries' => $tier->minimumBeneficiaries,
+                    'maximumBeneficiaries' => $tier->maximumBeneficiaries,
+                    'beneficiaryUnitFee' => $tier->beneficiaryUnitFee,
+                    'monthlyServiceFee' => $tier->monthlyServiceFee,
+                    'currency' => $tier->currency,
+                ],
+                $this->pricingTiers,
+            ),
         ];
     }
 }

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Users\Schemas;
 use App\Enums\Account\Roles;
 use App\Enums\Account\Status;
 use App\Enums\AccountTypes;
+use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Grid;
@@ -32,6 +33,10 @@ class UserForm
                                     ->maxLength(255)
                                     ->unique(ignoreRecord: true)
                                     ->columnSpanFull(),
+                                TextInput::make('phone')
+                                    ->tel()
+                                    ->maxLength(30)
+                                    ->columnSpanFull(),
                             ])
                             ->columns(12)
                             ->columnSpan(['default' => 'full', 'xl' => 8]),
@@ -46,7 +51,7 @@ class UserForm
                                         ->all())
                                     ->nullable(),
                                 Select::make('role')
-                                    ->options(collect(Roles::cases())
+                                    ->options(collect(auth()->user()?->isSuperAdmin() === true ? Roles::cases() : [Roles::USER])
                                         ->mapWithKeys(fn (Roles $role): array => [
                                             $role->value => str($role->value)->headline()->toString(),
                                         ])
@@ -64,6 +69,15 @@ class UserForm
                             ])
                             ->columns(1)
                             ->columnSpan(['default' => 'full', 'xl' => 4]),
+                        Section::make('Verification')
+                            ->description('Verification states are changed from the user detail page and require confirmation.')
+                            ->schema([
+                                DateTimePicker::make('email_verified_at')->label('Email verified at')->disabled(),
+                                DateTimePicker::make('phone_verified_at')->label('Phone verified at')->disabled(),
+                                DateTimePicker::make('account_verified_at')->label('Account verified at')->disabled(),
+                            ])
+                            ->columns(3)
+                            ->columnSpanFull(),
                         Section::make('Security')
                             ->description('Set a password for new users or leave it blank to preserve the current password.')
                             ->schema([

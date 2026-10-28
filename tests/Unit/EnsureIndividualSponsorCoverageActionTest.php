@@ -2,6 +2,7 @@
 
 use App\Actions\WorkspaceBeneficiaries\EnsureIndividualSponsorCoverageAction;
 use App\Actions\WorkspaceBeneficiaries\InviteWorkspaceBeneficiaryAction;
+use App\Actions\WorkspaceBeneficiaries\SynchronizeIndividualSponsorCoverageAction;
 use App\Actions\WorkspaceBeneficiaries\UpdateWorkspaceBeneficiaryAccessAction;
 use App\Actions\Workspaces\CreateNewWorkspace;
 use App\DTOs\WorkspaceBeneficiaries\InviteWorkspaceBeneficiaryData;
@@ -10,15 +11,19 @@ use App\Enums\AccountTypes;
 use App\Enums\WorkspaceBeneficiaries\WorkspaceBeneficiaryAccessAction;
 use App\Enums\WorkspaceMembers\WorkspaceMemberRole;
 use App\Enums\WorkspaceMembers\WorkspaceMemberStatus;
+use App\Models\Plan;
+use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Models\WorkspaceBeneficiary;
 use App\Models\WorkspaceMember;
+use App\Services\WorkspaceBeneficiaries\WorkspaceBeneficiaryCapacityService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Revoltify\Subscriptionify\Enums\SubscriptionStatus;
 use Tests\TestCase;
 
 uses(TestCase::class);
@@ -113,6 +118,42 @@ beforeEach(function (): void {
         $table->unique(['workspace_id', 'primary_sponsor_user_id']);
         $table->unique(['workspace_id', 'relatable_type', 'relatable_id', 'email']);
     });
+    Schema::connection('mysql')->create('plans', function (Blueprint $table): void {
+        $table->id();
+        $table->string('name');
+        $table->string('slug')->unique();
+        $table->string('description')->nullable();
+        $table->string('account_type');
+        $table->decimal('price', 16, 2)->default(0);
+        $table->unsignedInteger('included_seats')->nullable();
+        $table->decimal('additional_seat_price', 16, 2)->nullable();
+        $table->boolean('allows_capacity_purchases')->default(false);
+        $table->boolean('covers_sponsor_by_default')->default(false);
+        $table->boolean('is_free')->default(false);
+        $table->boolean('is_active')->default(true);
+        $table->unsignedInteger('trial_days')->default(0);
+        $table->unsignedInteger('billing_period')->default(1);
+        $table->string('billing_interval')->default('month');
+        $table->unsignedInteger('grace_days')->default(0);
+        $table->unsignedInteger('sort_order')->default(0);
+        $table->timestamps();
+    });
+    Schema::connection('mysql')->create('subscriptions', function (Blueprint $table): void {
+        $table->id();
+        $table->string('subscribable_type');
+        $table->unsignedBigInteger('subscribable_id');
+        $table->foreignId('plan_id');
+        $table->string('status');
+        $table->unsignedInteger('capacity_count')->default(1);
+        $table->boolean('auto_renew')->default(false);
+        $table->unsignedInteger('renewal_attempts')->default(0);
+        $table->string('funding_source')->default('customer_paid');
+        $table->boolean('complimentary_renews')->default(false);
+        $table->timestamp('starts_at');
+        $table->timestamp('ends_at')->nullable();
+        $table->timestamp('trial_ends_at')->nullable();
+        $table->timestamps();
+    });
     Schema::connection('main_sql')->create('users', function (Blueprint $table): void {
         $table->id();
         $table->string('email')->nullable();
@@ -158,6 +199,16 @@ it('does not count primary sponsor coverage as dependant capacity', function ():
         ->and($workspace->beneficiaryEnrollments()->count())->toBe(2);
 });
 
+it('normalizes an explicitly added owner out of target plan capacity when sponsor coverage is enabled', function (): void {
+    [, $workspace] = individualWorkspaceOwner();
+    dependantCoverage($workspace, email: 'owner@example.com');
+    dependantCoverage($workspace, email: 'dependant@example.com');
+    $capacity = app(WorkspaceBeneficiaryCapacityService::class);
+
+    expect($capacity->usedForPlan($workspace, individualPlan(false)))->toBe(2)
+        ->and($capacity->usedForPlan($workspace, individualPlan(true)))->toBe(1);
+});
+
 it('does not create primary sponsor coverage for business workspaces', function (): void {
     $owner = localUser('business@example.com');
     $workspace = localWorkspace(AccountTypes::BUSINESS);
@@ -169,7 +220,7 @@ it('does not create primary sponsor coverage for business workspaces', function 
         ->and($workspace->beneficiaryEnrollments()->count())->toBe(0);
 });
 
-it('creates primary sponsor coverage during new individual workspace setup', function (): void {
+it('creates primary sponsor coverage only after a covering plan is assigned', function (): void {
     $owner = localUser('new-owner@example.com');
 
     $workspace = Workspace::withoutEvents(fn (): Workspace => app(CreateNewWorkspace::class)->execute(
@@ -177,12 +228,39 @@ it('creates primary sponsor coverage during new individual workspace setup', fun
         new CreateWorkspaceData(name: 'Owner Home', accountType: AccountTypes::INDIVIDUAL),
     ));
 
+    expect($workspace->beneficiaryEnrollments()->count())->toBe(0);
+
+    $plan = individualPlan(true);
+    app(SynchronizeIndividualSponsorCoverageAction::class)->execute($workspace, $plan);
+
     expect($workspace->beneficiaryEnrollments()->count())->toBe(1)
         ->and($workspace->beneficiaryEnrollments()->first()?->primary_sponsor_user_id)->toBe($owner->getKey());
 });
 
+it('releases primary sponsor coverage when the assigned plan excludes the sponsor', function (): void {
+    [, $workspace] = individualWorkspaceOwner();
+    $action = app(SynchronizeIndividualSponsorCoverageAction::class);
+    $coverage = $action->execute($workspace, individualPlan(true));
+
+    $released = $action->execute($workspace, individualPlan(false));
+
+    expect($released?->getKey())->toBe($coverage?->getKey())
+        ->and($released?->primary_sponsor_user_id)->toBeNull()
+        ->and($released?->status->value)->toBe('revoked');
+});
+
 it('rejects inviting the individual owner as a dependant', function (): void {
     [$owner, $workspace] = individualWorkspaceOwner();
+    $plan = individualPlan(true);
+    Subscription::query()->create([
+        'subscribable_type' => $workspace->getMorphClass(),
+        'subscribable_id' => $workspace->getKey(),
+        'plan_id' => $plan->getKey(),
+        'status' => SubscriptionStatus::Active,
+        'starts_at' => now()->subDay(),
+        'ends_at' => now()->addMonth(),
+        'capacity_count' => 3,
+    ]);
     $invite = fn () => app(InviteWorkspaceBeneficiaryAction::class)->execute(
         $workspace,
         $owner,
@@ -246,6 +324,16 @@ function localWorkspace(AccountTypes $type): Workspace
     return Workspace::withoutEvents(fn (): Workspace => Workspace::query()->create([
         'name' => 'Sponsor Workspace',
         'type' => $type,
+    ]));
+}
+
+function individualPlan(bool $coversSponsor): Plan
+{
+    return Plan::withoutEvents(fn (): Plan => Plan::query()->create([
+        'name' => $coversSponsor ? 'Family Plan' : 'Coordinated Care',
+        'slug' => ($coversSponsor ? 'family-plan-' : 'coordinated-care-').Str::lower(Str::ulid()),
+        'account_type' => AccountTypes::INDIVIDUAL,
+        'covers_sponsor_by_default' => $coversSponsor,
     ]));
 }
 

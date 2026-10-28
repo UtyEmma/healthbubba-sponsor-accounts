@@ -2,12 +2,14 @@
 
 namespace App\Services\Payments;
 
+use App\DTOs\CapacityPurchases\CapacityConfiguration;
 use App\DTOs\Consultations\ConsultationAllocation;
 use App\DTOs\Payments\PlanChangeEligibility;
 use App\Enums\AccountTypes;
 use App\Enums\Appointments\AppointmentStatus;
 use App\Enums\Consultations\ConsultationReservationStatus;
 use App\Enums\Consultations\ConsultationType;
+use App\Enums\WorkspaceBeneficiaries\WorkspaceBeneficiaryStatus;
 use App\Models\Consultations\Appointment;
 use App\Models\Consultations\Consultation;
 use App\Models\Plan;
@@ -32,9 +34,11 @@ final readonly class PlanChangeEligibilityService
         Subscription $subscription,
         Plan $targetPlan,
     ): PlanChangeEligibility {
-        $occupiedCapacity = $this->beneficiaryCapacity->used($workspace);
+        $occupiedCapacity = $this->beneficiaryCapacity->usedForPlan($workspace, $targetPlan);
         $configuration = $this->capacityPricing->configuration($targetPlan);
-        $includedCapacity = max(1, $configuration?->includedCapacity ?? 1);
+        $includedCapacity = $configuration instanceof CapacityConfiguration
+            ? max(1, $configuration->includedCapacity)
+            : 1;
         $targetCapacity = max($includedCapacity, $occupiedCapacity);
         $violations = [];
 
@@ -82,7 +86,11 @@ final readonly class PlanChangeEligibilityService
                 continue;
             }
 
-            $usage = $this->usageByBeneficiary($workspace, $period);
+            $usage = $this->usageByBeneficiary(
+                $workspace,
+                $period,
+                $targetPlan->covers_sponsor_by_default,
+            );
             $totalUsage = $usage->sum();
 
             if (! $targetAllocation instanceof ConsultationAllocation) {
@@ -139,15 +147,30 @@ final readonly class PlanChangeEligibilityService
     private function usageByBeneficiary(
         Workspace $workspace,
         ConsultationAllocation $allocation,
+        bool $includePrimarySponsor,
     ): Collection {
         $beneficiaries = $workspace->beneficiaryEnrollments()
-            ->consumingCapacity()
+            ->when(
+                ! $includePrimarySponsor,
+                fn ($query) => $query->whereNull('primary_sponsor_user_id'),
+            )
+            ->where(function ($query): void {
+                $query->whereIn('status', [
+                    WorkspaceBeneficiaryStatus::Active,
+                    WorkspaceBeneficiaryStatus::Suspended,
+                ])->orWhere(function ($query): void {
+                    $query->where('status', WorkspaceBeneficiaryStatus::Pending)
+                        ->where('expires_at', '>', now());
+                });
+            })
             ->get(['id', 'beneficiary_id']);
         $byPatient = $beneficiaries
             ->whereNotNull('beneficiary_id')
             ->keyBy('beneficiary_id');
         $usage = $beneficiaries
-            ->mapWithKeys(static fn ($beneficiary): array => [(int) $beneficiary->getKey() => 0]);
+            ->mapWithKeys(fn ($beneficiary): array => [
+                (int) $beneficiary->getKey() => $this->zeroUsage(),
+            ]);
 
         $ledger = Consultation::query()
             ->whereBelongsTo($workspace)
@@ -208,5 +231,10 @@ final readonly class PlanChangeEligibilityService
         }
 
         return $usage;
+    }
+
+    private function zeroUsage(): int
+    {
+        return 0;
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Subscriptions\Schemas;
 
+use App\Enums\Subscriptions\SubscriptionFundingSource;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -32,6 +33,13 @@ class SubscriptionInfolist
                                 SubscriptionStatus::Cancelled, SubscriptionStatus::Expired => 'danger',
                             })
                             ->formatStateUsing(fn (SubscriptionStatus $state): string => str($state->value)->headline()->toString()),
+                        TextEntry::make('funding_source')
+                            ->label('Funding source')
+                            ->badge()
+                            ->formatStateUsing(fn (SubscriptionFundingSource $state): string => $state->label()),
+                        TextEntry::make('assignedBy.name')
+                            ->label('Assigned by')
+                            ->placeholder('Customer/system'),
                     ])
                     ->columns(2),
                 Section::make('Schedule')

@@ -34,6 +34,25 @@ export function PlanCard({
     const unavailableReason =
         planChange?.unavailable_reason ?? plan.unavailable_reason;
     const reasonId = `plan-${plan.id}-unavailable-reason`;
+    const sponsorCoverageFeature = plan.capacity?.unit === 'beneficiary' && (
+        <li
+            className={cn(
+                'flex items-center gap-2',
+                !plan.covers_sponsor_by_default && 'text-muted-foreground',
+            )}
+        >
+            {plan.covers_sponsor_by_default ? (
+                <CheckIcon className="size-4 shrink-0 text-success" />
+            ) : (
+                <XIcon className="size-4 shrink-0 text-muted-foreground/60" />
+            )}
+            <span>
+                {plan.covers_sponsor_by_default
+                    ? 'Primary sponsor covered in addition to beneficiaries'
+                    : 'Primary sponsor not included'}
+            </span>
+        </li>
+    );
 
     return (
         <Card
@@ -90,6 +109,7 @@ export function PlanCard({
                 )}
 
                 <ul className="grid gap-2 text-sm">
+                    {plan.covers_sponsor_by_default && sponsorCoverageFeature}
                     {plan.features.map((feature) => (
                         <li
                             key={feature.slug}
@@ -112,6 +132,7 @@ export function PlanCard({
                             )}
                         </li>
                     ))}
+                    {!plan.covers_sponsor_by_default && sponsorCoverageFeature}
                 </ul>
 
                 {plan.capacity?.unit === 'beneficiary' &&

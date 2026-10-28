@@ -34,6 +34,7 @@ final readonly class CampaignDetailQuery
             ->whereIn('type', [
                 TransactionTypes::CAMPAIGN_ALLOCATION->value,
                 TransactionTypes::CAMPAIGN_REFUND->value,
+                TransactionTypes::CAMPAIGN_BENEFICIARY_SETUP->value,
                 TransactionTypes::CAMPAIGN_BOOTH_SETUP->value,
                 TransactionTypes::CAMPAIGN_BOOTH_SERVICE->value,
                 TransactionTypes::CAMPAIGN_OPERATING_COST->value,
@@ -55,6 +56,7 @@ final readonly class CampaignDetailQuery
                 'instantUnitFee' => (string) config('campaigns.default_instant_consultation_fee'),
                 'boothSetupUnitFee' => (string) config('campaigns.booth_setup_fee'),
                 'boothMonthlyUnitFee' => (string) config('campaigns.booth_monthly_fee'),
+                'pricingTiers' => [],
             ],
             'enrollmentCode' => $campaign->display_enrollment_code,
             'booths' => $campaign->booths,
@@ -113,6 +115,7 @@ final readonly class CampaignDetailQuery
                 'label' => match ($transaction->type) {
                     TransactionTypes::CAMPAIGN_ALLOCATION => 'Allocation',
                     TransactionTypes::CAMPAIGN_REFUND => 'Refund',
+                    TransactionTypes::CAMPAIGN_BENEFICIARY_SETUP => 'Beneficiary setup',
                     TransactionTypes::CAMPAIGN_BOOTH_SETUP => 'Booth setup',
                     TransactionTypes::CAMPAIGN_BOOTH_SERVICE => 'Booth service',
                     TransactionTypes::CAMPAIGN_OPERATING_COST => 'Operating cost',

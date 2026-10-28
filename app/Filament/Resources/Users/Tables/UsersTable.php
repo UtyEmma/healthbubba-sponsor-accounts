@@ -5,8 +5,8 @@ namespace App\Filament\Resources\Users\Tables;
 use App\Enums\Account\Roles;
 use App\Enums\Account\Status;
 use App\Enums\AccountTypes;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
+use App\Enums\WorkspaceMembers\WorkspaceMemberRole;
+use App\Models\User;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
@@ -14,6 +14,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class UsersTable
 {
@@ -28,11 +29,16 @@ class UsersTable
                 TextColumn::make('email')
                     ->searchable()
                     ->copyable(),
-                TextColumn::make('type')
+                TextColumn::make('owned_account_types')
+                    ->label('Owned account types')
+                    ->state(fn (User $record): array => $record->workspaceMemberships
+                        ->where('role', WorkspaceMemberRole::Owner)
+                        ->map(fn ($membership): string => $membership->workspace->type->label())
+                        ->unique()
+                        ->values()
+                        ->all())
                     ->badge()
-                    ->placeholder('Not set')
-                    ->formatStateUsing(fn (?AccountTypes $state): ?string => $state?->label())
-                    ->sortable(),
+                    ->placeholder('No owned workspace'),
                 TextColumn::make('role')
                     ->badge()
                     ->formatStateUsing(fn (Roles $state): string => str($state->value)->headline()->toString())
@@ -52,12 +58,19 @@ class UsersTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                SelectFilter::make('type')
-                    ->options(collect(AccountTypes::cases())
-                        ->mapWithKeys(fn (AccountTypes $type): array => [
-                            $type->value => $type->label(),
-                        ])
-                        ->all()),
+                SelectFilter::make('account_type')
+                    ->label('Owned account type')
+                    ->options(AccountTypes::options())
+                    ->query(function (Builder $query, array $data): Builder {
+                        $type = $data['value'] ?? null;
+
+                        return blank($type) ? $query : $query->whereHas(
+                            'workspaceMemberships',
+                            fn (Builder $membership): Builder => $membership
+                                ->where('role', WorkspaceMemberRole::Owner)
+                                ->whereHas('workspace', fn (Builder $workspace): Builder => $workspace->where('type', $type)),
+                        );
+                    }),
                 SelectFilter::make('role')
                     ->options(collect(Roles::cases())
                         ->mapWithKeys(fn (Roles $role): array => [
@@ -78,10 +91,6 @@ class UsersTable
                 ViewAction::make(),
                 EditAction::make(),
             ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->toolbarActions([]);
     }
 }

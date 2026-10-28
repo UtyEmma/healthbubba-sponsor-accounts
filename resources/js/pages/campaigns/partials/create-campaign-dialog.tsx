@@ -29,6 +29,7 @@ import campaigns from '@/routes/campaigns';
 import type {
     CampaignCreationConfiguration,
     CampaignEnrollmentMethod,
+    CampaignPricingTier,
 } from '@/types';
 
 interface CampaignFormData {
@@ -161,7 +162,12 @@ export function CreateCampaignDialog({
                 <div className="px-5 pt-4 pb-5 sm:px-6">
                     {step === 1 && <DetailsStep data={form.data} form={form} />}
                     {step === 2 && (
-                        <BeneficiariesStep data={form.data} form={form} />
+                        <BeneficiariesStep
+                            data={form.data}
+                            form={form}
+                            configuration={configuration}
+                            totals={totals}
+                        />
                     )}
                     {step === 3 && (
                         <AllocationStep
@@ -221,6 +227,7 @@ export function CreateCampaignDialog({
                             onClick={launch}
                             disabled={
                                 form.processing ||
+                                !totals.pricingTier ||
                                 totals.launch >
                                     number(configuration.walletBalance)
                             }
@@ -285,7 +292,11 @@ function DetailsStep({
                     autoFocus
                 />
             </FormField>
-            <FormField label="Description" error={form.errors.description}>
+            <FormField
+                label="Description"
+                error={form.errors.description}
+                hint="Optional"
+            >
                 <Textarea
                     className="min-h-14 resize-none"
                     value={data.description}
@@ -336,9 +347,13 @@ function DetailsStep({
 function BeneficiariesStep({
     data,
     form,
+    configuration,
+    totals,
 }: {
     data: CampaignFormData;
     form: CampaignForm;
+    configuration: CampaignCreationConfiguration;
+    totals: CampaignTotals;
 }) {
     return (
         <div className="space-y-4">
@@ -385,6 +400,46 @@ function BeneficiariesStep({
                     placeholder="500"
                 />
             </FormField>
+            {totals.pricingTier ? (
+                <div className="grid gap-3 rounded-xl border bg-muted/30 p-4 sm:grid-cols-2">
+                    <div>
+                        <p className="text-xs text-muted-foreground">
+                            One-time beneficiary setup
+                        </p>
+                        <p className="mt-1 text-base font-semibold">
+                            {formatMoney(totals.beneficiarySetup)}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            {number(
+                                data.estimated_beneficiaries,
+                            ).toLocaleString('en-NG')}{' '}
+                            beneficiaries ×{' '}
+                            {formatMoney(totals.beneficiaryUnitFee)}
+                        </p>
+                    </div>
+                    <div>
+                        <p className="text-xs text-muted-foreground">
+                            Campaign service fee
+                        </p>
+                        <p className="mt-1 text-base font-semibold">
+                            {totals.campaignMonthly === null
+                                ? 'Not charged'
+                                : `${formatMoney(totals.campaignMonthly)} / month`}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            {totals.campaignMonthly === null
+                                ? 'This pricing tier has no monthly campaign service fee.'
+                                : 'Deducted monthly from the campaign start date.'}
+                        </p>
+                    </div>
+                </div>
+            ) : (
+                number(data.estimated_beneficiaries) > 0 && (
+                    <InputError
+                        error={`No active ${configuration.currency} pricing tier covers this beneficiary count.`}
+                    />
+                )
+            )}
             <InfoPanel>
                 Adding a Health Bubba Booth in step 4 also unlocks on-site
                 enrollment — booth officers register beneficiaries in person at
@@ -709,6 +764,21 @@ function SummaryStep({
                 />
             </SummarySection>
 
+            <SummarySection title="Campaign setup & service">
+                <SummaryRow
+                    label={`${number(data.estimated_beneficiaries).toLocaleString('en-NG')} beneficiaries × ${formatMoney(totals.beneficiaryUnitFee)}`}
+                    value={formatMoney(totals.beneficiarySetup)}
+                />
+                <SummaryRow
+                    label="Monthly campaign service fee"
+                    value={
+                        totals.campaignMonthly === null
+                            ? 'Not charged'
+                            : `${formatMoney(totals.campaignMonthly)} / month`
+                    }
+                />
+            </SummarySection>
+
             {data.booth_required && (
                 <SummarySection title="Health Bubba Booth">
                     <SummaryRow
@@ -737,6 +807,7 @@ function SummaryStep({
                 </div>
                 <p className="border-b py-2 text-xs text-muted-foreground">
                     {formatMoney(totals.healthcare)} healthcare allocation
+                    {` + ${formatMoney(totals.beneficiarySetup)} beneficiary setup`}
                     {data.booth_required
                         ? ` + ${formatMoney(totals.boothSetup)} booth setup`
                         : ''}
@@ -765,6 +836,14 @@ function SummaryStep({
                     </div>
                 </div>
             </div>
+            {totals.campaignMonthly !== null && (
+                <InfoPanel information>
+                    The {formatMoney(totals.campaignMonthly)} campaign service
+                    fee is not part of the launch amount. It is charged monthly
+                    from the campaign start date through its end date. Pricing
+                    is confirmed again when the campaign is launched.
+                </InfoPanel>
+            )}
             {data.booth_required && (
                 <InfoPanel information>
                     The {formatMoney(totals.boothMonthly)} monthly service fee
@@ -778,6 +857,9 @@ function SummaryStep({
             )}
             {totals.launch > number(configuration.walletBalance) && (
                 <InputError error="Your wallet does not have enough available balance to launch this campaign." />
+            )}
+            {!totals.pricingTier && (
+                <InputError error="No active campaign pricing tier covers this beneficiary count." />
             )}
             <InputError error={error} />
             <InputError error={launchError} />
@@ -1020,6 +1102,10 @@ interface CampaignTotals {
     healthcare: number;
     boothSetup: number;
     boothMonthly: number;
+    beneficiaryUnitFee: number;
+    beneficiarySetup: number;
+    campaignMonthly: number | null;
+    pricingTier: CampaignPricingTier | null;
     launch: number;
 }
 
@@ -1042,6 +1128,16 @@ function calculateTotals(
     const boothMonthly = data.booth_required
         ? number(data.booth_count) * number(configuration.boothMonthlyUnitFee)
         : 0;
+    const beneficiaries = number(data.estimated_beneficiaries);
+    const pricingTier = pricingTierForBeneficiaries(
+        beneficiaries,
+        configuration.pricingTiers,
+    );
+    const beneficiaryUnitFee = number(pricingTier?.beneficiaryUnitFee);
+    const beneficiarySetup = beneficiaries * beneficiaryUnitFee;
+    const campaignMonthly = pricingTier?.monthlyServiceFee
+        ? number(pricingTier.monthlyServiceFee)
+        : null;
 
     return {
         scheduled,
@@ -1049,8 +1145,26 @@ function calculateTotals(
         healthcare,
         boothSetup,
         boothMonthly,
-        launch: healthcare + boothSetup,
+        beneficiaryUnitFee,
+        beneficiarySetup,
+        campaignMonthly,
+        pricingTier,
+        launch: healthcare + boothSetup + beneficiarySetup,
     };
+}
+
+function pricingTierForBeneficiaries(
+    beneficiaries: number,
+    tiers: CampaignPricingTier[],
+): CampaignPricingTier | null {
+    return (
+        tiers.find(
+            (tier) =>
+                beneficiaries >= tier.minimumBeneficiaries &&
+                (tier.maximumBeneficiaries === null ||
+                    beneficiaries <= tier.maximumBeneficiaries),
+        ) ?? null
+    );
 }
 
 function validateStep(
@@ -1068,7 +1182,6 @@ function validateStep(
 
     if (step === 1) {
         required('name', 'Enter a campaign name.');
-        required('description', 'Enter a campaign description.');
         required('locations', 'Enter at least one location.');
         required('start_date', 'Choose a start date.');
         required('end_date', 'Choose an end date.');

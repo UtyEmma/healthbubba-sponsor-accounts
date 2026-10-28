@@ -44,6 +44,7 @@ export default function ({
     subscription,
     wallet,
     capacityPurchase,
+    faqs,
 }: PlanBillingPageProps) {
     const { errors, flash } = usePage().props;
     const gateway = useActivePaymentGateway();
@@ -225,7 +226,7 @@ export default function ({
                         )}
                     </section>
 
-                    <PlanFaq />
+                    <PlanFaq questions={faqs} />
                     <PlanCheckoutDialog
                         accountType={accountType}
                         wallet={wallet}

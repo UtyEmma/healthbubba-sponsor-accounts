@@ -2,11 +2,13 @@
 
 namespace App\Filament\Resources\Users;
 
+use App\Enums\Account\Roles;
 use App\Filament\RelationManagers\WalletRelationManager;
 use App\Filament\Resources\Users\Pages\CreateUser;
 use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Filament\Resources\Users\Pages\ViewUser;
+use App\Filament\Resources\Users\RelationManagers\WorkspacesRelationManager;
 use App\Filament\Resources\Users\Schemas\UserForm;
 use App\Filament\Resources\Users\Schemas\UserInfolist;
 use App\Filament\Resources\Users\Tables\UsersTable;
@@ -16,6 +18,8 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class UserResource extends Resource
@@ -29,6 +33,30 @@ class UserResource extends Resource
     protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    public static function canEdit(Model $record): bool
+    {
+        $actor = auth()->user();
+
+        return $actor instanceof User
+            && $record instanceof User
+            && ($record->role === Roles::USER || $actor->isSuperAdmin());
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return false;
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return false;
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with('workspaceMemberships.workspace');
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -49,6 +77,7 @@ class UserResource extends Resource
     {
         return [
             WalletRelationManager::class,
+            WorkspacesRelationManager::class,
         ];
     }
 

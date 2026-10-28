@@ -33,6 +33,10 @@ use Illuminate\Support\Str;
  * @property int|null $beneficiary_limit
  * @property CampaignEnrollmentMethod|null $enrollment_method
  * @property int|null $estimated_beneficiaries
+ * @property int|null $campaign_pricing_tier_id
+ * @property string|null $beneficiary_unit_fee
+ * @property string|null $beneficiary_setup_fee
+ * @property string|null $monthly_service_fee
  * @property bool $booth_required
  * @property string|null $scheduled_consultation_fee
  * @property string|null $instant_consultation_fee
@@ -67,6 +71,7 @@ use Illuminate\Support\Str;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Workspace $workspace
+ * @property-read CampaignPricingTier|null $pricingTier
  * @property-read Collection<int, WorkspaceBeneficiary> $beneficiaries
  * @property-read Collection<int, CampaignConsultationQuota> $consultationQuotas
  * @property-read Collection<int, CampaignBudgetUsage> $budgetUsages
@@ -100,6 +105,10 @@ final class Campaign extends Model
         'target_audience',
         'enrollment_method',
         'estimated_beneficiaries',
+        'campaign_pricing_tier_id',
+        'beneficiary_unit_fee',
+        'beneficiary_setup_fee',
+        'monthly_service_fee',
         'beneficiary_limit',
         'booth_required',
         'scheduled_consultation_fee',
@@ -138,6 +147,12 @@ final class Campaign extends Model
     public function workspace(): BelongsTo
     {
         return $this->belongsTo(Workspace::class);
+    }
+
+    /** @return BelongsTo<CampaignPricingTier, $this> */
+    public function pricingTier(): BelongsTo
+    {
+        return $this->belongsTo(CampaignPricingTier::class, 'campaign_pricing_tier_id');
     }
 
     /** @return MorphMany<WorkspaceBeneficiary, $this> */
@@ -257,6 +272,9 @@ final class Campaign extends Model
             'booth_required' => 'boolean',
             'beneficiary_limit' => 'integer',
             'estimated_beneficiaries' => 'integer',
+            'beneficiary_unit_fee' => 'decimal:2',
+            'beneficiary_setup_fee' => 'decimal:2',
+            'monthly_service_fee' => 'decimal:2',
             'enrollment_method' => CampaignEnrollmentMethod::class,
             'status' => CampaignStatus::class,
             'coverage_type_override' => InstitutionalCoverageType::class,

@@ -27,11 +27,15 @@ enum WorkspaceActivityType: string
     case MedicalAccessRequested = 'medical_access_requested';
     case MedicalAccessApproved = 'medical_access_approved';
     case MedicalAccessDenied = 'medical_access_denied';
+    case SponsorAccountProvisioned = 'sponsor_account_provisioned';
+    case AdminWalletFundingRecorded = 'admin_wallet_funding_recorded';
+    case ComplimentarySubscriptionAssigned = 'complimentary_subscription_assigned';
 
     public function category(): string
     {
         return match ($this) {
             self::WalletTopUpCompleted,
+            self::AdminWalletFundingRecorded,
             self::PaymentFailed => 'transaction',
             self::SubscriptionActivated,
             self::SubscriptionRenewed,
@@ -41,7 +45,8 @@ enum WorkspaceActivityType: string
             self::PlanDowngradeScheduled,
             self::PlanDowngradeApplied,
             self::PlanDowngradeCancelled,
-            self::CapacityPurchased => 'subscription',
+            self::CapacityPurchased,
+            self::ComplimentarySubscriptionAssigned => 'subscription',
             self::BeneficiaryInvited,
             self::InvitationResent,
             self::InvitationCancelled,
@@ -54,13 +59,15 @@ enum WorkspaceActivityType: string
             self::MedicalAccessRequested,
             self::MedicalAccessApproved,
             self::MedicalAccessDenied => 'medical_access',
+            self::SponsorAccountProvisioned => 'account',
         };
     }
 
     public function icon(): string
     {
         return match ($this) {
-            self::WalletTopUpCompleted => 'wallet',
+            self::WalletTopUpCompleted,
+            self::AdminWalletFundingRecorded => 'wallet',
             self::PaymentFailed,
             self::SubscriptionPastDue => 'circle-alert',
             self::SubscriptionActivated,
@@ -71,6 +78,8 @@ enum WorkspaceActivityType: string
             self::PlanDowngradeApplied => 'calendar-clock',
             self::PlanDowngradeCancelled => 'circle-alert',
             self::CapacityPurchased,
+            self::ComplimentarySubscriptionAssigned,
+            self::SponsorAccountProvisioned,
             self::BeneficiaryInvited,
             self::InvitationResent,
             self::EmployeeImportCompleted => 'user-plus',
@@ -90,10 +99,13 @@ enum WorkspaceActivityType: string
     {
         return match ($this) {
             self::WalletTopUpCompleted,
+            self::AdminWalletFundingRecorded,
             self::SubscriptionActivated,
             self::SubscriptionRenewed,
             self::PlanUpgradeCompleted,
             self::CapacityPurchased,
+            self::ComplimentarySubscriptionAssigned,
+            self::SponsorAccountProvisioned,
             self::InvitationAccepted,
             self::BeneficiaryRestored,
             self::MedicalAccessApproved => 'success',

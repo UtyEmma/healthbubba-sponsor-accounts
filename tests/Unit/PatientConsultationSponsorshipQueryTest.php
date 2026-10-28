@@ -76,6 +76,7 @@ beforeEach(function (): void {
         $table->unsignedInteger('grace_days')->default(0);
         $table->unsignedInteger('sort_order')->default(0);
         $table->boolean('allows_capacity_purchases')->default(false);
+        $table->boolean('covers_sponsor_by_default')->default(false);
         $table->timestamps();
     });
     Schema::connection('mysql')->create('features', function (Blueprint $table): void {
@@ -106,6 +107,8 @@ beforeEach(function (): void {
         $table->unsignedInteger('capacity_count')->default(1);
         $table->boolean('auto_renew')->default(false);
         $table->unsignedInteger('renewal_attempts')->default(0);
+        $table->string('funding_source')->default('customer_paid');
+        $table->boolean('complimentary_renews')->default(false);
         $table->timestamps();
     });
     Schema::connection('mysql')->create('campaigns', function (Blueprint $table): void {
@@ -189,6 +192,22 @@ it('returns current plans and subscription active states', function (): void {
         'plan' => null,
         'is_active' => false,
     ]);
+});
+
+it('omits automatic individual sponsor coverage when the current plan excludes it', function (): void {
+    $patient = sponsorshipPatient();
+    $ownerId = DB::table('users')->insertGetId(['email' => 'patient@example.com']);
+    $workspace = sponsorshipWorkspace(AccountTypes::INDIVIDUAL, 'Coordinated Care Sponsor');
+    $membership = sponsorshipMembership($workspace, $patient);
+    $membership->update(['primary_sponsor_user_id' => $ownerId]);
+    $plan = sponsorshipPlan(AccountTypes::INDIVIDUAL, 'Coordinated Care');
+    sponsorshipSubscription($workspace, $plan, SubscriptionStatus::Active, now()->addMonth());
+
+    expect(sponsorshipResponse($patient))->toBe([]);
+
+    Plan::withoutEvents(fn () => $plan->update(['covers_sponsor_by_default' => true]));
+
+    expect(sponsorshipResponse($patient))->toHaveCount(1);
 });
 
 it('returns active and inactive institutional campaign associations', function (): void {

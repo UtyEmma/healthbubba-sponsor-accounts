@@ -13,6 +13,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property int|null $payment_id
+ * @property int|null $recorded_by_user_id
  * @property numeric-string $amount
  * @property string $currency
  * @property string $reference
@@ -22,6 +23,7 @@ use Illuminate\Support\Carbon;
  * @property array<string, mixed>|null $meta
  * @property Carbon|null $created_at
  * @property-read Payment|null $payment
+ * @property-read User|null $recordedBy
  * @property-read Model $owner
  * @property-read Model $transactable
  */
@@ -30,6 +32,7 @@ final class Transaction extends Model
     /** @var list<string> */
     protected $fillable = [
         'payment_id',
+        'recorded_by_user_id',
         'owner_type',
         'owner_id',
         'transactable_type',
@@ -53,6 +56,12 @@ final class Transaction extends Model
     public function payment(): BelongsTo
     {
         return $this->belongsTo(Payment::class);
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function recordedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'recorded_by_user_id');
     }
 
     /** @return MorphTo<Model, $this> */

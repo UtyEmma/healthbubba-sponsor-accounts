@@ -14,6 +14,7 @@ class ViewCampaign extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            CampaignAdminActions::allocateMore(),
             CampaignAdminActions::pause(),
             CampaignAdminActions::resume(),
             CampaignAdminActions::runMonthlyDeductions(),

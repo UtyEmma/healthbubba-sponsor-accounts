@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\Payments\PaymentGatewayName;
+use App\Enums\Subscriptions\SubscriptionFundingSource;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
@@ -18,6 +19,9 @@ use Revoltify\Subscriptionify\Models\Subscription as SubscriptionifySubscription
  * @property Carbon|null $scheduled_plan_change_at
  * @property int|null $payment_method_id
  * @property PaymentGatewayName|null $gateway
+ * @property SubscriptionFundingSource $funding_source
+ * @property int|null $assigned_by_user_id
+ * @property bool $complimentary_renews
  * @property int $capacity_count
  * @property bool $auto_renew
  * @property Carbon|null $next_charge_at
@@ -33,6 +37,7 @@ use Revoltify\Subscriptionify\Models\Subscription as SubscriptionifySubscription
  * @property-read Plan $plan
  * @property-read Plan|null $scheduledPlan
  * @property-read PaymentMethod|null $paymentMethod
+ * @property-read User|null $assignedBy
  */
 final class Subscription extends SubscriptionifySubscription
 {
@@ -45,6 +50,9 @@ final class Subscription extends SubscriptionifySubscription
         'scheduled_plan_change_at',
         'payment_method_id',
         'gateway',
+        'funding_source',
+        'assigned_by_user_id',
+        'complimentary_renews',
         'capacity_count',
         'auto_renew',
         'next_charge_at',
@@ -64,6 +72,8 @@ final class Subscription extends SubscriptionifySubscription
         'capacity_count' => 1,
         'auto_renew' => false,
         'renewal_attempts' => 0,
+        'funding_source' => SubscriptionFundingSource::CustomerPaid->value,
+        'complimentary_renews' => false,
     ];
 
     /** @return BelongsTo<PaymentMethod, $this> */
@@ -78,6 +88,12 @@ final class Subscription extends SubscriptionifySubscription
         return $this->belongsTo(Plan::class, 'scheduled_plan_id');
     }
 
+    /** @return BelongsTo<User, $this> */
+    public function assignedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_by_user_id');
+    }
+
     /** @return MorphMany<Payment, $this> */
     public function payments(): MorphMany
     {
@@ -90,6 +106,8 @@ final class Subscription extends SubscriptionifySubscription
         return [
             ...parent::casts(),
             'gateway' => PaymentGatewayName::class,
+            'funding_source' => SubscriptionFundingSource::class,
+            'complimentary_renews' => 'boolean',
             'scheduled_plan_change_at' => 'datetime',
             'capacity_count' => 'integer',
             'auto_renew' => 'boolean',

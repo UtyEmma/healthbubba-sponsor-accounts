@@ -23,7 +23,7 @@ final class StoreInstitutionalCampaignRequest extends AuthorizedInstitutionalWor
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'description' => ['required', 'string', 'max:2000'],
+            'description' => ['nullable', 'string', 'max:2000'],
             'locations' => ['required', 'string', 'max:500'],
             'start_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
             'end_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:start_date'],
@@ -71,7 +71,7 @@ final class StoreInstitutionalCampaignRequest extends AuthorizedInstitutionalWor
 
         $this->merge([
             'name' => $this->string('name')->squish()->toString(),
-            'description' => $this->string('description')->squish()->toString(),
+            'description' => $this->nullableSquishedString('description'),
             'locations' => collect(explode(',', $this->string('locations')->toString()))
                 ->map(static fn (string $location): string => trim($location))
                 ->filter()
@@ -87,6 +87,7 @@ final class StoreInstitutionalCampaignRequest extends AuthorizedInstitutionalWor
     public function campaignData(): CreateCampaignData
     {
         $user = $this->user();
+        $description = $this->validated('description');
 
         abort_unless($user instanceof User, 403);
 
@@ -97,7 +98,7 @@ final class StoreInstitutionalCampaignRequest extends AuthorizedInstitutionalWor
             user: $user,
             details: new CampaignDetailsData(
                 name: (string) $this->validated('name'),
-                description: (string) $this->validated('description'),
+                description: is_string($description) ? $description : null,
                 locations: (string) $this->validated('locations'),
                 startDate: (string) $this->validated('start_date'),
                 endDate: (string) $this->validated('end_date'),

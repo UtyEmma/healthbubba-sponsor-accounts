@@ -12,6 +12,7 @@ use App\Enums\WorkspaceBeneficiaries\WorkspaceBeneficiaryStatus;
 use App\Enums\WorkspaceMembers\WorkspaceMemberRole;
 use App\Enums\WorkspaceMembers\WorkspaceMemberStatus;
 use App\Models\Campaign;
+use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Models\WorkspaceBeneficiary;
@@ -46,17 +47,7 @@ final readonly class InviteWorkspaceBeneficiaryAction
         $invitation = DB::transaction(function () use ($workspace, $inviter, $data, $beneficiaryId, $relatable): WorkspaceBeneficiary {
             Workspace::query()->whereKey($workspace->getKey())->lockForUpdate()->firstOrFail();
             $target = $this->lockTarget($workspace, $relatable);
-
-            if ($workspace->type === AccountTypes::INDIVIDUAL
-                && $workspace->members()
-                    ->where('role', WorkspaceMemberRole::Owner)
-                    ->where('status', WorkspaceMemberStatus::Active)
-                    ->whereHas('user', fn ($query) => $query->whereRaw('LOWER(email) = ?', [$data->email]))
-                    ->exists()) {
-                throw ValidationException::withMessages([
-                    'email' => 'The primary sponsor is already covered and does not use a beneficiary slot.',
-                ]);
-            }
+            $subscription = null;
 
             if ($target instanceof Campaign) {
                 if ($target->lifecycleStatus() === CampaignStatus::COMPLETED) {
@@ -82,6 +73,19 @@ final readonly class InviteWorkspaceBeneficiaryAction
                 $subscription = $this->capacity->lockSubscription($workspace);
                 $this->capacity->expirePending($workspace);
                 $capacityExhausted = $this->capacity->used($workspace) >= $subscription->capacity_count;
+            }
+
+            if ($workspace->type === AccountTypes::INDIVIDUAL
+                && $subscription instanceof Subscription
+                && $subscription->plan->covers_sponsor_by_default
+                && $workspace->members()
+                    ->where('role', WorkspaceMemberRole::Owner)
+                    ->where('status', WorkspaceMemberStatus::Active)
+                    ->whereHas('user', fn ($query) => $query->whereRaw('LOWER(email) = ?', [$data->email]))
+                    ->exists()) {
+                throw ValidationException::withMessages([
+                    'email' => 'The primary sponsor is already covered and does not use a beneficiary slot.',
+                ]);
             }
 
             $existing = WorkspaceBeneficiary::query()

@@ -18,6 +18,7 @@ use Revoltify\Subscriptionify\Models\Plan as SubscriptionifyPlan;
  * @property int|null $included_seats
  * @property numeric-string|null $additional_seat_price
  * @property bool $allows_capacity_purchases
+ * @property bool $covers_sponsor_by_default
  * @property bool $is_free
  * @property bool $is_active
  * @property int $trial_days
@@ -38,6 +39,7 @@ class Plan extends SubscriptionifyPlan
         'included_seats',
         'additional_seat_price',
         'allows_capacity_purchases',
+        'covers_sponsor_by_default',
         'is_free',
         'is_active',
         'trial_days',
@@ -58,6 +60,7 @@ class Plan extends SubscriptionifyPlan
         'grace_days' => 0,
         'sort_order' => 0,
         'allows_capacity_purchases' => false,
+        'covers_sponsor_by_default' => false,
     ];
 
     protected static function booted(): void
@@ -65,6 +68,10 @@ class Plan extends SubscriptionifyPlan
         static::saving(function (Plan $plan): void {
             if ($plan->account_type === AccountTypes::INSTITUTION) {
                 $plan->allows_capacity_purchases = false;
+            }
+
+            if ($plan->account_type !== AccountTypes::INDIVIDUAL) {
+                $plan->covers_sponsor_by_default = false;
             }
         });
     }
@@ -89,6 +96,7 @@ class Plan extends SubscriptionifyPlan
             'included_seats' => 'integer',
             'additional_seat_price' => 'decimal:2',
             'allows_capacity_purchases' => 'boolean',
+            'covers_sponsor_by_default' => 'boolean',
         ];
     }
 

@@ -19,6 +19,19 @@ class WorkspaceInfolist
                         TextEntry::make('type')
                             ->badge()
                             ->formatStateUsing(fn (AccountTypes $state): string => $state->label()),
+                        TextEntry::make('ownerMembership.user.name')
+                            ->label('Owner')
+                            ->placeholder('No active owner'),
+                        TextEntry::make('latestSubscription.plan.name')
+                            ->label('Current plan')
+                            ->placeholder('No subscription'),
+                        TextEntry::make('latestSubscription.status')
+                            ->label('Subscription status')
+                            ->badge()
+                            ->placeholder('No subscription'),
+                        TextEntry::make('wallet.balance')
+                            ->label('Wallet balance')
+                            ->money(fn ($record): string => $record->wallet->currency),
                         TextEntry::make('description')
                             ->placeholder('No description')
                             ->columnSpanFull(),
@@ -32,6 +45,8 @@ class WorkspaceInfolist
                     ->schema([
                         TextEntry::make('members_count')->label('Team members')->numeric(),
                         TextEntry::make('campaigns_count')->label('Campaigns')->numeric(),
+                        TextEntry::make('workspace_beneficiaries_count')->label('Beneficiaries')->numeric(),
+                        TextEntry::make('consultations_count')->label('Consultations')->numeric(),
                         TextEntry::make('latestCampaign.name')
                             ->label('Latest campaign')
                             ->placeholder('No campaign'),

@@ -16,6 +16,7 @@ export interface DashboardSubscription {
     includedCapacity: number;
     currentCapacity: number;
     additionalCapacity: number;
+    coversSponsorByDefault: boolean;
     renewsAt: string | null;
     renewalDays: number | null;
 }

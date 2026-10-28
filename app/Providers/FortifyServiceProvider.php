@@ -121,11 +121,12 @@ class FortifyServiceProvider extends ServiceProvider
                 ['value' => 'NG', 'label' => 'Nigeria'],
             ],
             'states' => NigeriaState::options(),
+            'initialReferralCode' => is_string($request->query('ref')) ? Str::upper(trim($request->query('ref'))) : '',
             'initialAccountType' => $this->requestedAccountType($request),
             'initialEmail' => Str::lower(trim((string) $request->query('email'))),
         ]));
         Fortify::loginView(fn (Request $request) => Inertia::render('auth/login', [
-            'initialAccountType' => $this->requestedAccountType($request),
+            'initialAccountType' => $this->requestedAccountType($request) ?? AccountTypes::INDIVIDUAL->value,
             'initialEmail' => Str::lower(trim((string) $request->query('email'))),
         ]));
         Fortify::requestPasswordResetLinkView(fn (Request $request) => Inertia::render('auth/forgot-password', [

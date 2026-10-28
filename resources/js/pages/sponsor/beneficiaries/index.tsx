@@ -21,7 +21,13 @@ export default function BeneficiariesIndex({
                 <div className="mx-auto w-full max-w-6xl">
                     <PageHeader
                         title="Covered people"
-                        description="Your coverage includes you as the primary sponsor, plus the dependants on your plan."
+                        description={
+                            capacity.unavailableReason
+                                ? 'Activate a plan to manage sponsor and beneficiary coverage.'
+                                : capacity.sponsorCoveredByDefault
+                                  ? 'Your coverage includes you as the primary sponsor, plus the dependants on your plan.'
+                                  : 'Your current plan covers the beneficiaries you add; the primary sponsor is not included automatically.'
+                        }
                         action={
                             workspacePermissions.canManage ? (
                                 <AddBeneficiaryDialog />
@@ -40,15 +46,19 @@ export default function BeneficiariesIndex({
                         aria-label="Beneficiary overview"
                     >
                         <SummaryCard
-                            label="Active covered people"
+                            label={
+                                capacity.sponsorCoveredByDefault
+                                    ? 'Active covered people'
+                                    : 'Active beneficiaries'
+                            }
                             value={String(counts.active)}
                         />
                         <SummaryCard
-                            label="Pending dependants"
+                            label="Pending beneficiaries"
                             value={String(counts.pending)}
                         />
                         <SummaryCard
-                            label="Dependant capacity"
+                            label="Beneficiary capacity"
                             value={`${capacity.used}/${capacity.total}`}
                         />
                     </section>

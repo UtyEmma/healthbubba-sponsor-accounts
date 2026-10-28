@@ -121,6 +121,7 @@ final readonly class WorkspacePlanMapper
                 ? $plan->additional_seat_price
                 : null,
             allowsCapacityPurchases: $plan->allows_capacity_purchases,
+            coversSponsorByDefault: $plan->covers_sponsor_by_default,
             capacity: $capacity === null ? null : [
                 'unit' => $capacity->unit,
                 'unit_plural' => $capacity->unitPlural,

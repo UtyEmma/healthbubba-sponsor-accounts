@@ -4,14 +4,11 @@ namespace App\Queries\Funding;
 
 use App\DTOs\Funding\InstitutionalFundingPageData;
 use App\Enums\CampaignStatus;
-use App\Enums\Payments\PaymentPurpose;
-use App\Enums\Payments\PaymentStatus;
 use App\Enums\Transactions\TransactionFlow;
 use App\Enums\Transactions\TransactionStatus;
 use App\Enums\Transactions\TransactionTypes;
 use App\Models\Campaign;
 use App\Models\CampaignUsageEntry;
-use App\Models\Payment;
 use App\Models\Transaction;
 use App\Models\Workspace;
 use App\Queries\InstitutionalCampaigns\CampaignMetricsQuery;
@@ -55,11 +52,13 @@ final readonly class InstitutionalFundingQuery
                 }
             }
         }
-        $totalFunded = Payment::query()
-            ->whereBelongsTo($workspace)
-            ->where('purpose', PaymentPurpose::WALLET_TOP_UP)
-            ->where('status', PaymentStatus::SUCCEEDED)
-            ->sum('amount_minor');
+        $totalFunded = Transaction::query()
+            ->where('owner_type', $workspace->getMorphClass())
+            ->where('owner_id', $workspace->getKey())
+            ->where('type', TransactionTypes::TOPUP)
+            ->where('flow', TransactionFlow::CREDIT)
+            ->where('status', TransactionStatus::COMPLETED)
+            ->sum('amount');
         $returned = Money::fromMajor(
             (string) $campaigns->sum(fn (Campaign $campaign): float => (float) $campaign->returned_amount),
             $currency,
@@ -72,7 +71,7 @@ final readonly class InstitutionalFundingQuery
                 'availableBalance' => $available->toMajorAmount(),
                 'allocatedBalance' => $reserved->toMajorAmount(),
                 'utilized' => $utilized->toMajorAmount(),
-                'totalFunded' => (new Money((int) $totalFunded, $currency))->toMajorAmount(),
+                'totalFunded' => Money::fromMajor((string) $totalFunded, $currency)->toMajorAmount(),
                 'walletBalance' => $available->add($reserved)->toMajorAmount(),
                 'allocatedCampaigns' => $allocatedCampaigns,
             ],
@@ -144,6 +143,7 @@ final readonly class InstitutionalFundingQuery
     {
         $types = [
             TransactionTypes::TOPUP,
+            TransactionTypes::CAMPAIGN_BENEFICIARY_SETUP,
             TransactionTypes::CAMPAIGN_BOOTH_SETUP,
             TransactionTypes::CAMPAIGN_BOOTH_SERVICE,
             TransactionTypes::CAMPAIGN_OPERATING_COST,
@@ -157,7 +157,7 @@ final readonly class InstitutionalFundingQuery
         $count = (clone $transactionQuery)->count() + (clone $usageQuery)->count();
 
         $ledgerTransactions = (clone $transactionQuery)
-            ->with('payment:id,metadata')
+            ->with(['payment:id,metadata', 'recordedBy:id,name'])
             ->latest()
             ->limit(50)
             ->get()
@@ -172,6 +172,8 @@ final readonly class InstitutionalFundingQuery
                 'amount' => $transaction->amount,
                 'currency' => $transaction->currency,
                 'flow' => $transaction->flow->value,
+                'recordedBy' => $transaction->recordedBy?->name,
+                'recordingChannel' => (string) ($transaction->meta['recording_channel'] ?? 'customer'),
             ]);
         $usageEntries = (clone $usageQuery)
             ->with(['campaign:id,name', 'workspaceBeneficiary:id,first_name,last_name'])
@@ -191,6 +193,8 @@ final readonly class InstitutionalFundingQuery
                 'amount' => $entry->total_amount,
                 'currency' => $entry->currency,
                 'flow' => TransactionFlow::DEBIT->value,
+                'recordedBy' => null,
+                'recordingChannel' => 'system',
             ]);
 
         return [
@@ -212,6 +216,7 @@ final readonly class InstitutionalFundingQuery
     {
         return match ($type) {
             TransactionTypes::TOPUP => 'Funding',
+            TransactionTypes::CAMPAIGN_BENEFICIARY_SETUP => 'Beneficiary setup',
             TransactionTypes::CAMPAIGN_BOOTH_SETUP => 'Booth setup',
             TransactionTypes::CAMPAIGN_BOOTH_SERVICE => 'Booth service',
             TransactionTypes::CAMPAIGN_OPERATING_COST => 'Operating cost',
@@ -222,6 +227,10 @@ final readonly class InstitutionalFundingQuery
     private function transactionDescription(Transaction $transaction): string
     {
         if ($transaction->type === TransactionTypes::TOPUP) {
+            if (($transaction->meta['recording_channel'] ?? null) === 'admin') {
+                return 'Sponsor funding recorded by administrator';
+            }
+
             $method = (string) ($transaction->payment?->metadata['funding_method'] ?? '');
 
             return $method === 'bank_transfer' ? 'Wallet top-up (Bank transfer)' : 'Wallet top-up';

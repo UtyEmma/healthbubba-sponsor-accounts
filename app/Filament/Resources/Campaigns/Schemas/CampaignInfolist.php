@@ -64,6 +64,48 @@ class CampaignInfolist
                         TextEntry::make('country')->placeholder('Not provided'),
                     ])
                     ->columns(2),
+                Section::make('Campaign service pricing')
+                    ->description('Pricing captured when this campaign was launched. Later tier changes do not alter these amounts.')
+                    ->schema([
+                        TextEntry::make('estimated_beneficiaries')
+                            ->label('Estimated beneficiaries')
+                            ->numeric(),
+                        TextEntry::make('beneficiary_unit_fee')
+                            ->label('Fee per beneficiary')
+                            ->money(fn ($record): string => $record->currency)
+                            ->placeholder('Legacy campaign'),
+                        TextEntry::make('beneficiary_setup_fee')
+                            ->label('One-time beneficiary setup')
+                            ->money(fn ($record): string => $record->currency)
+                            ->placeholder('Legacy campaign'),
+                        TextEntry::make('monthly_service_fee')
+                            ->label('Monthly campaign service fee')
+                            ->money(fn ($record): string => $record->currency)
+                            ->placeholder('Legacy campaign'),
+                    ])
+                    ->columns(4),
+                Section::make('Monitoring')
+                    ->schema([
+                        TextEntry::make('allocated_consultation_value')
+                            ->label('Consultation allocation')
+                            ->money(fn ($record): string => $record->currency),
+                        TextEntry::make('utilized_healthcare_value')
+                            ->label('Healthcare utilized')
+                            ->money(fn ($record): string => $record->currency),
+                        TextEntry::make('returned_amount')
+                            ->label('Returned to wallet')
+                            ->money(fn ($record): string => $record->currency),
+                        TextEntry::make('beneficiaries_count')->label('Beneficiaries')->numeric(),
+                        TextEntry::make('consultations_count')->label('Consultations')->numeric(),
+                        TextEntry::make('booths_count')->label('Booths')->numeric(),
+                        TextEntry::make('booth_charges_total')
+                            ->label('Booth charges')
+                            ->money(fn ($record): string => $record->currency),
+                        TextEntry::make('active_recurring_costs_count')
+                            ->label('Active recurring costs')
+                            ->numeric(),
+                    ])
+                    ->columns(4),
                 Section::make('Audit')
                     ->schema([
                         TextEntry::make('created_at')->dateTime(),

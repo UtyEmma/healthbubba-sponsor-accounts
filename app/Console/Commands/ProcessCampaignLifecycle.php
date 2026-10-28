@@ -9,7 +9,7 @@ final class ProcessCampaignLifecycle extends Command
 {
     protected $signature = 'campaigns:process-lifecycle';
 
-    protected $description = 'Advance campaign states, reconcile refunds, and bill active booths.';
+    protected $description = 'Advance campaign states, reconcile refunds, and bill due campaign costs.';
 
     public function handle(ProcessCampaignLifecycleAction $process): int
     {

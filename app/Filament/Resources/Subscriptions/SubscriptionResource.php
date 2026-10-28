@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\Subscriptions;
 
-use App\Filament\Resources\Subscriptions\Pages\CreateSubscription;
-use App\Filament\Resources\Subscriptions\Pages\EditSubscription;
 use App\Filament\Resources\Subscriptions\Pages\ListSubscriptions;
 use App\Filament\Resources\Subscriptions\Pages\ViewSubscription;
 use App\Filament\Resources\Subscriptions\Schemas\SubscriptionForm;
@@ -16,6 +14,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class SubscriptionResource extends Resource
@@ -28,9 +27,29 @@ class SubscriptionResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return false;
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return false;
+    }
+
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['plan', 'subscribable']);
+        return parent::getEloquentQuery()->with(['plan', 'subscribable', 'assignedBy']);
     }
 
     public static function form(Schema $schema): Schema
@@ -59,9 +78,7 @@ class SubscriptionResource extends Resource
     {
         return [
             'index' => ListSubscriptions::route('/'),
-            'create' => CreateSubscription::route('/create'),
             'view' => ViewSubscription::route('/{record}'),
-            'edit' => EditSubscription::route('/{record}/edit'),
         ];
     }
 }

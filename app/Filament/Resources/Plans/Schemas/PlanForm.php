@@ -122,6 +122,11 @@ class PlanForm
                                         AccountTypes::INDIVIDUAL->value,
                                         AccountTypes::BUSINESS->value,
                                     ], true)),
+                                Toggle::make('covers_sponsor_by_default')
+                                    ->label('Cover sponsor by default')
+                                    ->helperText('Covers the Individual workspace owner in addition to the configured beneficiary capacity. The sponsor shares the plan consultation pool.')
+                                    ->default(false)
+                                    ->visible(fn (Get $get): bool => $get('account_type') === AccountTypes::INDIVIDUAL->value),
                                 TextInput::make('sort_order')
                                     ->numeric()
                                     ->integer()

@@ -7,6 +7,13 @@ export type BillingWallet = {
     currency: string;
 };
 
+export type FrequentlyAskedQuestion = {
+    id: number;
+    accountType: AccountType;
+    question: string;
+    answer: string;
+};
+
 export type FeatureType = 'toggle' | 'limit' | 'consumable' | 'metered';
 
 export type PlanFeature = {
@@ -32,6 +39,7 @@ export type Plan = {
     included_seats: number | null;
     additional_seat_price: string | null;
     allows_capacity_purchases: boolean;
+    covers_sponsor_by_default: boolean;
     capacity: PlanCapacity | null;
     plan_change: PlanChange | null;
     unavailable_reason: string | null;
@@ -121,4 +129,5 @@ export type PlanBillingPageProps = {
     wallet: BillingWallet;
     subscription: SubscriptionSummary | null;
     capacityPurchase: CapacityPurchaseSummary | null;
+    faqs: FrequentlyAskedQuestion[];
 };

@@ -13,6 +13,9 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
+ * @property string|null $refunded_at
+ * @property string|null $charged_back_at
+ * @property string|null $chargeback_event_at
  * @property int $workspace_id
  * @property int|null $user_id
  * @property string|null $payable_type

@@ -20,6 +20,7 @@ class UserInfolist
                     ->schema([
                         TextEntry::make('name'),
                         TextEntry::make('email')->copyable(),
+                        TextEntry::make('phone')->placeholder('Not provided'),
                         TextEntry::make('type')
                             ->placeholder('Not set')
                             ->formatStateUsing(fn (?AccountTypes $state): ?string => $state?->label()),
@@ -33,6 +34,14 @@ class UserInfolist
                         IconEntry::make('email_verified_at')
                             ->label('Email verified')
                             ->state(fn ($record): bool => $record->email_verified_at !== null)
+                            ->boolean(),
+                        IconEntry::make('phone_verified_at')
+                            ->label('Phone verified')
+                            ->state(fn ($record): bool => $record->phone_verified_at !== null)
+                            ->boolean(),
+                        IconEntry::make('account_verified_at')
+                            ->label('Account verified')
+                            ->state(fn ($record): bool => $record->account_verified_at !== null)
                             ->boolean(),
                     ])
                     ->columns(2),

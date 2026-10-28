@@ -84,6 +84,7 @@ export interface WorkspaceCapacity {
     canInvite: boolean;
     unlimited?: boolean;
     unavailableReason: string | null;
+    sponsorCoveredByDefault: boolean;
 }
 
 export interface WorkspaceBeneficiaryCounts {

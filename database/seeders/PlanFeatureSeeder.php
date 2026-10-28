@@ -103,6 +103,7 @@ class PlanFeatureSeeder extends Seeder
      *     included_seats: int|null,
      *     additional_seat_price: string|null,
      *     allows_capacity_purchases: bool,
+     *     covers_sponsor_by_default: bool,
      *     is_free: bool,
      *     is_active: bool,
      *     trial_days: int,
@@ -133,6 +134,7 @@ class PlanFeatureSeeder extends Seeder
                 price: '20000.00',
                 sortOrder: 1,
                 allowsCapacityPurchases: true,
+                coversSponsorByDefault: true,
                 features: [
                     Features::BENEFICIARIES_INCLUDED->value => ['value' => '3', 'unit_price' => '5000'],
                     Features::MAXIMUM_BENEFICIARIES->value => ['value' => '6'],
@@ -149,6 +151,7 @@ class PlanFeatureSeeder extends Seeder
                 price: '39000.00',
                 sortOrder: 2,
                 allowsCapacityPurchases: true,
+                coversSponsorByDefault: true,
                 features: [
                     Features::BENEFICIARIES_INCLUDED->value => ['value' => '6', 'unit_price' => '5000'],
                     Features::MAXIMUM_BENEFICIARIES->value => ['value' => '12'],
@@ -167,6 +170,7 @@ class PlanFeatureSeeder extends Seeder
                 accountType: AccountTypes::INDIVIDUAL,
                 price: '59000.00',
                 sortOrder: 3,
+                coversSponsorByDefault: false,
                 features: [
                     Features::BENEFICIARIES_INCLUDED->value => ['value' => '2'],
                     Features::MAXIMUM_BENEFICIARIES->value => ['value' => '2'],
@@ -275,6 +279,7 @@ class PlanFeatureSeeder extends Seeder
      *     included_seats: int|null,
      *     additional_seat_price: string|null,
      *     allows_capacity_purchases: bool,
+     *     covers_sponsor_by_default: bool,
      *     is_free: bool,
      *     is_active: bool,
      *     trial_days: int,
@@ -296,6 +301,7 @@ class PlanFeatureSeeder extends Seeder
         ?int $includedSeats = null,
         ?string $additionalSeatPrice = null,
         bool $allowsCapacityPurchases = false,
+        bool $coversSponsorByDefault = false,
     ): array {
         return [
             'name' => $name,
@@ -305,6 +311,7 @@ class PlanFeatureSeeder extends Seeder
             'included_seats' => $includedSeats,
             'additional_seat_price' => $additionalSeatPrice,
             'allows_capacity_purchases' => $allowsCapacityPurchases,
+            'covers_sponsor_by_default' => $coversSponsorByDefault,
             'is_free' => false,
             'is_active' => true,
             'trial_days' => 0,

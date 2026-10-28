@@ -65,6 +65,7 @@ final readonly class AllocateMoreToCampaignAction
             $wallet->update(['balance' => (new Money($balance->amountInMinorUnits - $total->amountInMinorUnits, $balance->currency))->toMajorAmount()]);
 
             Transaction::query()->create([
+                'recorded_by_user_id' => $data->user->getKey(),
                 'owner_type' => $data->workspace->getMorphClass(),
                 'owner_id' => $data->workspace->getKey(),
                 'transactable_type' => $campaign->getMorphClass(),

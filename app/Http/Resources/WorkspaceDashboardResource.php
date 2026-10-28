@@ -68,6 +68,7 @@ final class WorkspaceDashboardResource extends JsonResource
             'includedCapacity' => $subscription->includedCapacity,
             'currentCapacity' => $subscription->currentCapacity,
             'additionalCapacity' => $subscription->additionalCapacity,
+            'coversSponsorByDefault' => $subscription->coversSponsorByDefault,
             'renewsAt' => $subscription->renewsAt?->toISOString(),
             'renewalDays' => $subscription->renewalDays,
         ];

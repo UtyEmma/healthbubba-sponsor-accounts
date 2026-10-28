@@ -53,6 +53,10 @@ class TransactionsTable
                     ->label('Transactable')
                     ->state(fn (Transaction $record): string => self::morphLabel($record->transactable))
                     ->toggleable(),
+                TextColumn::make('recordedBy.name')
+                    ->label('Recorded by')
+                    ->placeholder('System/customer')
+                    ->toggleable(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable(),

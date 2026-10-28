@@ -1,4 +1,4 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage, usePoll } from '@inertiajs/react';
 import {
     Activity,
     ArrowLeft,
@@ -74,6 +74,9 @@ export default function CampaignDetailsPage(
     const [modal, setModal] = useState<Modal>(
         importResult ? 'import-result' : null,
     );
+    usePoll(10_000, {
+        only: ['campaign'],
+    });
     const canManage =
         workspacePermissions.canManage && campaign.status !== 'COMPLETED';
     const lifecycle = (action: 'pause' | 'resume') =>
@@ -102,9 +105,11 @@ export default function CampaignDetailsPage(
                             <h1 className="text-2xl font-semibold tracking-tight">
                                 {campaign.name}
                             </h1>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                {campaign.description}
-                            </p>
+                            {campaign.description && (
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    {campaign.description}
+                                </p>
+                            )}
                             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                                 <StatusBadge
                                     status={campaign.status}
@@ -280,7 +285,7 @@ function SummaryCards({ campaign }: { campaign: Campaign }) {
         {
             label: 'Utilized',
             value: money(financial?.utilized),
-            note: `${financial?.utilizationPercentage ?? 0}% of allocation`,
+            note: `${money(financial?.consultationUtilized)} consultations · ${financial?.utilizationPercentage ?? 0}% total`,
             icon: Activity,
             tone: 'information',
         },
@@ -954,8 +959,8 @@ function UsageTab({
                 <div className="p-4">
                     <h2 className="text-base font-semibold">Campaign ledger</h2>
                     <p className="text-sm text-muted-foreground">
-                        Allocations, top-ups, utilization, refunds, booth
-                        charges and operating costs.
+                        Allocations, beneficiary setup, utilization, refunds,
+                        campaign service, booth charges and operating costs.
                     </p>
                 </div>
                 <div className="overflow-x-auto">

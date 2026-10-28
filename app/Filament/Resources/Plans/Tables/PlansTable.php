@@ -53,6 +53,11 @@ class PlansTable
                 IconColumn::make('is_active')
                     ->boolean()
                     ->sortable(),
+                IconColumn::make('covers_sponsor_by_default')
+                    ->label('Sponsor covered')
+                    ->boolean()
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('sort_order')
                     ->sortable()
                     ->toggleable(),

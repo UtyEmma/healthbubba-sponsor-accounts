@@ -52,6 +52,7 @@ final readonly class WorkspaceBeneficiaryIndexController
                     'remaining' => $summary->remaining(),
                     'canInvite' => $summary->canInvite(),
                     'unavailableReason' => $summary->unavailableReason,
+                    'sponsorCoveredByDefault' => $summary->sponsorCoveredByDefault,
                 ],
                 'counts' => [
                     'active' => $activeCount,

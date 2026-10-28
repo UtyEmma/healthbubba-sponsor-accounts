@@ -99,9 +99,9 @@ export default function InstitutionalFundingPage({
                             Available is money not yet allocated. Allocated is
                             reserved for live campaigns and still yours until
                             used. Utilized is care beneficiaries have actually
-                            consumed. Booth setup and monthly service fees also
-                            leave the wallet, but sit outside every campaign
-                            allocation.
+                            consumed. Beneficiary setup, campaign service, booth
+                            and operating fees also leave the wallet, but sit
+                            outside every healthcare allocation.
                         </p>
                     </div>
 
@@ -122,6 +122,7 @@ export default function InstitutionalFundingPage({
                         </TabsList>
 
                         <TabsContent value="allocation" className="space-y-4">
+                            <ProgramBalanceCard funding={funding} />
                             <CampaignAllocations
                                 campaigns={funding.campaigns}
                                 returned={funding.returnedFromEndedCampaigns}

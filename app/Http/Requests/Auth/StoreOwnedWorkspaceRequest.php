@@ -7,6 +7,7 @@ use App\Enums\AccountTypes;
 use App\Enums\InstitutionalOrganizationType;
 use App\Enums\NigeriaState;
 use App\Models\User;
+use App\Rules\MarketingReferralCode;
 use App\ValueObjects\NigeriaPhoneNumber;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -36,6 +37,7 @@ final class StoreOwnedWorkspaceRequest extends FormRequest
 
         return [
             'account_type' => ['required', Rule::enum(AccountTypes::class)],
+            'referral_code' => ['nullable', 'string', new MarketingReferralCode],
             'organization_name' => [Rule::requiredIf($isOrganization), 'nullable', 'string', 'max:255'],
             'organization_type' => [Rule::requiredIf($isInstitution), 'nullable', Rule::enum(InstitutionalOrganizationType::class)],
             'country_code' => [Rule::requiredIf($isInstitution), 'nullable', Rule::in(['NG'])],
@@ -49,6 +51,9 @@ final class StoreOwnedWorkspaceRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
+            'referral_code' => is_string($this->input('referral_code'))
+                ? mb_strtolower(trim($this->input('referral_code')))
+                : $this->input('referral_code'),
             'organization_name' => $this->string('organization_name')->squish()->toString() ?: null,
             'official_email' => $this->string('official_email')->lower()->trim()->toString() ?: null,
             'official_phone' => $this->filled('official_phone')
@@ -80,6 +85,7 @@ final class StoreOwnedWorkspaceRequest extends FormRequest
                 ? $this->validated('official_phone')
                 : null,
             authorizationConfirmed: $accountType === AccountTypes::INSTITUTION,
+            referralCode: $this->validated('referral_code'),
         );
     }
 }

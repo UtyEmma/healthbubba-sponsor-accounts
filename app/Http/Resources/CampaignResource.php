@@ -47,6 +47,12 @@ final class CampaignResource extends JsonResource
             ] : null,
             'scheduledFee' => $this->scheduled_consultation_fee,
             'instantFee' => $this->instant_consultation_fee,
+            'servicePricing' => $this->beneficiary_unit_fee === null ? null : [
+                'beneficiaryUnitFee' => $this->beneficiary_unit_fee,
+                'beneficiarySetupFee' => $this->beneficiary_setup_fee,
+                'monthlyServiceFee' => $this->monthly_service_fee,
+                'currency' => $this->currency,
+            ],
             'beneficiaryCount' => $this->whenCounted('beneficiaries'),
             'activeBeneficiaryCount' => $this->whenCounted('activeBeneficiaries'),
             'capacityUsed' => $this->when($hasCapacityCount, $capacityUsed),

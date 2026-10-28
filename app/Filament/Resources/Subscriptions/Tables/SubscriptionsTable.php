@@ -2,9 +2,7 @@
 
 namespace App\Filament\Resources\Subscriptions\Tables;
 
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
+use App\Enums\Subscriptions\SubscriptionFundingSource;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -39,6 +37,14 @@ class SubscriptionsTable
                     })
                     ->formatStateUsing(fn (SubscriptionStatus $state): string => str($state->value)->headline()->toString())
                     ->sortable(),
+                TextColumn::make('funding_source')
+                    ->label('Funding')
+                    ->badge()
+                    ->formatStateUsing(fn (SubscriptionFundingSource $state): string => $state->label())
+                    ->sortable(),
+                TextColumn::make('assignedBy.name')
+                    ->label('Assigned by')
+                    ->placeholder('Customer/system'),
                 TextColumn::make('starts_at')
                     ->dateTime()
                     ->sortable(),
@@ -66,15 +72,15 @@ class SubscriptionsTable
                             $status->value => str($status->value)->headline()->toString(),
                         ])
                         ->all()),
+                SelectFilter::make('funding_source')
+                    ->options(collect(SubscriptionFundingSource::cases())
+                        ->mapWithKeys(fn (SubscriptionFundingSource $source): array => [
+                            $source->value => $source->label(),
+                        ])->all()),
             ])
             ->recordActions([
                 ViewAction::make(),
-                EditAction::make(),
             ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->toolbarActions([]);
     }
 }

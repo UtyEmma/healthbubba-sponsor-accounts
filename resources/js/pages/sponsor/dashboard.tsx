@@ -27,7 +27,7 @@ export default function IndividualDashboard({ dashboard }: DashboardPageProps) {
             label: 'Covered people',
             value: String(dashboard.beneficiaries.active),
             detail: dashboard.subscription
-                ? `Sponsor included · ${dashboard.beneficiaries.total} of ${dashboard.beneficiaries.capacity} beneficiary slots used`
+                ? `${dashboard.subscription.coversSponsorByDefault ? 'Sponsor included' : 'Sponsor not included'} · ${dashboard.beneficiaries.total} of ${dashboard.beneficiaries.capacity} beneficiary slots used`
                 : 'No active plan capacity',
         },
         {

@@ -49,6 +49,9 @@ class TransactionInfolist
                         TextEntry::make('transactable_label')
                             ->label('Transactable')
                             ->state(fn (Transaction $record): string => self::morphLabel($record->transactable)),
+                        TextEntry::make('recordedBy.name')
+                            ->label('Recorded by')
+                            ->placeholder('System/customer'),
                     ])
                     ->columns(2),
                 Section::make('Audit')

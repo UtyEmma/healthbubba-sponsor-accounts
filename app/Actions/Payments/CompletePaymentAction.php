@@ -2,12 +2,14 @@
 
 namespace App\Actions\Payments;
 
+use App\Actions\WorkspaceBeneficiaries\SynchronizeIndividualSponsorCoverageAction;
 use App\DTOs\Payments\PaymentMethodData;
 use App\DTOs\Payments\PaymentVerification;
 use App\Enums\CapacityPurchases\CapacityPurchaseStatus;
 use App\Enums\Payments\PaymentGatewayName;
 use App\Enums\Payments\PaymentPurpose;
 use App\Enums\Payments\PaymentStatus;
+use App\Enums\Subscriptions\SubscriptionFundingSource;
 use App\Enums\Transactions\TransactionFlow;
 use App\Enums\Transactions\TransactionStatus;
 use App\Enums\Transactions\TransactionTypes;
@@ -43,6 +45,7 @@ final readonly class CompletePaymentAction
         private CompleteCapacityPurchaseAction $completeCapacityPurchase,
         private PlanPricingService $planPricing,
         private PlanChangePricingService $planChangePricing,
+        private SynchronizeIndividualSponsorCoverageAction $synchronizeSponsorCoverage,
     ) {}
 
     public function execute(
@@ -360,7 +363,11 @@ final readonly class CompletePaymentAction
             'capacity_count' => $capacityCount,
             'scheduled_plan_id' => null,
             'scheduled_plan_change_at' => null,
+            'funding_source' => SubscriptionFundingSource::CustomerPaid,
+            'assigned_by_user_id' => null,
+            'complimentary_renews' => false,
         ]);
+        $this->synchronizeSponsorCoverage->execute($workspace, $targetPlan);
 
         return $subscription->refresh();
     }
@@ -409,6 +416,9 @@ final readonly class CompletePaymentAction
             'renewal_attempts' => 0,
             'renewal_retry_at' => null,
             'recurring_consent_at' => is_string($consentedAt) ? CarbonImmutable::parse($consentedAt) : null,
+            'funding_source' => SubscriptionFundingSource::CustomerPaid,
+            'assigned_by_user_id' => null,
+            'complimentary_renews' => false,
         ];
 
         $capacityCount = $payment->metadata['capacity_count']
@@ -419,7 +429,10 @@ final readonly class CompletePaymentAction
             $attributes['capacity_count'] = (int) $capacityCount;
         }
 
-        return Subscription::query()->create($attributes);
+        $subscription = Subscription::query()->create($attributes);
+        $this->synchronizeSponsorCoverage->execute($workspace, $plan);
+
+        return $subscription;
     }
 
     private function initialSubscriptionEndsAt(
@@ -512,7 +525,11 @@ final readonly class CompletePaymentAction
             'gateway' => $paymentMethod instanceof PaymentMethod
                 ? $payment->gateway
                 : $subscription->gateway,
+            'funding_source' => SubscriptionFundingSource::CustomerPaid,
+            'assigned_by_user_id' => null,
+            'complimentary_renews' => false,
         ]);
+        $this->synchronizeSponsorCoverage->execute($workspace, $renewalPlan);
 
         return $subscription->refresh();
     }

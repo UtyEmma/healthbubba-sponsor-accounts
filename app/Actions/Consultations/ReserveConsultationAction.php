@@ -60,19 +60,22 @@ final readonly class ReserveConsultationAction
                 return ConsultationEligibilityResult::unavailable('campaign_not_applicable', $type);
             }
 
-            $primarySponsorCoverage = $patient instanceof Beneficiary
-                ? $this->ensureIndividualSponsorCoverage->execute($workspace, $patient)
-                : null;
             $subscription = $this->coverage->activeSubscription($workspace, lock: true);
 
             if (! $subscription instanceof Subscription) {
                 return ConsultationEligibilityResult::unavailable('no_active_subscription', $type);
             }
 
+            $primarySponsorCoverage = $subscription->plan->covers_sponsor_by_default
+                && $patient instanceof Beneficiary
+                    ? $this->ensureIndividualSponsorCoverage->execute($workspace, $patient)
+                    : null;
+
             $workspaceBeneficiary = $primarySponsorCoverage
                 ?? WorkspaceBeneficiary::query()
                     ->whereBelongsTo($workspace)
                     ->where('beneficiary_id', $data->patientId)
+                    ->whereNull('primary_sponsor_user_id')
                     ->where('status', WorkspaceBeneficiaryStatus::Active)
                     ->lockForUpdate()
                     ->first();

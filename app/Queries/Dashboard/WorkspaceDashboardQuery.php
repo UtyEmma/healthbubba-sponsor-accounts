@@ -128,6 +128,7 @@ final readonly class WorkspaceDashboardQuery
             includedCapacity: $includedCapacity,
             currentCapacity: $currentCapacity,
             additionalCapacity: max(0, $currentCapacity - $includedCapacity),
+            coversSponsorByDefault: $subscription->plan->covers_sponsor_by_default,
             renewsAt: $renewsAt,
             renewalDays: $this->renewalDays($renewsAt),
         );

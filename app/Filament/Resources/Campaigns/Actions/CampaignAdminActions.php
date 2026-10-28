@@ -2,21 +2,62 @@
 
 namespace App\Filament\Resources\Campaigns\Actions;
 
+use App\Actions\Campaigns\AllocateMoreToCampaignAction;
 use App\Actions\Campaigns\DeactivateCampaignBoothAction;
 use App\Actions\Campaigns\EndCampaignAction;
 use App\Actions\Campaigns\PauseCampaignAction;
 use App\Actions\Campaigns\ResumeCampaignAction;
 use App\Actions\Campaigns\RunCampaignMonthlyDeductionsAction;
+use App\DTOs\Campaigns\AllocateMoreToCampaignData;
 use App\Enums\CampaignBoothStatus;
 use App\Enums\CampaignStatus;
 use App\Models\Campaign;
+use App\Models\User;
 use Filament\Actions\Action;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 final class CampaignAdminActions
 {
+    public static function allocateMore(): Action
+    {
+        return Action::make('allocateMore')
+            ->label('Allocate more')
+            ->icon(Heroicon::OutlinedPlus)
+            ->visible(static fn (Campaign $record): bool => $record->lifecycleStatus() !== CampaignStatus::COMPLETED)
+            ->schema([
+                TextInput::make('scheduled_units')
+                    ->label('Scheduled consultation units')
+                    ->numeric()->integer()->minValue(0)->default(0)->required(),
+                TextInput::make('instant_units')
+                    ->label('Instant consultation units')
+                    ->numeric()->integer()->minValue(0)->default(0)->required(),
+                TextInput::make('medication_budget')->numeric()->minValue(0)->default(0)->prefix('₦')->required(),
+                TextInput::make('laboratory_budget')->numeric()->minValue(0)->default(0)->prefix('₦')->required(),
+            ])
+            ->requiresConfirmation()
+            ->modalDescription('This reserves sponsor-funded value from the workspace wallet at the campaign’s server-controlled prices.')
+            ->action(static function (array $data, Campaign $record, AllocateMoreToCampaignAction $allocate): void {
+                $administrator = Auth::user();
+                abort_unless($administrator instanceof User && $administrator->isAdmin(), 403);
+
+                $allocate->execute(new AllocateMoreToCampaignData(
+                    workspace: $record->workspace,
+                    user: $administrator,
+                    campaign: $record,
+                    scheduledUnits: (int) $data['scheduled_units'],
+                    instantUnits: (int) $data['instant_units'],
+                    medicationBudget: (string) $data['medication_budget'],
+                    laboratoryBudget: (string) $data['laboratory_budget'],
+                ));
+
+                Notification::make()->title('Campaign allocation increased')->success()->send();
+            });
+    }
+
     public static function pause(): Action
     {
         return Action::make('pauseCampaign')
@@ -89,7 +130,7 @@ final class CampaignAdminActions
             ->label('Run monthly deductions')
             ->icon(Heroicon::OutlinedCreditCard)
             ->requiresConfirmation()
-            ->modalDescription('All due booth service and operating costs for this campaign will be charged from its workspace wallet.')
+            ->modalDescription('All due campaign service, booth service, and operating costs will be charged from the workspace wallet.')
             ->visible(static fn (Campaign $record): bool => (int) $record->active_recurring_costs_count > 0
                 && $record->lifecycleStatus() !== CampaignStatus::COMPLETED)
             ->action(static function (Campaign $record, RunCampaignMonthlyDeductionsAction $runDeductions): void {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Payments;
 
+use App\Actions\Marketing\QueuePaymentReversalAction;
 use App\Enums\Payments\PaymentGatewayName;
 use App\Enums\Payments\PaymentStatus;
 use App\Exceptions\Payments\InvalidWebhookPayloadException;
@@ -18,6 +19,7 @@ final class PaymentWebhookController extends Controller
         Request $request,
         string $gateway,
         PaymentService $payments,
+        QueuePaymentReversalAction $reversals,
     ): JsonResponse {
         $gatewayName = PaymentGatewayName::tryFrom($gateway);
 
@@ -38,6 +40,8 @@ final class PaymentWebhookController extends Controller
         } catch (InvalidWebhookPayloadException) {
             abort(400);
         }
+
+        $reversals->execute($webhook, $rawPayload);
 
         if ($webhook->reference !== null
             && in_array($webhook->paymentStatus, [PaymentStatus::SUCCEEDED, PaymentStatus::FAILED], true)) {

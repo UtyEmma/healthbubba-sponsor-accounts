@@ -2,11 +2,13 @@
 
 namespace App\Actions\Payments;
 
+use App\Actions\WorkspaceBeneficiaries\SynchronizeIndividualSponsorCoverageAction;
 use App\DTOs\Activity\WorkspaceActivityActor;
 use App\DTOs\Activity\WorkspaceActivityData;
 use App\Enums\Activity\WorkspaceActivityType;
 use App\Enums\Payments\SubscriptionPaymentSource;
 use App\Enums\Payments\WalletRenewalResult;
+use App\Enums\Subscriptions\SubscriptionFundingSource;
 use App\Enums\Transactions\TransactionFlow;
 use App\Enums\Transactions\TransactionStatus;
 use App\Enums\Transactions\TransactionTypes;
@@ -27,6 +29,7 @@ final readonly class AttemptWalletSubscriptionRenewalAction
     public function __construct(
         private PlanPricingService $pricing,
         private WorkspaceActivityLogger $activities,
+        private SynchronizeIndividualSponsorCoverageAction $synchronizeSponsorCoverage,
     ) {}
 
     public function execute(int $subscriptionId, bool $allowPastDue = false): WalletRenewalResult
@@ -101,7 +104,11 @@ final readonly class AttemptWalletSubscriptionRenewalAction
                 'next_charge_at' => $endsAt,
                 'renewal_attempts' => 0,
                 'renewal_retry_at' => null,
+                'funding_source' => SubscriptionFundingSource::Wallet,
+                'assigned_by_user_id' => null,
+                'complimentary_renews' => false,
             ]);
+            $this->synchronizeSponsorCoverage->execute($workspace, $renewalPlan);
 
             Transaction::query()->create([
                 'payment_id' => null,

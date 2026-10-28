@@ -18,6 +18,7 @@ final readonly class StoreOwnedWorkspaceData
         public ?string $officialEmail,
         public ?string $officialPhone,
         public bool $authorizationConfirmed,
+        public ?string $referralCode = null,
     ) {}
 
     public function workspaceData(string $ownerName, ?string $ownerPhone): CreateWorkspaceData

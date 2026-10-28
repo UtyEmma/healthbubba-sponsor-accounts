@@ -3,15 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\Payments\CheckoutUnavailable;
-use App\Http\Resources\CapacityPurchaseSummaryResource;
 use App\Http\Resources\BillingWalletResource;
+use App\Http\Resources\CapacityPurchaseSummaryResource;
+use App\Http\Resources\FrequentlyAskedQuestionResource;
 use App\Http\Resources\PlanResource;
 use App\Http\Resources\SubscriptionResource;
 use App\Mappers\WorkspacePlanMapper;
 use App\Models\Subscription;
 use App\Models\User;
-use App\Models\Workspace;
 use App\Models\Wallet;
+use App\Models\Workspace;
+use App\Queries\Billing\GetFrequentlyAskedQuestions;
 use App\Services\Payments\CapacityPricingService;
 use App\Services\Payments\PlanPricingService;
 use App\Services\WorkspaceMembers\WorkspaceMemberAccessService;
@@ -26,6 +28,7 @@ final class BillingController extends Controller
         private readonly CapacityPricingService $capacityPricing,
         private readonly PlanPricingService $planPricing,
         private readonly WorkspaceMemberAccessService $workspaceAccess,
+        private readonly GetFrequentlyAskedQuestions $frequentlyAskedQuestions,
     ) {}
 
     public function __invoke(Request $request): Response
@@ -62,6 +65,9 @@ final class BillingController extends Controller
             'capacityPurchase' => $subscription === null
                 ? null
                 : $this->capacityPurchaseSummary($subscription, $workspace, $wallet),
+            'faqs' => FrequentlyAskedQuestionResource::collection(
+                $this->frequentlyAskedQuestions->execute($workspace->type),
+            ),
         ]);
     }
 

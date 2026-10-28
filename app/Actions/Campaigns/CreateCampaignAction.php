@@ -18,6 +18,7 @@ use App\Models\CampaignRecurringCost;
 use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Models\Workspace;
+use App\Services\Campaigns\CampaignPricingService;
 use App\Support\Payments\PaymentReferenceGenerator;
 use App\ValueObjects\Money;
 use Carbon\CarbonImmutable;
@@ -27,7 +28,10 @@ use Illuminate\Validation\ValidationException;
 
 final readonly class CreateCampaignAction
 {
-    public function __construct(private PaymentReferenceGenerator $references) {}
+    public function __construct(
+        private PaymentReferenceGenerator $references,
+        private CampaignPricingService $pricing,
+    ) {}
 
     public function execute(CreateCampaignData $data): Campaign
     {
@@ -43,7 +47,6 @@ final readonly class CreateCampaignAction
         $boothSetupTotal = $data->booth->required
             ? $boothSetupFee->multiply($data->booth->count ?? 0)
             : new Money(0, 'NGN');
-        $launchTotal = $healthcareAllocation->add($boothSetupTotal);
 
         return DB::transaction(function () use (
             $data,
@@ -53,12 +56,30 @@ final readonly class CreateCampaignAction
             $boothMonthlyFee,
             $healthcareAllocation,
             $boothSetupTotal,
-            $launchTotal,
         ): Campaign {
             $workspace = Workspace::query()->whereKey($data->workspace->getKey())->lockForUpdate()->firstOrFail();
             $wallet = $workspace->wallet()->firstOrCreate([], ['balance' => '0.00', 'currency' => 'NGN']);
             $wallet = Wallet::query()->whereKey($wallet->getKey())->lockForUpdate()->firstOrFail();
             $balance = Money::fromMajor($wallet->balance, $wallet->currency);
+
+            if ($balance->currency !== $healthcareAllocation->currency) {
+                throw ValidationException::withMessages([
+                    'launch' => 'The workspace wallet currency does not match this campaign.',
+                ]);
+            }
+
+            $pricing = $this->pricing->quote(
+                beneficiaries: $data->enrollment->estimatedBeneficiaries,
+                currency: $healthcareAllocation->currency,
+                lockForUpdate: true,
+            );
+            $beneficiarySetupFee = Money::fromMajor($pricing->beneficiarySetupFee, $pricing->currency);
+            $monthlyServiceFee = $pricing->monthlyServiceFee === null
+                ? null
+                : Money::fromMajor($pricing->monthlyServiceFee, $pricing->currency);
+            $launchTotal = $healthcareAllocation
+                ->add($boothSetupTotal)
+                ->add($beneficiarySetupFee);
 
             if ($balance->currency !== $launchTotal->currency) {
                 throw ValidationException::withMessages([
@@ -73,6 +94,7 @@ final readonly class CreateCampaignAction
             }
 
             $allocationReference = $this->references->generateCampaignAllocation();
+            $beneficiarySetupReference = $this->references->generateCampaignBeneficiarySetup();
             $boothSetupReference = $data->booth->required ? $this->references->generateBoothCharge() : null;
             $startDate = CarbonImmutable::parse($data->details->startDate);
             $displayEnrollmentCode = $this->displayEnrollmentCode($data, $workspace->getKey());
@@ -82,6 +104,10 @@ final readonly class CreateCampaignAction
                 'location' => $data->details->locations,
                 'enrollment_method' => $data->enrollment->method,
                 'estimated_beneficiaries' => $data->enrollment->estimatedBeneficiaries,
+                'campaign_pricing_tier_id' => $pricing->tierId,
+                'beneficiary_unit_fee' => $pricing->beneficiaryUnitFee,
+                'beneficiary_setup_fee' => $pricing->beneficiarySetupFee,
+                'monthly_service_fee' => $pricing->monthlyServiceFee,
                 'beneficiary_limit' => null,
                 'start_date' => $data->details->startDate,
                 'end_date' => $data->details->endDate,
@@ -104,6 +130,12 @@ final readonly class CreateCampaignAction
                 'booth_contact_phone' => $data->booth->contactPhone,
                 'booth_setup_unit_fee' => $data->booth->required ? $boothSetupFee->toMajorAmount() : null,
                 'booth_monthly_unit_fee' => $data->booth->required ? $boothMonthlyFee->toMajorAmount() : null,
+                'coverage_type_override' => $data->coverageTypeOverride,
+                'scheduled_consultation_limit_per_beneficiary_override' => $data->scheduledLimitOverride,
+                'instant_consultation_limit_per_beneficiary_override' => $data->instantLimitOverride,
+                'daily_consultation_limit_override' => $data->dailyLimitOverride,
+                'coverage_expiry_override' => $data->coverageExpiryOverride,
+                'payment_preference_override' => $data->paymentPreferenceOverride,
             ]);
 
             CampaignEnrollmentCode::query()->create([
@@ -117,6 +149,21 @@ final readonly class CreateCampaignAction
 
             $this->createQuota($campaign, $workspace, ConsultationType::Scheduled, $data->healthcare->scheduledUnits, $scheduledFee);
             $this->createQuota($campaign, $workspace, ConsultationType::Instant, $data->healthcare->instantUnits, $instantFee);
+
+            if ($monthlyServiceFee !== null) {
+                CampaignRecurringCost::query()->create([
+                    'campaign_id' => $campaign->getKey(),
+                    'workspace_id' => $workspace->getKey(),
+                    'name' => 'Campaign management & service',
+                    'category' => CampaignRecurringCostCategory::CampaignService,
+                    'monthly_amount' => $monthlyServiceFee->toMajorAmount(),
+                    'currency' => $monthlyServiceFee->currency,
+                    'starts_on' => $data->details->startDate,
+                    'next_charge_on' => $data->details->startDate,
+                    'ends_on' => $data->details->endDate,
+                    'is_active' => true,
+                ]);
+            }
 
             if ($data->booth->required && $data->booth->count !== null) {
                 $this->createBooths(
@@ -156,6 +203,18 @@ final readonly class CreateCampaignAction
                     reference: (string) $boothSetupReference,
                     type: TransactionTypes::CAMPAIGN_BOOTH_SETUP,
                     description: "Booth setup for {$campaign->name}",
+                    userId: (int) $data->user->getKey(),
+                );
+            }
+
+            if ($beneficiarySetupFee->amountInMinorUnits > 0) {
+                $this->recordDebit(
+                    workspace: $workspace,
+                    campaign: $campaign,
+                    amount: $beneficiarySetupFee,
+                    reference: $beneficiarySetupReference,
+                    type: TransactionTypes::CAMPAIGN_BENEFICIARY_SETUP,
+                    description: "Beneficiary setup for {$campaign->name}",
                     userId: (int) $data->user->getKey(),
                 );
             }
@@ -261,6 +320,7 @@ final readonly class CreateCampaignAction
         int $userId,
     ): void {
         Transaction::query()->create([
+            'recorded_by_user_id' => $userId,
             'owner_type' => $workspace->getMorphClass(),
             'owner_id' => $workspace->getKey(),
             'transactable_type' => $campaign->getMorphClass(),

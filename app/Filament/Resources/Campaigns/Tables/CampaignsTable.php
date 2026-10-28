@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Campaigns\Tables;
 
 use App\Enums\AccountTypes;
+use App\Enums\CampaignStatus;
 use App\Filament\Resources\Campaigns\Actions\CampaignAdminActions;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
@@ -102,11 +103,16 @@ class CampaignsTable
                     ->visible($includeWorkspace),
                 TernaryFilter::make('booth_required')
                     ->label('Booth required'),
+                SelectFilter::make('status')
+                    ->options(collect(CampaignStatus::cases())->mapWithKeys(fn (CampaignStatus $status): array => [
+                        $status->value => $status->label(),
+                    ])->all()),
             ])
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
                 ActionGroup::make([
+                    CampaignAdminActions::allocateMore(),
                     CampaignAdminActions::pause(),
                     CampaignAdminActions::resume(),
                     CampaignAdminActions::runMonthlyDeductions(),

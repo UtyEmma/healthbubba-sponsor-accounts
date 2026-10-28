@@ -64,6 +64,25 @@ return [
             ]) : [],
         ],
 
+        'marketing_sql' => [
+            'driver' => env('DB_MARKETING_CONNECTION', 'mysql'),
+            'url' => env('DB_MARKETING_URL'),
+            'host' => env('DB_MARKETING_HOST', '127.0.0.1'),
+            'port' => env('DB_MARKETING_PORT', '3306'),
+            'database' => env('DB_MARKETING_DATABASE'),
+            'username' => env('DB_MARKETING_USERNAME'),
+            'password' => env('DB_MARKETING_PASSWORD'),
+            'unix_socket' => env('DB_MARKETING_SOCKET', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'foreign_key_constraints' => true,
+            'busy_timeout' => 5000,
+        ],
+
         'main_sql' => [
             'driver' => 'mysql',
             'url' => env('DB_URL'),

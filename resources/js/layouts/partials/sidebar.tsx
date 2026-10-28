@@ -2,7 +2,6 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     BarChart3Icon,
     BellIcon,
-    HandHeartIcon,
     SettingsIcon,
     TicketIcon,
     UsersRoundIcon,
@@ -85,10 +84,6 @@ function Navigation() {
                     label: 'Enrollment Codes',
                     icon: TicketIcon,
                     href: institutional.enrollment_codes.index(),
-                },
-                {
-                    label: 'Referrals',
-                    icon: HandHeartIcon,
                 },
                 {
                     label: 'Team',

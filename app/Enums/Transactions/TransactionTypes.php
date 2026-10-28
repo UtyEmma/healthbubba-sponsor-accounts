@@ -11,6 +11,7 @@ enum TransactionTypes: string
     case CONSULTATION_QUOTA = 'consultation_quota';
     case CAMPAIGN_ALLOCATION = 'campaign_allocation';
     case CAMPAIGN_REFUND = 'campaign_refund';
+    case CAMPAIGN_BENEFICIARY_SETUP = 'campaign_beneficiary_setup';
     case CAMPAIGN_BOOTH_SETUP = 'campaign_booth_setup';
     case CAMPAIGN_BOOTH_SERVICE = 'campaign_booth_service';
     case CAMPAIGN_OPERATING_COST = 'campaign_operating_cost';

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Payments;
 
+use App\Actions\WorkspaceBeneficiaries\SynchronizeIndividualSponsorCoverageAction;
 use App\DTOs\Activity\WorkspaceActivityActor;
 use App\DTOs\Activity\WorkspaceActivityData;
 use App\Enums\Activity\WorkspaceActivityType;
@@ -20,6 +21,7 @@ final readonly class ReconcileScheduledDowngradesAction
         private PlanChangePricingService $pricing,
         private PlanChangeEligibilityService $eligibility,
         private WorkspaceActivityLogger $activities,
+        private SynchronizeIndividualSponsorCoverageAction $synchronizeSponsorCoverage,
     ) {}
 
     /** @return array{applied: int, cancelled: int} */
@@ -62,12 +64,14 @@ final readonly class ReconcileScheduledDowngradesAction
 
             $targetPlan = $subscription->scheduledPlan;
             $violations = [];
+            $targetCapacityCount = $subscription->capacity_count;
 
             if ($this->pricing->direction($subscription, $targetPlan) !== PlanChangeDirection::DOWNGRADE) {
                 $violations[] = 'The scheduled plan is no longer lower-priced than the current plan.';
             } else {
                 $eligibility = $this->eligibility->assess($workspace, $subscription, $targetPlan);
                 $violations = $eligibility->violations;
+                $targetCapacityCount = $eligibility->targetCapacityCount;
             }
 
             if ($violations !== []) {
@@ -82,10 +86,11 @@ final readonly class ReconcileScheduledDowngradesAction
 
             $subscription->update([
                 'plan_id' => $targetPlan->getKey(),
-                'capacity_count' => $eligibility->targetCapacityCount,
+                'capacity_count' => $targetCapacityCount,
                 'scheduled_plan_id' => null,
                 'scheduled_plan_change_at' => null,
             ]);
+            $this->synchronizeSponsorCoverage->execute($workspace, $targetPlan);
             $this->record($workspace, $subscription, $targetPlan, true, []);
 
             return 'applied';
@@ -116,7 +121,7 @@ final readonly class ReconcileScheduledDowngradesAction
                 : implode(' ', $violations),
             context: [
                 'plan_name' => $targetPlan->name,
-                'violations' => $violations,
+                'violations' => implode(' | ', $violations),
             ],
         ));
     }

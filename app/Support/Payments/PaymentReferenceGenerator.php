@@ -29,6 +29,11 @@ final class PaymentReferenceGenerator
         return 'CAM-'.Str::upper((string) Str::ulid());
     }
 
+    public function generateCampaignBeneficiarySetup(): string
+    {
+        return 'BEN-'.Str::upper((string) Str::ulid());
+    }
+
     public function generateCampaignRefund(): string
     {
         return 'REF-'.Str::upper((string) Str::ulid());

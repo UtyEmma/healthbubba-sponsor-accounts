@@ -59,6 +59,7 @@ final readonly class WorkspacePlan implements Arrayable
         public ?int $includedSeats,
         public ?string $additionalSeatPrice,
         public bool $allowsCapacityPurchases,
+        public bool $coversSponsorByDefault,
         public ?array $capacity,
         public ?array $planChange,
         public ?string $unavailableReason,
@@ -80,6 +81,7 @@ final readonly class WorkspacePlan implements Arrayable
      *     included_seats: int|null,
      *     additional_seat_price: string|null,
      *     allows_capacity_purchases: bool,
+     *     covers_sponsor_by_default: bool,
      *     capacity: array{
      *         unit: string,
      *         unit_plural: string,
@@ -135,6 +137,7 @@ final readonly class WorkspacePlan implements Arrayable
             'included_seats' => $this->includedSeats,
             'additional_seat_price' => $this->additionalSeatPrice,
             'allows_capacity_purchases' => $this->allowsCapacityPurchases,
+            'covers_sponsor_by_default' => $this->coversSponsorByDefault,
             'capacity' => $this->capacity,
             'plan_change' => $this->planChange,
             'unavailable_reason' => $this->unavailableReason,

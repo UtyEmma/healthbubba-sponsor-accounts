@@ -81,13 +81,15 @@ final class CampaignMetricsQuery
         $laboratory = $this->budgetMetrics($campaign, CampaignBudgetCategory::Laboratory, $usages);
         $allocatedMinor = $scheduled['allocated_minor'] + $instant['allocated_minor']
             + $medication['allocated_minor'] + $laboratory['allocated_minor'];
-        $utilizedMinor = $scheduled['utilized_minor'] + $instant['utilized_minor']
+        $consultationUtilizedMinor = $scheduled['utilized_minor'] + $instant['utilized_minor'];
+        $utilizedMinor = $consultationUtilizedMinor
             + $medication['used_minor'] + $laboratory['used_minor'];
 
         return [
             'currency' => $campaign->currency,
             'allocated' => (new Money($allocatedMinor, $campaign->currency))->toMajorAmount(),
             'utilized' => (new Money($utilizedMinor, $campaign->currency))->toMajorAmount(),
+            'consultationUtilized' => (new Money($consultationUtilizedMinor, $campaign->currency))->toMajorAmount(),
             'reserved' => (new Money(max(0, $allocatedMinor - $utilizedMinor), $campaign->currency))->toMajorAmount(),
             'returned' => $campaign->returned_amount,
             'utilizationPercentage' => $allocatedMinor === 0
@@ -142,9 +144,16 @@ final class CampaignMetricsQuery
         $quota = $quotas->first(fn (CampaignConsultationQuota $row): bool => $row->consultation_type === $type);
         $units = (int) $quota?->getAttribute('units');
         $unitFee = Money::fromMajor((string) ($quota?->getAttribute('unit_fee') ?? '0.00'), $campaign->currency);
-        $confirmed = (int) $usages
-            ->first(fn (CampaignUsageEntry $row): bool => $row->benefit->value === $type->value)
-            ?->getAttribute('units_used');
+        $usage = $usages->first(fn (CampaignUsageEntry $row): bool => $row->benefit->value === $type->value);
+        $confirmed = (int) $usage?->getAttribute('units_used');
+        $allocated = Money::fromMajor(
+            (string) ($quota?->getAttribute('total_cost') ?? '0.00'),
+            $campaign->currency,
+        );
+        $utilized = Money::fromMajor(
+            (string) ($usage?->getAttribute('used') ?? '0.00'),
+            $campaign->currency,
+        );
         $reserved = (int) $consultations
             ->first(fn (Consultation $row): bool => $row->consultation_type === $type && $row->status === ConsultationReservationStatus::Reserved)
             ?->getAttribute('aggregate');
@@ -155,9 +164,9 @@ final class CampaignMetricsQuery
             'reserved' => $reserved,
             'remaining' => max(0, $units - $confirmed - $reserved),
             'unitFee' => $unitFee->toMajorAmount(),
-            'allocated' => $unitFee->multiply($units)->toMajorAmount(),
-            'allocated_minor' => $unitFee->multiply($units)->amountInMinorUnits,
-            'utilized_minor' => $unitFee->multiply($confirmed)->amountInMinorUnits,
+            'allocated' => $allocated->toMajorAmount(),
+            'allocated_minor' => $allocated->amountInMinorUnits,
+            'utilized_minor' => $utilized->amountInMinorUnits,
         ];
     }
 

@@ -41,9 +41,14 @@ class TransactionResource extends Resource
         return false;
     }
 
+    public static function canDeleteAny(): bool
+    {
+        return false;
+    }
+
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['owner', 'transactable']);
+        return parent::getEloquentQuery()->with(['owner', 'transactable', 'recordedBy']);
     }
 
     public static function infolist(Schema $schema): Schema

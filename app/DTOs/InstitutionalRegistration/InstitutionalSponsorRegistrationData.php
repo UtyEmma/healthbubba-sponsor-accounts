@@ -19,5 +19,6 @@ final readonly class InstitutionalSponsorRegistrationData
         public string $ownerEmail,
         public string $ownerPhone,
         public string $password,
+        public ?string $referralCode = null,
     ) {}
 }

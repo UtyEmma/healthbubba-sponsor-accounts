@@ -16,6 +16,7 @@ use App\Models\Campaign;
 use App\Queries\InstitutionalCampaigns\CampaignDetailQuery;
 use App\Queries\InstitutionalCampaigns\CampaignIndexSummaryQuery;
 use App\Queries\InstitutionalCampaigns\WorkspaceCampaignQuery;
+use App\Services\Campaigns\CampaignPricingService;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -25,6 +26,7 @@ final readonly class CampaignController
         private WorkspaceCampaignQuery $campaigns,
         private CampaignIndexSummaryQuery $indexSummary,
         private CampaignDetailQuery $detail,
+        private CampaignPricingService $pricing,
     ) {}
 
     public function index(IndexInstitutionalCampaignRequest $request): Response
@@ -48,6 +50,7 @@ final readonly class CampaignController
                     instantUnitFee: (string) config('campaigns.default_instant_consultation_fee'),
                     boothSetupUnitFee: (string) config('campaigns.booth_setup_fee'),
                     boothMonthlyUnitFee: (string) config('campaigns.booth_monthly_fee'),
+                    pricingTiers: $this->pricing->activeTiers($summary->currency),
                 ),
             ),
         ]);

@@ -2,6 +2,7 @@
 
 namespace App\Actions\InstitutionalRegistration;
 
+use App\Actions\Marketing\AttributeSignupReferrerAction;
 use App\Actions\Workspaces\CreateNewWorkspace;
 use App\DTOs\InstitutionalRegistration\InstitutionalSponsorAccount;
 use App\DTOs\InstitutionalRegistration\InstitutionalSponsorRegistrationData;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\Hash;
 
 final readonly class CreateInstitutionalSponsorAccountAction
 {
-    public function __construct(private CreateNewWorkspace $createWorkspace) {}
+    public function __construct(private CreateNewWorkspace $createWorkspace, private AttributeSignupReferrerAction $attributeReferrer) {}
 
     public function execute(InstitutionalSponsorRegistrationData $data): InstitutionalSponsorAccount
     {
@@ -39,6 +40,8 @@ final readonly class CreateInstitutionalSponsorAccountAction
                 memberJobTitle: $data->jobTitle,
                 authorizationConfirmed: true,
             ));
+
+            $this->attributeReferrer->execute($user, $data->referralCode);
 
             return new InstitutionalSponsorAccount($user, $workspace);
         });

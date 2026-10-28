@@ -7,6 +7,7 @@ use App\DTOs\InstitutionalRegistration\InstitutionalSponsorRegistrationData;
 use App\Enums\InstitutionalOrganizationType;
 use App\Enums\NigeriaState;
 use App\Models\User;
+use App\Rules\MarketingReferralCode;
 use App\ValueObjects\NigeriaPhoneNumber;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -35,6 +36,7 @@ final class StoreInstitutionalSponsorRegistrationRequest extends FormRequest
             'email' => ['required', 'email', 'max:255', Rule::unique(User::class)],
             'phone' => ['required', 'regex:/^\+234\d{10}$/', Rule::unique(User::class)],
             'password' => [...$this->passwordRules(), 'confirmed'],
+            'referral_code' => ['nullable', 'string', new MarketingReferralCode],
             'authorization_confirmed' => ['accepted'],
         ];
     }
@@ -42,6 +44,9 @@ final class StoreInstitutionalSponsorRegistrationRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
+            'referral_code' => is_string($this->input('referral_code'))
+                ? mb_strtolower(trim($this->input('referral_code')))
+                : $this->input('referral_code'),
             'organization_name' => $this->string('organization_name')->squish()->toString(),
             'official_email' => $this->string('official_email')->lower()->trim()->toString(),
             'official_phone' => NigeriaPhoneNumber::normalize($this->string('official_phone')->toString()),
@@ -66,6 +71,7 @@ final class StoreInstitutionalSponsorRegistrationRequest extends FormRequest
             ownerEmail: (string) $this->validated('email'),
             ownerPhone: (string) $this->validated('phone'),
             password: (string) $this->validated('password'),
+            referralCode: $this->validated('referral_code'),
         );
     }
 }

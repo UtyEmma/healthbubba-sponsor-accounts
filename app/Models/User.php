@@ -23,6 +23,8 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
+ * @property string|null $referrer_id
+ * @property string|null $referrer_linked_at
  * @property string $name
  * @property string $email
  * @property string|null $phone
@@ -37,7 +39,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'phone', 'password', 'type', 'role', 'account_verified_at'])]
+#[Fillable(['name', 'email', 'phone', 'password', 'type', 'role', 'status', 'email_verified_at', 'phone_verified_at', 'account_verified_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser
 {

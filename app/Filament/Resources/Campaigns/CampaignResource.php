@@ -52,6 +52,8 @@ class CampaignResource extends Resource
             ->with('workspace')
             ->withCount([
                 'beneficiaries',
+                'consultations',
+                'booths',
                 'booths as active_booths_count' => static fn (Builder $query): Builder => $query
                     ->whereIn('status', [
                         CampaignBoothStatus::Active,
@@ -60,7 +62,10 @@ class CampaignResource extends Resource
                     ]),
                 'recurringCosts as active_recurring_costs_count' => static fn (Builder $query): Builder => $query
                     ->where('is_active', true),
-            ]);
+            ])
+            ->withSum('consultationQuotas as allocated_consultation_value', 'total_cost')
+            ->withSum('usageEntries as utilized_healthcare_value', 'total_amount')
+            ->withSum('boothCharges as booth_charges_total', 'total_cost');
     }
 
     public static function form(Schema $schema): Schema

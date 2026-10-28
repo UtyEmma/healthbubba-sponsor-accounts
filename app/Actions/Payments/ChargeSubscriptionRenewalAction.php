@@ -2,6 +2,7 @@
 
 namespace App\Actions\Payments;
 
+use App\Actions\Admin\RenewComplimentarySubscriptionAction;
 use App\DTOs\Payments\RecurringChargeData;
 use App\Enums\Payments\PaymentPurpose;
 use App\Enums\Payments\PaymentStatus;
@@ -32,6 +33,7 @@ final readonly class ChargeSubscriptionRenewalAction
         private FailPaymentAction $failPayment,
         private RecordRenewalFailureAction $recordFailure,
         private AttemptWalletSubscriptionRenewalAction $walletRenewal,
+        private RenewComplimentarySubscriptionAction $complimentaryRenewal,
     ) {}
 
     public function execute(int $subscriptionId): void
@@ -41,6 +43,10 @@ final readonly class ChargeSubscriptionRenewalAction
             ->findOrFail($subscriptionId);
 
         if (! $this->isDue($subscription)) {
+            return;
+        }
+
+        if ($this->complimentaryRenewal->execute($subscriptionId)) {
             return;
         }
 

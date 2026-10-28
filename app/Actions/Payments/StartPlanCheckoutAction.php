@@ -2,6 +2,7 @@
 
 namespace App\Actions\Payments;
 
+use App\Actions\WorkspaceBeneficiaries\SynchronizeIndividualSponsorCoverageAction;
 use App\DTOs\Activity\WorkspaceActivityActor;
 use App\DTOs\Activity\WorkspaceActivityData;
 use App\DTOs\Payments\CheckoutSession;
@@ -16,6 +17,7 @@ use App\Enums\Payments\PaymentGatewayName;
 use App\Enums\Payments\PaymentPurpose;
 use App\Enums\Payments\PaymentStatus;
 use App\Enums\Payments\SubscriptionPaymentSource;
+use App\Enums\Subscriptions\SubscriptionFundingSource;
 use App\Enums\Transactions\TransactionFlow;
 use App\Enums\Transactions\TransactionStatus;
 use App\Enums\Transactions\TransactionTypes;
@@ -43,6 +45,7 @@ final readonly class StartPlanCheckoutAction
         private FailPaymentAction $failPayment,
         private CompletePaymentAction $completePayment,
         private WorkspaceActivityLogger $activities,
+        private SynchronizeIndividualSponsorCoverageAction $synchronizeSponsorCoverage,
     ) {}
 
     public function execute(StartPlanCheckoutData $data): SubscriptionCheckoutResult
@@ -178,7 +181,10 @@ final readonly class StartPlanCheckoutAction
                 'renewal_attempts' => 0,
                 'renewal_retry_at' => null,
                 'recurring_consent_at' => $startsAt,
+                'funding_source' => SubscriptionFundingSource::Wallet,
+                'complimentary_renews' => false,
             ]);
+            $this->synchronizeSponsorCoverage->execute($data->workspace, $data->plan);
 
             $wallet->update([
                 'balance' => (new Money(

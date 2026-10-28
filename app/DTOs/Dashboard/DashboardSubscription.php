@@ -16,6 +16,7 @@ final readonly class DashboardSubscription
         public int $includedCapacity,
         public int $currentCapacity,
         public int $additionalCapacity,
+        public bool $coversSponsorByDefault,
         public ?CarbonImmutable $renewsAt,
         public ?int $renewalDays,
     ) {}

@@ -34,6 +34,7 @@ type RegistrationStep =
     | 'setup';
 
 interface WorkspaceSetupForm {
+    referral_code: string;
     account_type: AccountType;
     organization_name: string;
     organization_type: string;
@@ -60,6 +61,7 @@ export default function Register({
     states,
     initialAccountType,
     initialEmail,
+    initialReferralCode,
 }: InstitutionalRegistrationPageProps) {
     const [selectedType, setSelectedType] = useState<AccountType | null>(
         initialAccountType,
@@ -91,6 +93,7 @@ export default function Register({
     });
 
     const newUserForm = useForm<NewUserRegistrationForm>({
+        referral_code: initialReferralCode ?? '',
         account_type: initialAccountType ?? 'individual',
         type: initialAccountType ?? ('individual' as AccountType),
         name: '',
@@ -109,6 +112,7 @@ export default function Register({
     });
 
     const workspaceForm = useHttp<WorkspaceSetupForm, null>({
+        referral_code: initialReferralCode ?? '',
         account_type: initialAccountType ?? 'individual',
         organization_name: '',
         organization_type: '',
@@ -266,6 +270,7 @@ export default function Register({
 
         newUserForm.clearErrors();
         const organizationFields = [
+            'referral_code',
             'organization_name',
             'organization_type',
             'country_code',
@@ -438,25 +443,32 @@ export default function Register({
                                 className="bg-muted/40"
                             />
                         </Field>
-                        {selectedType === 'institution' && (
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <Field
-                                    label="Phone number"
-                                    error={newUserForm.errors.phone}
-                                >
-                                    <Input
-                                        value={newUserForm.data.phone}
-                                        onChange={(event) =>
-                                            newUserForm.setData(
-                                                'phone',
-                                                event.currentTarget.value,
-                                            )
-                                        }
-                                        type="tel"
-                                        autoComplete="tel"
-                                        placeholder="+234"
-                                    />
-                                </Field>
+                        <div
+                            className={
+                                selectedType === 'institution'
+                                    ? 'grid gap-4 sm:grid-cols-2'
+                                    : undefined
+                            }
+                        >
+                            <Field
+                                label={`Phone number${selectedType === 'institution' ? '' : ' (optional)'}`}
+                                error={newUserForm.errors.phone}
+                            >
+                                <Input
+                                    value={newUserForm.data.phone}
+                                    onChange={(event) =>
+                                        newUserForm.setData(
+                                            'phone',
+                                            event.currentTarget.value,
+                                        )
+                                    }
+                                    type="tel"
+                                    inputMode="tel"
+                                    autoComplete="tel"
+                                    placeholder="+234"
+                                />
+                            </Field>
+                            {selectedType === 'institution' && (
                                 <Field
                                     label="Role / job title"
                                     error={newUserForm.errors.job_title}
@@ -472,8 +484,8 @@ export default function Register({
                                         autoComplete="organization-title"
                                     />
                                 </Field>
-                            </div>
-                        )}
+                            )}
+                        </div>
                         <Field
                             label="Password"
                             error={newUserForm.errors.password}
@@ -675,6 +687,41 @@ export default function Register({
                             />
                         )}
 
+                        <Field
+                            label="Referrer's code (optional)"
+                            error={
+                                isExistingIdentity
+                                    ? workspaceForm.errors.referral_code
+                                    : newUserForm.errors.referral_code
+                            }
+                        >
+                            <Input
+                                name="referral_code"
+                                value={
+                                    isExistingIdentity
+                                        ? workspaceForm.data.referral_code
+                                        : newUserForm.data.referral_code
+                                }
+                                onChange={(event) => {
+                                    const code = event.currentTarget.value;
+                                    newUserForm.setData('referral_code', code);
+                                    workspaceForm.setData(
+                                        'referral_code',
+                                        code,
+                                    );
+                                    newUserForm.clearErrors('referral_code');
+                                    workspaceForm.clearErrors('referral_code');
+                                }}
+                                autoComplete="off"
+                                spellCheck={false}
+                                placeholder="Marketer username"
+                                aria-invalid={Boolean(
+                                    isExistingIdentity
+                                        ? workspaceForm.errors.referral_code
+                                        : newUserForm.errors.referral_code,
+                                )}
+                            />
+                        </Field>
                         <InputError
                             error={
                                 isExistingIdentity

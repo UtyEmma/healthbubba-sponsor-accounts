@@ -2,6 +2,7 @@
 
 namespace App\Actions\Payments;
 
+use App\Actions\WorkspaceBeneficiaries\SynchronizeIndividualSponsorCoverageAction;
 use App\DTOs\Activity\WorkspaceActivityActor;
 use App\DTOs\Activity\WorkspaceActivityData;
 use App\DTOs\Payments\CheckoutSession;
@@ -18,6 +19,7 @@ use App\Enums\Payments\PaymentPurpose;
 use App\Enums\Payments\PaymentStatus;
 use App\Enums\Payments\SubscriptionPaymentSource;
 use App\Enums\Subscriptions\PlanChangeDirection;
+use App\Enums\Subscriptions\SubscriptionFundingSource;
 use App\Enums\Transactions\TransactionFlow;
 use App\Enums\Transactions\TransactionStatus;
 use App\Enums\Transactions\TransactionTypes;
@@ -47,6 +49,7 @@ final readonly class StartPlanChangeAction
         private FailPaymentAction $failPayment,
         private WorkspaceActivityLogger $activities,
         private PlanChangeEligibilityService $eligibility,
+        private SynchronizeIndividualSponsorCoverageAction $synchronizeSponsorCoverage,
     ) {}
 
     public function execute(StartPlanChangeData $data): PlanChangeResult
@@ -255,6 +258,7 @@ final readonly class StartPlanChangeAction
             'scheduled_plan_id' => null,
             'scheduled_plan_change_at' => null,
         ]);
+        $this->synchronizeSponsorCoverage->execute($data->workspace, $targetPlan);
 
         $this->activities->record($data->workspace, new WorkspaceActivityData(
             type: WorkspaceActivityType::PlanDowngradeApplied,
@@ -313,7 +317,11 @@ final readonly class StartPlanChangeAction
             'capacity_count' => $quote->targetCapacityCount,
             'scheduled_plan_id' => null,
             'scheduled_plan_change_at' => null,
+            'funding_source' => SubscriptionFundingSource::Wallet,
+            'assigned_by_user_id' => null,
+            'complimentary_renews' => false,
         ]);
+        $this->synchronizeSponsorCoverage->execute($data->workspace, $targetPlan);
 
         Transaction::query()->create([
             'payment_id' => null,

@@ -4,11 +4,11 @@ namespace App\Filament\Resources\Workspaces\RelationManagers;
 
 use App\Enums\AccountTypes;
 use App\Enums\CampaignBoothStatus;
+use App\Filament\Resources\Campaigns\CampaignResource;
 use App\Filament\Resources\Campaigns\Schemas\CampaignForm;
 use App\Filament\Resources\Campaigns\Tables\CampaignsTable;
-use App\Models\Campaign;
 use App\Models\Workspace;
-use Filament\Actions\CreateAction;
+use Filament\Actions\Action;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
@@ -46,13 +46,12 @@ class CampaignsRelationManager extends RelationManager
                     ->where('is_active', true),
             ]))
             ->headerActions([
-                CreateAction::make()
-                    ->databaseTransaction()
-                    ->after(static function (Campaign $record): void {
-                        if ($record->workspace->onboarded_at === null) {
-                            $record->workspace->update(['onboarded_at' => now()]);
-                        }
-                    }),
+                Action::make('createCampaign')
+                    ->label('Create campaign')
+                    ->icon('heroicon-o-plus')
+                    ->url(fn (): string => CampaignResource::getUrl('create', [
+                        'workspace' => $this->getOwnerRecord()->getKey(),
+                    ])),
             ]);
     }
 }

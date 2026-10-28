@@ -7,6 +7,7 @@ use App\Enums\AccountTypes;
 use App\Enums\Consultations\AllocationFallback;
 use App\Enums\InstitutionalOrganizationType;
 use App\Enums\NigeriaState;
+use App\Enums\WorkspaceMembers\WorkspaceMemberRole;
 use App\Enums\WorkspaceMembers\WorkspaceMemberStatus;
 use App\Models\Consultations\Appointment;
 use App\Models\Consultations\Consultation;
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -27,6 +29,8 @@ use Revoltify\Subscriptionify\Models\Feature;
 
 /**
  * @property int $id
+ * @property string|null $referrer_id
+ * @property string|null $referrer_linked_at
  * @property string $name
  * @property string|null $description
  * @property Carbon|null $onboarded_at
@@ -41,6 +45,7 @@ use Revoltify\Subscriptionify\Models\Feature;
  * @property-read EloquentCollection<int, Campaign> $campaigns
  * @property-read Campaign|null $latestCampaign
  * @property-read InstitutionalFundingProgram|null $fundingProgram
+ * @property-read EloquentCollection<int, Subscription> $subscriptions
  * @property-read EloquentCollection<int, Beneficiary> $patients
  */
 class Workspace extends Model implements Subscribable
@@ -141,6 +146,19 @@ class Workspace extends Model implements Subscribable
     public function paymentMethods(): HasMany
     {
         return $this->hasMany(PaymentMethod::class);
+    }
+
+    /** @return MorphOne<Subscription, $this> */
+    public function latestSubscription(): MorphOne
+    {
+        return $this->morphOne(Subscription::class, 'subscribable')->latestOfMany();
+    }
+
+    /** @return HasOne<WorkspaceMember, $this> */
+    public function ownerMembership(): HasOne
+    {
+        return $this->hasOne(WorkspaceMember::class)
+            ->where('role', WorkspaceMemberRole::Owner);
     }
 
     /** @return MorphMany<Transaction, $this> */

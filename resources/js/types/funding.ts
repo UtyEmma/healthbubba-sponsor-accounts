@@ -56,6 +56,8 @@ export interface FundingLedgerEntry {
     amount: string;
     currency: string;
     flow: 'credit' | 'debit';
+    recordedBy: string | null;
+    recordingChannel: 'admin' | 'customer' | 'system' | string;
 }
 
 export interface FundingOption<T extends string = string> {

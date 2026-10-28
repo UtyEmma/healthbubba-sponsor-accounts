@@ -72,6 +72,10 @@ class PlanInfolist
                             ->label('Additional capacity purchases')
                             ->boolean()
                             ->visible(fn (Plan $record): bool => $record->account_type !== AccountTypes::INSTITUTION),
+                        IconEntry::make('covers_sponsor_by_default')
+                            ->label('Sponsor covered by default')
+                            ->boolean()
+                            ->visible(fn (Plan $record): bool => $record->account_type === AccountTypes::INDIVIDUAL),
                         TextEntry::make('sort_order'),
                     ])
                     ->columns(3),

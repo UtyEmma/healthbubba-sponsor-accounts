@@ -5,7 +5,11 @@ namespace App\Filament\Resources\Workspaces;
 use App\Filament\Resources\Workspaces\Pages\EditWorkspace;
 use App\Filament\Resources\Workspaces\Pages\ListWorkspaces;
 use App\Filament\Resources\Workspaces\Pages\ViewWorkspace;
+use App\Filament\Resources\Workspaces\RelationManagers\ActivitiesRelationManager;
 use App\Filament\Resources\Workspaces\RelationManagers\CampaignsRelationManager;
+use App\Filament\Resources\Workspaces\RelationManagers\MembersRelationManager;
+use App\Filament\Resources\Workspaces\RelationManagers\SubscriptionsRelationManager;
+use App\Filament\Resources\Workspaces\RelationManagers\TransactionsRelationManager;
 use App\Filament\Resources\Workspaces\Schemas\WorkspaceForm;
 use App\Filament\Resources\Workspaces\Schemas\WorkspaceInfolist;
 use App\Filament\Resources\Workspaces\Tables\WorkspacesTable;
@@ -49,8 +53,8 @@ class WorkspaceResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->with('latestCampaign')
-            ->withCount(['members', 'campaigns']);
+            ->with(['latestCampaign', 'wallet', 'latestSubscription.plan', 'ownerMembership.user'])
+            ->withCount(['members', 'campaigns', 'workspaceBeneficiaries', 'consultations']);
     }
 
     public static function form(Schema $schema): Schema
@@ -71,7 +75,11 @@ class WorkspaceResource extends Resource
     public static function getRelations(): array
     {
         return [
+            ActivitiesRelationManager::class,
             CampaignsRelationManager::class,
+            MembersRelationManager::class,
+            SubscriptionsRelationManager::class,
+            TransactionsRelationManager::class,
         ];
     }
 

@@ -9,6 +9,7 @@ final readonly class CapacitySummary
         public int $total,
         public ?string $unavailableReason = null,
         public bool $unlimited = false,
+        public bool $sponsorCoveredByDefault = false,
     ) {}
 
     public function remaining(): int

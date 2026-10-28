@@ -33,6 +33,7 @@ export interface CampaignFinancialMetrics {
     currency: string;
     allocated: string;
     utilized: string;
+    consultationUtilized: string;
     reserved: string;
     returned: string;
     utilizationPercentage: number;
@@ -119,7 +120,10 @@ export interface CampaignDetail {
     ledger: CampaignLedgerEntry[];
 }
 
-export type CampaignBeneficiaryCapacity = WorkspaceCapacity;
+export type CampaignBeneficiaryCapacity = Omit<
+    WorkspaceCapacity,
+    'sponsorCoveredByDefault'
+>;
 
 export interface Campaign {
     id: number;
@@ -142,6 +146,12 @@ export interface Campaign {
     booth: CampaignBooth | null;
     scheduledFee: string | null;
     instantFee: string | null;
+    servicePricing: {
+        beneficiaryUnitFee: string;
+        beneficiarySetupFee: string | null;
+        monthlyServiceFee: string | null;
+        currency: string;
+    } | null;
     beneficiaryCount?: number;
     activeBeneficiaryCount?: number;
     capacityUsed?: number;
@@ -169,6 +179,16 @@ export interface CampaignCreationConfiguration {
     instantUnitFee: string;
     boothSetupUnitFee: string;
     boothMonthlyUnitFee: string;
+    pricingTiers: CampaignPricingTier[];
+}
+
+export interface CampaignPricingTier {
+    id: number;
+    minimumBeneficiaries: number;
+    maximumBeneficiaries: number | null;
+    beneficiaryUnitFee: string;
+    monthlyServiceFee: string | null;
+    currency: string;
 }
 
 export interface CampaignConsultationQuota {

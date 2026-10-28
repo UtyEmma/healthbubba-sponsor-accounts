@@ -9,6 +9,7 @@ export interface InstitutionalRegistrationPageProps {
     states: RegistrationOption[];
     initialAccountType: AccountType | null;
     initialEmail: string;
+    initialReferralCode: string;
 }
 
 export type VerificationChannel = 'email' | 'sms';

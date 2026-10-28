@@ -111,7 +111,8 @@ class CampaignForm
                                     ->label('Booth required')
                                     ->helperText('Indicates whether HealthBubba support should arrange a booth for this campaign.')
                                     ->default(false)
-                                    ->required(),
+                                    ->required()
+                                    ->disabled(fn (string $operation): bool => $operation === 'edit'),
                             ])
                             ->columnSpan(['default' => 'full', 'xl' => 4]),
                         Section::make('Consultation fees')
@@ -123,20 +124,24 @@ class CampaignForm
                                     ->numeric()
                                     ->minValue(0)
                                     ->prefix('₦')
-                                    ->default(config('campaigns.default_scheduled_consultation_fee', 0)),
+                                    ->default(config('campaigns.default_scheduled_consultation_fee', 0))
+                                    ->disabled(fn (string $operation): bool => $operation === 'edit'),
                                 TextInput::make('instant_consultation_fee')
                                     ->label('Instant consultation fee (₦)')
                                     ->helperText('Fee per instant consultation in Naira.')
                                     ->numeric()
                                     ->minValue(0)
                                     ->prefix('₦')
-                                    ->default(config('campaigns.default_instant_consultation_fee', 0)),
+                                    ->default(config('campaigns.default_instant_consultation_fee', 0))
+                                    ->disabled(fn (string $operation): bool => $operation === 'edit'),
                             ])
                             ->columnSpanFull(),
                         Section::make('Healthcare budgets')
                             ->schema([
-                                TextInput::make('medication_budget')->numeric()->prefix('₦'),
-                                TextInput::make('laboratory_budget')->numeric()->prefix('₦'),
+                                TextInput::make('medication_budget')->numeric()->prefix('₦')
+                                    ->disabled(fn (string $operation): bool => $operation === 'edit'),
+                                TextInput::make('laboratory_budget')->numeric()->prefix('₦')
+                                    ->disabled(fn (string $operation): bool => $operation === 'edit'),
                             ])
                             ->columnSpanFull(),
                         Section::make('Coverage rule overrides')
@@ -168,11 +173,16 @@ class CampaignForm
                             ->columnSpanFull(),
                         Section::make('Booth deployment')
                             ->schema([
-                                TextInput::make('booth_count')->numeric()->integer()->minValue(1),
-                                DatePicker::make('booth_preferred_deployment_date'),
-                                TextInput::make('booth_site'),
-                                TextInput::make('booth_contact_name'),
-                                TextInput::make('booth_contact_phone'),
+                                TextInput::make('booth_count')->numeric()->integer()->minValue(1)
+                                    ->disabled(fn (string $operation): bool => $operation === 'edit'),
+                                DatePicker::make('booth_preferred_deployment_date')
+                                    ->disabled(fn (string $operation): bool => $operation === 'edit'),
+                                TextInput::make('booth_site')
+                                    ->disabled(fn (string $operation): bool => $operation === 'edit'),
+                                TextInput::make('booth_contact_name')
+                                    ->disabled(fn (string $operation): bool => $operation === 'edit'),
+                                TextInput::make('booth_contact_phone')
+                                    ->disabled(fn (string $operation): bool => $operation === 'edit'),
                             ])
                             ->columns(2)
                             ->columnSpanFull(),

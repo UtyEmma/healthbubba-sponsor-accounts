@@ -105,6 +105,12 @@ final readonly class PatientConsultationSponsorshipQuery
                 $currentSubscription = $activeSubscription
                     ?? $latestSubscriptions->get($workspace->getKey());
 
+                if ($membership->isPrimarySponsor()
+                    && (! $currentSubscription instanceof Subscription
+                        || ! $currentSubscription->plan->covers_sponsor_by_default)) {
+                    return [];
+                }
+
                 return [$this->subscriptionSponsor(
                     $workspace,
                     $membership,
