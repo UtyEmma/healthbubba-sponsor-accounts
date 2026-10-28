@@ -21,7 +21,7 @@ return new class extends Migration
                 'minimum_beneficiaries' => 1,
                 'maximum_beneficiaries' => 100,
                 'beneficiary_unit_fee' => '1500.00',
-                'monthly_service_fee' => '',
+                'monthly_service_fee' => null,
                 'currency' => 'NGN',
                 'is_active' => true,
                 'sort_order' => 1,
