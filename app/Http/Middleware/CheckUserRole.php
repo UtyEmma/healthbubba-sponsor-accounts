@@ -23,11 +23,7 @@ class CheckUserRole
                 return redirect(route('filament.admin.auth.login'));
             }
         }
-
-        if($user->role == Roles::USER) {
-            return redirect(route('home'));
-        }
-
+        
         return $next($request);
     }
 }
