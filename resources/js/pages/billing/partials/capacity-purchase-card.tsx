@@ -43,10 +43,9 @@ export function CapacityPurchaseCard({
         summary.maximum_capacity === null
             ? 100000
             : Math.max(0, summary.maximum_capacity - summary.current_capacity);
-    const proratedUnitPrice = Number(summary.prorated_unit_price ?? 0);
-    const renewalUnitPrice = Number(summary.unit_price ?? 0);
-    const chargeNow = proratedUnitPrice * quantity;
-    const renewalIncrease = renewalUnitPrice * quantity;
+    const unitPrice = Number(summary.unit_price ?? 0);
+    const chargeNow = unitPrice * quantity;
+    const renewalIncrease = unitPrice * quantity;
     const walletBalance = Number(summary.wallet_balance);
     const walletAvailable = walletBalance >= chargeNow;
     function handleOpenChange(nextOpen: boolean) {
@@ -70,7 +69,7 @@ export function CapacityPurchaseCard({
                     </h2>
                     <p className="text-sm leading-5 text-muted-foreground">
                         {summary.available
-                            ? `Add ${summary.unit_plural} mid-cycle. Add seats mid-cycle. You're charged a pro-rated amount up to your renewal date, and the full monthly allocation is injected immediately.`
+                            ? `Add ${summary.unit_plural} at the fixed plan rate. The full allocation is available immediately, and the same amount is added to future renewals.`
                             : summary.unavailable_reason}
                     </p>
                 </CardHeader>
@@ -146,7 +145,7 @@ export function CapacityPurchaseCard({
                             </div>
                             <div className="grid gap-0.5">
                                 <span className="text-sm text-muted-foreground">
-                                    Prorated charge now
+                                    Fixed charge now
                                 </span>
                                 <output className="text-xl font-semibold">
                                     {formatMoney(chargeNow, summary.currency)}
@@ -191,7 +190,7 @@ export function CapacityPurchaseCard({
                                     : summary.unit_plural}
                             </DialogTitle>
                             <DialogDescription className="leading-5">
-                                Choose how to pay for the prorated capacity
+                                Choose how to pay for this fixed-price capacity
                                 purchase.
                             </DialogDescription>
                         </DialogHeader>

@@ -114,7 +114,6 @@ export type CapacityPurchaseSummary = {
     included_capacity: number;
     maximum_capacity: number | null;
     unit_price: string | null;
-    prorated_unit_price: string | null;
     currency: string;
     wallet_balance: string;
     available: boolean;

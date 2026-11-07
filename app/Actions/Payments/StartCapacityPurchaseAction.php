@@ -267,7 +267,8 @@ final readonly class StartCapacityPurchaseAction
             'previous_capacity' => $quote->previousCapacity,
             'new_capacity' => $quote->newCapacity,
             'unit_amount_minor' => $quote->unitPrice->amountInMinorUnits,
-            'prorated_unit_amount_minor' => $quote->proratedUnitPrice->amountInMinorUnits,
+            // Retained as a fixed-price snapshot for legacy schema compatibility.
+            'prorated_unit_amount_minor' => $quote->unitPrice->amountInMinorUnits,
             'amount_minor' => $quote->total->amountInMinorUnits,
             'renewal_amount_minor' => $quote->renewalIncrease->amountInMinorUnits,
             'currency' => $quote->total->currency,

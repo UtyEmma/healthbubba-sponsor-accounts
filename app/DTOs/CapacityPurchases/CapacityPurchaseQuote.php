@@ -13,7 +13,6 @@ final readonly class CapacityPurchaseQuote
         public int $previousCapacity,
         public int $newCapacity,
         public Money $unitPrice,
-        public Money $proratedUnitPrice,
         public Money $total,
         public Money $renewalIncrease,
         public CarbonInterface $termStartsAt,

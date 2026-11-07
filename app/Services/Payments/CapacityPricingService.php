@@ -80,22 +80,13 @@ final readonly class CapacityPricingService
             throw new CheckoutUnavailable('The subscription billing term is invalid.');
         }
 
-        // dd($configuration, $configuration->unitPrice);
-        $proratedUnitPrice = $this->prorate(
-            money: $configuration->unitPrice,
-            termStartsAt: $termStartsAt,
-            termEndsAt: $termEndsAt,
-            quotedAt: $quotedAt,
-        );
-
         return new CapacityPurchaseQuote(
             configuration: $configuration,
             quantity: $quantity,
             previousCapacity: $previousCapacity,
             newCapacity: $previousCapacity + $quantity,
             unitPrice: $configuration->unitPrice,
-            proratedUnitPrice: $proratedUnitPrice,
-            total: $proratedUnitPrice->multiply($quantity),
+            total: $configuration->unitPrice->multiply($quantity),
             renewalIncrease: $configuration->unitPrice->multiply($quantity),
             termStartsAt: $termStartsAt,
             termEndsAt: $termEndsAt,
@@ -111,14 +102,13 @@ final readonly class CapacityPricingService
         }
 
         $currentCapacity = $this->currentCapacity($subscription);
-        
-        $proratedUnitPrice = null;
+
         $available = $configuration->purchasesEnabled;
         $reason = $configuration->unavailableReason;
 
         if ($available) {
             try {
-                $proratedUnitPrice = $this->quote($subscription, 1)->proratedUnitPrice;
+                $this->quote($subscription, 1);
             } catch (CheckoutUnavailable $exception) {
                 $available = false;
                 $reason = $exception->getMessage();
@@ -133,7 +123,6 @@ final readonly class CapacityPricingService
             includedCapacity: $configuration->includedCapacity,
             maximumCapacity: $configuration->maximumCapacity,
             unitPrice: $configuration->unitPrice?->toMajorAmount(),
-            proratedUnitPrice: $proratedUnitPrice?->toMajorAmount(),
             currency: $configuration->unitPrice->currency
                 ?? config()->string('payments.currency', 'NGN'),
             walletBalance: $wallet->balance ?? '0.00',
@@ -217,26 +206,6 @@ final readonly class CapacityPricingService
         }
 
         return null;
-    }
-
-    private function prorate(
-        Money $money,
-        CarbonInterface $termStartsAt,
-        CarbonInterface $termEndsAt,
-        CarbonInterface $quotedAt,
-    ): Money {
-        $termSeconds = max(1, $termStartsAt->diffInSeconds($termEndsAt));
-        $remainingSeconds = max(0, $quotedAt->diffInSeconds($termEndsAt));
-        $proratedMinor = (int) round(
-            $money->amountInMinorUnits * min(1, $remainingSeconds / $termSeconds),
-            0,
-            PHP_ROUND_HALF_UP,
-        );
-
-        return new Money(
-            amountInMinorUnits: max(1, $proratedMinor),
-            currency: $money->currency,
-        );
     }
 
     private function money(string|int|null $amount): ?Money
