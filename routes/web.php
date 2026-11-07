@@ -138,7 +138,7 @@ Route::post('/register/institutional', StoreInstitutionalSponsorRegistrationCont
     ->middleware(['guest', 'throttle:10,1'])
     ->name('institutional_registration.store');
 
-Route::middleware('auth')
+Route::middleware('auth', 'role:user')
     ->prefix('account-verification')
     ->name('account_verification.')
     ->group(function (): void {
@@ -161,7 +161,7 @@ $businessWorkspace = 'workspace.type:'.AccountTypes::BUSINESS->value;
 $institutionalWorkspace = 'workspace.type:'.AccountTypes::INSTITUTION->value;
 $subscriptionWorkspace = $individualWorkspace.','.AccountTypes::BUSINESS->value;
 
-Route::middleware(['auth', EnsureInstitutionalAccountVerified::class])->group(function () use (
+Route::middleware(['auth', 'role:user', EnsureInstitutionalAccountVerified::class])->group(function () use (
     $businessWorkspace,
     $individualWorkspace,
     $institutionalWorkspace,

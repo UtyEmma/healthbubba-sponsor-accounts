@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CheckUserRole;
 use App\Http\Middleware\EnsureApiResponseEnvelope;
 use App\Http\Middleware\EnsureHealthBubbaServiceToken;
 use App\Http\Middleware\EnsureWorkspaceType;
@@ -28,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'healthbubba.service' => EnsureHealthBubbaServiceToken::class,
             'workspace.type' => EnsureWorkspaceType::class,
+            'role' => CheckUserRole::class
         ]);
 
         $middleware->preventRequestForgery(except: [
