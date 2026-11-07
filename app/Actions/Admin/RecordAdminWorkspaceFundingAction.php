@@ -33,7 +33,7 @@ final readonly class RecordAdminWorkspaceFundingAction
 
         if ($data->amount->amountInMinorUnits <= 0) {
             throw ValidationException::withMessages([
-                'funding_amount' => 'The funding amount must be greater than zero.',
+                'amount' => 'The funding amount must be greater than zero.',
             ]);
         }
 
@@ -47,7 +47,7 @@ final readonly class RecordAdminWorkspaceFundingAction
 
             if ($wallet->currency !== $data->amount->currency) {
                 throw ValidationException::withMessages([
-                    'funding_amount' => 'The funding currency must match the workspace wallet currency.',
+                    'amount' => 'The funding currency must match the workspace wallet currency.',
                 ]);
             }
 

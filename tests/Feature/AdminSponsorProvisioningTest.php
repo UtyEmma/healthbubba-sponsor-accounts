@@ -144,3 +144,45 @@ it('assigns complimentary plans without debiting the sponsor wallet', function (
         ->and($workspace->wallet()->firstOrFail()->balance)->toBe('0.00')
         ->and(Transaction::query()->where('type', TransactionTypes::SUBSCRIPTION)->exists())->toBeFalse();
 });
+
+it('creates a wallet-funded subscription and records the administrator debit', function () {
+    $administrator = User::factory()->create(['role' => Roles::ADMIN]);
+    $owner = User::factory()->create();
+    $workspace = app(CreateNewWorkspace::class)->execute(
+        $owner,
+        new CreateWorkspaceData('Funded Sponsor Business', AccountTypes::BUSINESS),
+    );
+    $workspace->wallet()->update(['balance' => '250000.00']);
+    $plan = Plan::query()->create([
+        'name' => 'Business Wallet Plan',
+        'slug' => 'business-wallet-plan',
+        'account_type' => AccountTypes::BUSINESS,
+        'price' => '10000.00',
+        'is_active' => true,
+        'is_free' => false,
+        'trial_days' => 0,
+        'billing_period' => 1,
+        'billing_interval' => 'month',
+    ]);
+
+    $subscription = app(AssignWorkspaceSubscriptionAction::class)->execute(
+        $administrator,
+        new AssignWorkspaceSubscriptionData(
+            workspaceId: $workspace->getKey(),
+            planId: $plan->getKey(),
+            fundingSource: SubscriptionFundingSource::Wallet,
+        ),
+    );
+
+    $transaction = Transaction::query()
+        ->where('type', TransactionTypes::SUBSCRIPTION)
+        ->firstOrFail();
+
+    expect($subscription->status)->toBe(SubscriptionStatus::Active)
+        ->and($subscription->funding_source)->toBe(SubscriptionFundingSource::Wallet)
+        ->and($subscription->assigned_by_user_id)->toBe($administrator->getKey())
+        ->and($workspace->wallet()->firstOrFail()->balance)->toBe('240000.00')
+        ->and($transaction->flow)->toBe(TransactionFlow::DEBIT)
+        ->and($transaction->amount)->toBe('10000.00')
+        ->and($transaction->recorded_by_user_id)->toBe($administrator->getKey());
+});

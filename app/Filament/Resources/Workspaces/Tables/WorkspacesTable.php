@@ -3,7 +3,9 @@
 namespace App\Filament\Resources\Workspaces\Tables;
 
 use App\Enums\AccountTypes;
+use App\Filament\Resources\Workspaces\Actions\WorkspaceAdminActions;
 use App\Models\Plan;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
@@ -92,6 +94,10 @@ class WorkspacesTable
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
+                ActionGroup::make([
+                    WorkspaceAdminActions::recordFunding(),
+                    WorkspaceAdminActions::assignSubscription(),
+                ])->label('Billing actions'),
             ]);
     }
 }

@@ -19,7 +19,7 @@ final class SubscriptionPolicy
 
     public function create(User $administrator): bool
     {
-        return false;
+        return $administrator->isAdmin();
     }
 
     public function update(User $administrator, Subscription $subscription): bool
