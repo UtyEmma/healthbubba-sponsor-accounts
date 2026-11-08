@@ -27,6 +27,7 @@ use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Models\Workspace;
 use App\Payments\PaymentService;
+use App\Services\Payments\BillingCycleUpgradePricingService;
 use App\Services\Payments\IndividualPlanIntervalPricingService;
 use App\Services\Payments\PlanChangePricingService;
 use App\Services\Payments\PlanPricingService;
@@ -50,6 +51,7 @@ final readonly class CompletePaymentAction
         private PlanChangePricingService $planChangePricing,
         private SynchronizeIndividualSponsorCoverageAction $synchronizeSponsorCoverage,
         private IndividualPlanIntervalPricingService $intervalPricing,
+        private BillingCycleUpgradePricingService $billingCycleUpgradePricing,
     ) {}
 
     public function execute(
@@ -147,6 +149,10 @@ final readonly class CompletePaymentAction
                         payment: $lockedPayment,
                         workspace: $workspace,
                     ),
+                    PaymentPurpose::BILLING_CYCLE_UPGRADE => $this->completeBillingCycleUpgradePayment(
+                        payment: $lockedPayment,
+                        workspace: $workspace,
+                    ),
                 };
 
                 if ($paymentMethod instanceof PaymentMethod) {
@@ -237,6 +243,7 @@ final readonly class CompletePaymentAction
             ) ? $payment->payable_type : null,
             PaymentPurpose::CAPACITY_PURCHASE => (new CapacityPurchase)->getMorphClass(),
             PaymentPurpose::PLAN_UPGRADE => (new Subscription)->getMorphClass(),
+            PaymentPurpose::BILLING_CYCLE_UPGRADE => (new Subscription)->getMorphClass(),
         };
 
         if ($expectedType === null || $payment->payable_type !== $expectedType) {
@@ -381,6 +388,61 @@ final readonly class CompletePaymentAction
             'complimentary_renews' => false,
         ]);
         $this->synchronizeSponsorCoverage->execute($workspace, $targetPlan);
+
+        return $subscription->refresh();
+    }
+
+    private function completeBillingCycleUpgradePayment(
+        Payment $payment,
+        Workspace $workspace,
+    ): Subscription {
+        $subscription = Subscription::query()
+            ->with('plan.features')
+            ->whereKey($payment->payable_id)
+            ->where('subscribable_type', $workspace->getMorphClass())
+            ->where('subscribable_id', $workspace->getKey())
+            ->lockForUpdate()
+            ->firstOrFail();
+        $from = IndividualPlanBillingCycle::tryFrom((string) ($payment->metadata['from_billing_cycle'] ?? ''));
+        $to = IndividualPlanBillingCycle::tryFrom((string) ($payment->metadata['to_billing_cycle'] ?? ''));
+        $quotedAt = $payment->metadata['quoted_at'] ?? null;
+        $termEndsAt = $payment->metadata['term_ends_at'] ?? null;
+
+        if (! $from instanceof IndividualPlanBillingCycle
+            || ! $to instanceof IndividualPlanBillingCycle
+            || ! is_string($quotedAt)
+            || ! is_string($termEndsAt)
+            || $subscription->status !== SubscriptionStatus::Active
+            || $this->intervalPricing->currentCycle($subscription) !== $from
+            || $subscription->ends_at?->toISOString() !== $termEndsAt) {
+            throw new PaymentVerificationFailed('The subscription changed before the billing-cycle payment completed.');
+        }
+
+        $quote = $this->billingCycleUpgradePricing->quote(
+            $subscription,
+            $to,
+            CarbonImmutable::parse($quotedAt),
+        );
+
+        if ($payment->amount_minor !== $quote->amountDueNow->amountInMinorUnits
+            || $payment->currency !== $quote->amountDueNow->currency
+            || $this->positiveMetadataInteger($payment, 'current_amount_minor', 'billing-cycle upgrade')
+                !== $quote->currentAmount->amountInMinorUnits
+            || $this->positiveMetadataInteger($payment, 'target_amount_minor', 'billing-cycle upgrade')
+                !== $quote->targetAmount->amountInMinorUnits
+            || ($payment->metadata['target_ends_at'] ?? null) !== $quote->targetEndsAt->toISOString()) {
+            throw new PaymentVerificationFailed('The billing-cycle pricing changed before payment completed.');
+        }
+
+        $subscription->update([
+            'billing_cycle' => $to->value,
+            'scheduled_billing_cycle' => null,
+            'ends_at' => $quote->targetEndsAt,
+            'next_charge_at' => $subscription->auto_renew ? $quote->targetEndsAt : null,
+            'funding_source' => SubscriptionFundingSource::CustomerPaid,
+            'assigned_by_user_id' => null,
+            'complimentary_renews' => false,
+        ]);
 
         return $subscription->refresh();
     }
@@ -716,6 +778,7 @@ final readonly class CompletePaymentAction
                 PaymentPurpose::SUBSCRIPTION => TransactionTypes::SUBSCRIPTION,
                 PaymentPurpose::CAPACITY_PURCHASE => TransactionTypes::CAPACITY_PURCHASE,
                 PaymentPurpose::PLAN_UPGRADE => TransactionTypes::PLAN_CHANGE,
+                PaymentPurpose::BILLING_CYCLE_UPGRADE => TransactionTypes::PLAN_CHANGE,
             },
             'status' => TransactionStatus::COMPLETED,
             'flow' => $payment->purpose === PaymentPurpose::WALLET_TOP_UP
@@ -727,6 +790,7 @@ final readonly class CompletePaymentAction
                     PaymentPurpose::SUBSCRIPTION => 'Plan subscription payment',
                     PaymentPurpose::CAPACITY_PURCHASE => 'Additional capacity purchase',
                     PaymentPurpose::PLAN_UPGRADE => 'Prorated plan upgrade',
+                    PaymentPurpose::BILLING_CYCLE_UPGRADE => 'Billing cycle upgrade',
                 },
                 'gateway' => $payment->gateway->value,
             ],

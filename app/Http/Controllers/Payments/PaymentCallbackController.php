@@ -48,6 +48,7 @@ final class PaymentCallbackController extends Controller
                 PaymentPurpose::SUBSCRIPTION => 'Your subscription is now active.',
                 PaymentPurpose::CAPACITY_PURCHASE => 'Your additional capacity is now available.',
                 PaymentPurpose::PLAN_UPGRADE => 'Your plan upgrade is now active.',
+                PaymentPurpose::BILLING_CYCLE_UPGRADE => 'Your billing cycle upgrade is now active.',
             },
         );
     }

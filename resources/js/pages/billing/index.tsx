@@ -1,7 +1,6 @@
-import { Form, Head, usePage } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { useState } from 'react';
-import StoreSubscriptionBillingCycleController from '@/actions/App/Http/Controllers/Payments/StoreSubscriptionBillingCycleController';
+import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { PaymentStatusNotice } from '@/components/payment-status-notice';
 import { Disclose } from '@/components/toggle/disclose';
@@ -11,6 +10,7 @@ import { useActivePaymentGateway } from '@/hooks/use-active-payment-gateway';
 import { DashboardLayout } from '@/layouts/dashboard';
 import { cn } from '@/lib/utils';
 import type { IndividualPlanBillingCycle, PlanBillingPageProps } from '@/types';
+import { BillingCycleChangeDialog } from './partials/billing-cycle-change-dialog';
 import { CapacityPurchaseCard } from './partials/capacity-purchase-card';
 import { PlanCard } from './partials/plan-cards';
 import { PlanChangeDialog } from './partials/plan-change-dialog';
@@ -55,9 +55,7 @@ export default function ({
     const [renewalOpen, setRenewalOpen] = useState(false);
     const [selectedBillingCycle, setSelectedBillingCycle] =
         useState<IndividualPlanBillingCycle>(
-            subscription?.scheduledBillingCycle?.cycle ??
-                subscription?.billingCycle?.cycle ??
-                'monthly',
+            subscription?.billingCycle?.cycle ?? 'monthly',
         );
     const billingCycles =
         accountType === 'individual' ? (plans[0]?.billing_options ?? []) : [];
@@ -67,11 +65,24 @@ export default function ({
     );
     const selectedPlanChange =
         selectedPlanBillingOption?.plan_change ?? selectedPlan?.plan_change;
+    const billingCycleChangeOpen =
+        selectedPlan?.is_current === true &&
+        subscription !== null &&
+        selectedPlanBillingOption?.billing_cycle_change?.available === true;
 
     const renewalDate =
         subscription?.status === 'trialing'
             ? subscription.trialEndsAt
             : subscription?.endsAt;
+
+    useEffect(() => {
+        if (!flash.success) {
+            return;
+        }
+
+        setSelectedPlan(null);
+        setRenewalOpen(false);
+    }, [flash.success]);
 
     return (
         <>
@@ -159,10 +170,8 @@ export default function ({
                                             )}
                                         </p>
                                         <p className="text-xs text-muted-foreground">
-                                            {subscription.scheduledBillingCycle
-                                                ?.cadence ??
-                                                subscription.scheduledPlan
-                                                    ?.billingLabel ??
+                                            {subscription.scheduledPlan
+                                                ?.billingLabel ??
                                                 subscription.plan.billingLabel}
                                         </p>
                                     </div>
@@ -202,47 +211,12 @@ export default function ({
                                                         }
                                                     </p>
                                                     <p className="text-xs text-muted-foreground">
-                                                        {subscription.scheduledBillingCycle
-                                                            ? `${subscription.scheduledBillingCycle.label} starts at the next renewal.`
-                                                            : 'No interval change is scheduled.'}
+                                                        Longer billing cycles
+                                                        can be upgraded
+                                                        immediately by paying
+                                                        the difference.
                                                     </p>
                                                 </div>
-                                                {selectedBillingCycle !==
-                                                    (subscription
-                                                        .scheduledBillingCycle
-                                                        ?.cycle ??
-                                                        currentCycle) && (
-                                                    <Form
-                                                        {...StoreSubscriptionBillingCycleController.form(
-                                                            subscription.id,
-                                                        )}
-                                                    >
-                                                        {({ processing }) => (
-                                                            <>
-                                                                <input
-                                                                    type="hidden"
-                                                                    name="billing_cycle"
-                                                                    value={
-                                                                        selectedBillingCycle
-                                                                    }
-                                                                />
-                                                                <Button
-                                                                    type="submit"
-                                                                    size="compact"
-                                                                    variant="outline"
-                                                                    disabled={
-                                                                        processing
-                                                                    }
-                                                                >
-                                                                    {selectedBillingCycle ===
-                                                                    currentCycle
-                                                                        ? 'Cancel scheduled change'
-                                                                        : 'Apply at renewal'}
-                                                                </Button>
-                                                            </>
-                                                        )}
-                                                    </Form>
-                                                )}
                                             </div>
                                         )}
                                 </>
@@ -296,8 +270,9 @@ export default function ({
                                                 : 'ghost'
                                         }
                                         className={cn(
-                                            "h-auto min-h-10 gap-0.5 py-2",
-                                            selectedBillingCycle == option.cycle ? 'text-white' : ''
+                                            'h-auto min-h-10 gap-0.5 py-2',
+                                            selectedBillingCycle ===
+                                                option.cycle && 'text-white',
                                         )}
                                         disabled={!option.available}
                                         onClick={() => {
@@ -330,6 +305,29 @@ export default function ({
                                                 : undefined
                                         }
                                         onSelect={setSelectedPlan}
+                                        currentPlanActionLabel={
+                                            plan.is_current &&
+                                            plan.billing_options.find(
+                                                (option) =>
+                                                    option.cycle ===
+                                                    selectedBillingCycle,
+                                            )?.billing_cycle_change?.available
+                                                ? 'Upgrade billing cycle'
+                                                : undefined
+                                        }
+                                        currentPlanUnavailableReason={
+                                            plan.is_current &&
+                                            selectedBillingCycle !==
+                                                currentCycle
+                                                ? (plan.billing_options.find(
+                                                      (option) =>
+                                                          option.cycle ===
+                                                          selectedBillingCycle,
+                                                  )?.billing_cycle_change
+                                                      ?.unavailable_reason ??
+                                                  undefined)
+                                                : undefined
+                                        }
                                     />
                                 ))}
                             </div>
@@ -364,6 +362,28 @@ export default function ({
                                 : undefined
                         }
                     />
+                    {subscription && (
+                        <BillingCycleChangeDialog
+                            subscriptionId={subscription.id}
+                            planName={subscription.plan?.name ?? 'Current plan'}
+                            wallet={wallet}
+                            currentCycle={
+                                subscription.billingCycle ?? {
+                                    cycle: 'monthly',
+                                    label: 'Monthly',
+                                    months: 1,
+                                    cadence: 'per month',
+                                }
+                            }
+                            selectedOption={selectedPlanBillingOption}
+                            open={billingCycleChangeOpen}
+                            onOpenChange={(open) => {
+                                if (!open) {
+                                    setSelectedPlan(null);
+                                }
+                            }}
+                        />
+                    )}
                     {subscription && (
                         <PlanChangeDialog
                             subscriptionId={subscription.id}

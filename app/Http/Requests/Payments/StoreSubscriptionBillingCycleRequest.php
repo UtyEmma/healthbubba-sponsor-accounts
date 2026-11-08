@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Payments;
 
 use App\Enums\AccountTypes;
+use App\Enums\Payments\SubscriptionPaymentSource;
 use App\Enums\Subscriptions\IndividualPlanBillingCycle;
 use App\Models\Subscription;
 use App\Models\Workspace;
@@ -16,10 +17,9 @@ final class StoreSubscriptionBillingCycleRequest extends AuthorizedWorkspacePaym
         if (! parent::authorize()) {
             return false;
         }
-
         $workspace = Workspace::current();
-        $subscription = $this->route('subscription');
-
+        $subscription = Subscription::find($this->route('subscription'));
+        
         return $workspace instanceof Workspace
             && $workspace->type === AccountTypes::INDIVIDUAL
             && $subscription instanceof Subscription
@@ -32,12 +32,21 @@ final class StoreSubscriptionBillingCycleRequest extends AuthorizedWorkspacePaym
     {
         return [
             'billing_cycle' => ['required', Rule::enum(IndividualPlanBillingCycle::class)],
+            'payment_source' => ['required', Rule::enum(SubscriptionPaymentSource::class)],
+            'confirmed' => ['required', 'accepted'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if (! $this->has('payment_source')) {
+            $this->merge(['payment_source' => SubscriptionPaymentSource::WALLET->value]);
+        }
     }
 
     public function subscription(): Subscription
     {
-        $subscription = $this->route('subscription');
+        $subscription = Subscription::find($this->route('subscription'));
 
         return $subscription instanceof Subscription
             ? $subscription
@@ -47,5 +56,10 @@ final class StoreSubscriptionBillingCycleRequest extends AuthorizedWorkspacePaym
     public function billingCycle(): IndividualPlanBillingCycle
     {
         return IndividualPlanBillingCycle::from((string) $this->validated('billing_cycle'));
+    }
+
+    public function paymentSource(): SubscriptionPaymentSource
+    {
+        return SubscriptionPaymentSource::from((string) $this->validated('payment_source'));
     }
 }

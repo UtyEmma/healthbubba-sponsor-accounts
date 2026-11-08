@@ -11,6 +11,7 @@ use App\Exceptions\Payments\CheckoutUnavailable;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\Workspace;
+use App\Services\Payments\BillingCycleUpgradePricingService;
 use App\Services\Payments\CapacityPricingService;
 use App\Services\Payments\IndividualPlanIntervalPricingService;
 use App\Services\Payments\PlanChangeEligibilityService;
@@ -31,6 +32,7 @@ final readonly class WorkspacePlanMapper
         private PlanChangePricingService $planChangePricing,
         private PlanChangeEligibilityService $planChangeEligibility,
         private IndividualPlanIntervalPricingService $intervalPricing,
+        private BillingCycleUpgradePricingService $billingCycleUpgradePricing,
     ) {}
 
     public function map(
@@ -125,6 +127,11 @@ final readonly class WorkspacePlanMapper
                         $workspace,
                         $subscription,
                         $plan,
+                        $isCurrent,
+                        $option->cycle,
+                    ),
+                    'billing_cycle_change' => $this->billingCycleChangeState(
+                        $subscription,
                         $isCurrent,
                         $option->cycle,
                     ),
@@ -280,6 +287,21 @@ final readonly class WorkspacePlanMapper
 
         $violations = [];
 
+        if ($billingCycle !== null
+            && $billingCycle !== $this->intervalPricing->currentCycle($subscription)) {
+            return [
+                'available' => false,
+                'direction' => null,
+                'amount_due_now' => '0.00',
+                'renewal_amount' => $this->renewalAmount($plan, $billingCycle),
+                'effective_at' => $subscription->ends_at?->toISOString() ?? '',
+                'scheduled' => false,
+                'target_capacity_count' => $subscription->capacity_count,
+                'limit_violations' => [],
+                'unavailable_reason' => 'Upgrade the billing cycle on your current plan before changing plan tiers.',
+            ];
+        }
+
         try {
             $direction = $this->planChangePricing->direction($subscription, $plan);
             $quoteSubscription = $subscription;
@@ -324,6 +346,50 @@ final readonly class WorkspacePlanMapper
             'limit_violations' => $violations,
             'unavailable_reason' => $unavailableReason,
         ];
+    }
+
+    /**
+     * @return array{
+     *     available: bool,
+     *     current_amount: string,
+     *     target_amount: string,
+     *     amount_due_now: string,
+     *     target_ends_at: string|null,
+     *     unavailable_reason: string|null
+     * }|null
+     */
+    private function billingCycleChangeState(
+        ?Subscription $subscription,
+        bool $isCurrent,
+        IndividualPlanBillingCycle $targetCycle,
+    ): ?array {
+        if (! $subscription instanceof Subscription
+            || $subscription->status !== SubscriptionStatus::Active
+            || ! $isCurrent) {
+            return null;
+        }
+
+        try {
+            $quote = $this->billingCycleUpgradePricing->quote($subscription, $targetCycle);
+
+            return [
+                'available' => true,
+                'current_amount' => $quote->currentAmount->toMajorAmount(),
+                'target_amount' => $quote->targetAmount->toMajorAmount(),
+                'amount_due_now' => $quote->amountDueNow->toMajorAmount(),
+                'target_ends_at' => $quote->targetEndsAt->toISOString(),
+                'unavailable_reason' => null,
+            ];
+        } catch (CheckoutUnavailable $exception) {
+            return [
+                'available' => false,
+                'current_amount' => '0.00',
+                'target_amount' => $this->renewalAmount($subscription->plan, $targetCycle),
+                'amount_due_now' => '0.00',
+                'target_ends_at' => null,
+                'unavailable_reason' => $exception->getMessage(),
+            ];
+        }
     }
 
     /**

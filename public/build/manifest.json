@@ -162,6 +162,13 @@
       "_dist-EZZWsIOG.js"
     ]
   },
+  "_calendar-clock-B6JAENb7.js": {
+    "file": "assets/calendar-clock-B6JAENb7.js",
+    "name": "calendar-clock",
+    "imports": [
+      "_createLucideIcon-BcIYjSMj.js"
+    ]
+  },
   "_calendar-days-Bp5P6DZZ.js": {
     "file": "assets/calendar-days-Bp5P6DZZ.js",
     "name": "calendar-days",
@@ -258,14 +265,15 @@
       "_react-B8IZ02wI.js"
     ]
   },
-  "_dashboard-yd3nM6YJ.js": {
-    "file": "assets/dashboard-yd3nM6YJ.js",
+  "_dashboard-RGRBZ5Vu.js": {
+    "file": "assets/dashboard-RGRBZ5Vu.js",
     "name": "dashboard",
     "imports": [
       "_dist-z3cHLQFW.js",
       "_utils-eqEE18YL.js",
       "_createLucideIcon-BcIYjSMj.js",
       "_wallet-DuPjqX8w.js",
+      "_calendar-clock-B6JAENb7.js",
       "_user-account-menu-CM6O4GZH.js",
       "_wallet-Cep1llmN.js",
       "_shield-check-9WcGDmaY.js",
@@ -453,12 +461,12 @@
       "_use-active-payment-gateway-DvhyFutU.js"
     ]
   },
-  "_payment-status-notice-4zov5G2i.js": {
-    "file": "assets/payment-status-notice-4zov5G2i.js",
+  "_payment-status-notice-DErX8iwU.js": {
+    "file": "assets/payment-status-notice-DErX8iwU.js",
     "name": "payment-status-notice",
     "imports": [
       "_utils-eqEE18YL.js",
-      "_dashboard-yd3nM6YJ.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_circle-check-DnZtDfnK.js"
     ]
   },
@@ -743,7 +751,7 @@
     "isEntry": true
   },
   "resources/js/app.tsx": {
-    "file": "assets/app-CiYEgC04.js",
+    "file": "assets/app-6dZ6gynG.js",
     "name": "app",
     "src": "resources/js/app.tsx",
     "isEntry": true,
@@ -766,6 +774,7 @@
       "resources/js/pages/auth/register.tsx",
       "resources/js/pages/auth/reset-password.tsx",
       "resources/js/pages/billing/index.tsx",
+      "resources/js/pages/billing/partials/billing-cycle-change-dialog.tsx",
       "resources/js/pages/billing/partials/capacity-purchase-card.tsx",
       "_payment-source-options-BKHh3j8U.js",
       "resources/js/pages/billing/partials/plan-cards.tsx",
@@ -838,7 +847,7 @@
     ]
   },
   "resources/js/pages/account-settings/index.tsx": {
-    "file": "assets/account-settings-DS3Fi1ii.js",
+    "file": "assets/account-settings-rkVVD3zQ.js",
     "name": "account-settings",
     "src": "resources/js/pages/account-settings/index.tsx",
     "isDynamicEntry": true,
@@ -848,7 +857,7 @@
       "_utils-eqEE18YL.js",
       "_createLucideIcon-BcIYjSMj.js",
       "_building-2-BznBwFAz.js",
-      "_dashboard-yd3nM6YJ.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_page-header-DT7FqDaN.js",
       "_avatar-BtxMViCJ.js",
       "resources/js/pages/account-settings/partials/business-details-dialog.tsx",
@@ -1064,7 +1073,7 @@
     ]
   },
   "resources/js/pages/billing/index.tsx": {
-    "file": "assets/billing-CRm1nyq-.js",
+    "file": "assets/billing-KDF1n4Jc.js",
     "name": "billing",
     "src": "resources/js/pages/billing/index.tsx",
     "isDynamicEntry": true,
@@ -1072,20 +1081,38 @@
       "_react-B8IZ02wI.js",
       "_dist-z3cHLQFW.js",
       "_utils-eqEE18YL.js",
-      "_dashboard-yd3nM6YJ.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_page-header-DT7FqDaN.js",
       "_button-CvuPAkli.js",
-      "_wayfinder-Dp7PqxvV.js",
       "_card-BnB_Qbx-.js",
       "_disclose-CPUO-52P.js",
-      "_payment-status-notice-4zov5G2i.js",
+      "_payment-status-notice-DErX8iwU.js",
       "_use-active-payment-gateway-DvhyFutU.js",
+      "resources/js/pages/billing/partials/billing-cycle-change-dialog.tsx",
       "resources/js/pages/billing/partials/capacity-purchase-card.tsx",
       "resources/js/pages/billing/partials/plan-cards.tsx",
       "resources/js/pages/billing/partials/plan-change-dialog.tsx",
       "resources/js/pages/billing/partials/plan-checkout-dialog.tsx",
       "resources/js/pages/billing/partials/plan-faq.tsx",
       "resources/js/pages/billing/partials/subscription-renewal-dialog.tsx"
+    ]
+  },
+  "resources/js/pages/billing/partials/billing-cycle-change-dialog.tsx": {
+    "file": "assets/billing-cycle-change-dialog-CO-hAGa8.js",
+    "name": "billing-cycle-change-dialog",
+    "src": "resources/js/pages/billing/partials/billing-cycle-change-dialog.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_react-B8IZ02wI.js",
+      "_dist-z3cHLQFW.js",
+      "_utils-eqEE18YL.js",
+      "_calendar-clock-B6JAENb7.js",
+      "_triangle-alert-1tLOcRvi.js",
+      "_dialog-CLou3o4v.js",
+      "_button-CvuPAkli.js",
+      "_wayfinder-Dp7PqxvV.js",
+      "_use-active-payment-gateway-DvhyFutU.js",
+      "_payment-source-options-BKHh3j8U.js"
     ]
   },
   "resources/js/pages/billing/partials/capacity-purchase-card.tsx": {
@@ -1109,7 +1136,7 @@
     ]
   },
   "resources/js/pages/billing/partials/plan-cards.tsx": {
-    "file": "assets/plan-cards-lxVisF0Z.js",
+    "file": "assets/plan-cards-C0GZcmdq.js",
     "name": "plan-cards",
     "src": "resources/js/pages/billing/partials/plan-cards.tsx",
     "isDynamicEntry": true,
@@ -1200,14 +1227,14 @@
     ]
   },
   "resources/js/pages/business-sponsor/consultations/index.tsx": {
-    "file": "assets/consultations-DIkZyPNr.js",
+    "file": "assets/consultations-Ba8-Wrma.js",
     "name": "consultations",
     "src": "resources/js/pages/business-sponsor/consultations/index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "_dist-z3cHLQFW.js",
       "_utils-eqEE18YL.js",
-      "_dashboard-yd3nM6YJ.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_page-header-DT7FqDaN.js",
       "resources/js/pages/consultations/partials/allocation-fallback.tsx",
       "resources/js/pages/business-sponsor/consultations/partials/report-export.tsx",
@@ -1251,7 +1278,7 @@
     ]
   },
   "resources/js/pages/business-sponsor/dashboard.tsx": {
-    "file": "assets/dashboard-CWtizhRh.js",
+    "file": "assets/dashboard-BQIGxdNY.js",
     "name": "dashboard",
     "src": "resources/js/pages/business-sponsor/dashboard.tsx",
     "isDynamicEntry": true,
@@ -1260,7 +1287,8 @@
       "_dist-z3cHLQFW.js",
       "_utils-eqEE18YL.js",
       "_arrow-right-CxyOHHF8.js",
-      "_dashboard-yd3nM6YJ.js",
+      "_calendar-clock-B6JAENb7.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_stethoscope-D_hVTDIf.js",
       "_users-round-Cp5nR2_J.js",
       "_wallet-cards-DCfcpkTC.js",
@@ -1273,14 +1301,14 @@
     ]
   },
   "resources/js/pages/business-sponsor/employees/index.tsx": {
-    "file": "assets/employees-Bzvuhypo.js",
+    "file": "assets/employees-C7vUNhnr.js",
     "name": "employees",
     "src": "resources/js/pages/business-sponsor/employees/index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "_dist-z3cHLQFW.js",
       "_utils-eqEE18YL.js",
-      "_dashboard-yd3nM6YJ.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_page-header-DT7FqDaN.js",
       "_card-BnB_Qbx-.js",
       "resources/js/pages/business-sponsor/employees/partials/add-employee-dialog.tsx",
@@ -1334,7 +1362,7 @@
     ]
   },
   "resources/js/pages/campaigns/index.tsx": {
-    "file": "assets/campaigns-BS_EMo8B.js",
+    "file": "assets/campaigns-M71U-nyv.js",
     "name": "campaigns",
     "src": "resources/js/pages/campaigns/index.tsx",
     "isDynamicEntry": true,
@@ -1344,7 +1372,7 @@
       "_utils-eqEE18YL.js",
       "_activity-BBqmaqZA.js",
       "_briefcase-business-QmbtY161.js",
-      "_dashboard-yd3nM6YJ.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_plus-CgtxOqpW.js",
       "_users-round-Cp5nR2_J.js",
       "_wallet-cards-DCfcpkTC.js",
@@ -1502,7 +1530,7 @@
     ]
   },
   "resources/js/pages/campaigns/show.tsx": {
-    "file": "assets/show-DTWW3KWb.js",
+    "file": "assets/show-DFU4EhpR.js",
     "name": "show",
     "src": "resources/js/pages/campaigns/show.tsx",
     "isDynamicEntry": true,
@@ -1513,8 +1541,8 @@
       "_createLucideIcon-BcIYjSMj.js",
       "_activity-BBqmaqZA.js",
       "_arrow-left-DohR3ttc.js",
-      "_dashboard-yd3nM6YJ.js",
       "_calendar-days-Bp5P6DZZ.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_copy-BmSWMmiL.js",
       "_wallet-Cep1llmN.js",
       "_plus-CgtxOqpW.js",
@@ -1532,7 +1560,7 @@
     ]
   },
   "resources/js/pages/consultations/index.tsx": {
-    "file": "assets/consultations-DZAZJdwP.js",
+    "file": "assets/consultations-BU02-TEf.js",
     "name": "consultations",
     "src": "resources/js/pages/consultations/index.tsx",
     "isDynamicEntry": true,
@@ -1540,7 +1568,7 @@
       "_dist-z3cHLQFW.js",
       "_utils-eqEE18YL.js",
       "_wallet-DuPjqX8w.js",
-      "_dashboard-yd3nM6YJ.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_user-round-plus-c3SrPt5C.js",
       "_users-round-Cp5nR2_J.js",
       "_page-header-DT7FqDaN.js",
@@ -1606,7 +1634,7 @@
     ]
   },
   "resources/js/pages/funding/index.tsx": {
-    "file": "assets/funding-CjiqKnC1.js",
+    "file": "assets/funding-BH-BCpOL.js",
     "name": "funding",
     "src": "resources/js/pages/funding/index.tsx",
     "isDynamicEntry": true,
@@ -1618,7 +1646,7 @@
       "_activity-BBqmaqZA.js",
       "_arrow-right-CxyOHHF8.js",
       "_briefcase-business-QmbtY161.js",
-      "_dashboard-yd3nM6YJ.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_download-CfO8wG1v.js",
       "_info-Bxzom0Ay.js",
       "_landmark-DiCLIIgx.js",
@@ -1629,7 +1657,7 @@
       "_campaigns-CPiXKoam.js",
       "_institutional-BMZrsvVx.js",
       "_card-BnB_Qbx-.js",
-      "_payment-status-notice-4zov5G2i.js",
+      "_payment-status-notice-DErX8iwU.js",
       "_table-CJ754ARW.js",
       "resources/js/pages/funding/partials/funding-dialogs.tsx"
     ]
@@ -1687,7 +1715,7 @@
     ]
   },
   "resources/js/pages/institutional-sponsor/beneficiaries/index.tsx": {
-    "file": "assets/beneficiaries-D_zp8gw8.js",
+    "file": "assets/beneficiaries-CH1XCmM_.js",
     "name": "beneficiaries",
     "src": "resources/js/pages/institutional-sponsor/beneficiaries/index.tsx",
     "isDynamicEntry": true,
@@ -1695,7 +1723,7 @@
       "_react-B8IZ02wI.js",
       "_dist-z3cHLQFW.js",
       "_utils-eqEE18YL.js",
-      "_dashboard-yd3nM6YJ.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_select-BFeFmvSd.js",
       "_download-CfO8wG1v.js",
       "_UpdateCampaignBeneficiaryAccessController-BdP6UzZE.js",
@@ -1716,14 +1744,14 @@
     ]
   },
   "resources/js/pages/institutional-sponsor/consultations/index.tsx": {
-    "file": "assets/consultations-DV5OMg-0.js",
+    "file": "assets/consultations-C7m82060.js",
     "name": "consultations",
     "src": "resources/js/pages/institutional-sponsor/consultations/index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "_dist-z3cHLQFW.js",
       "_utils-eqEE18YL.js",
-      "_dashboard-yd3nM6YJ.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_select-BFeFmvSd.js",
       "_info-Bxzom0Ay.js",
       "_page-header-DT7FqDaN.js",
@@ -1735,7 +1763,7 @@
     ]
   },
   "resources/js/pages/institutional-sponsor/dashboard.tsx": {
-    "file": "assets/dashboard-QNv5mLNX.js",
+    "file": "assets/dashboard-BNlyptss.js",
     "name": "dashboard",
     "src": "resources/js/pages/institutional-sponsor/dashboard.tsx",
     "isDynamicEntry": true,
@@ -1747,8 +1775,8 @@
       "_activity-BBqmaqZA.js",
       "_arrow-right-CxyOHHF8.js",
       "_briefcase-business-QmbtY161.js",
-      "_dashboard-yd3nM6YJ.js",
       "_calendar-days-Bp5P6DZZ.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_wallet-Cep1llmN.js",
       "_plus-CgtxOqpW.js",
       "_store-Bqwata-Y.js",
@@ -1767,7 +1795,7 @@
     ]
   },
   "resources/js/pages/institutional-sponsor/enrollment-codes/index.tsx": {
-    "file": "assets/enrollment-codes-Be06lFSo.js",
+    "file": "assets/enrollment-codes-Ujg9BTn1.js",
     "name": "enrollment-codes",
     "src": "resources/js/pages/institutional-sponsor/enrollment-codes/index.tsx",
     "isDynamicEntry": true,
@@ -1775,7 +1803,7 @@
       "_react-B8IZ02wI.js",
       "_dist-z3cHLQFW.js",
       "_utils-eqEE18YL.js",
-      "_dashboard-yd3nM6YJ.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_select-BFeFmvSd.js",
       "_copy-BmSWMmiL.js",
       "_plus-CgtxOqpW.js",
@@ -1790,7 +1818,7 @@
     ]
   },
   "resources/js/pages/institutional-sponsor/notifications/index.tsx": {
-    "file": "assets/notifications-DmzExWBx.js",
+    "file": "assets/notifications-DQLUdes1.js",
     "name": "notifications",
     "src": "resources/js/pages/institutional-sponsor/notifications/index.tsx",
     "isDynamicEntry": true,
@@ -1799,7 +1827,8 @@
       "_dist-z3cHLQFW.js",
       "_utils-eqEE18YL.js",
       "_createLucideIcon-BcIYjSMj.js",
-      "_dashboard-yd3nM6YJ.js",
+      "_calendar-clock-B6JAENb7.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_heart-pulse-CZ2mzDXh.js",
       "_users-round-Cp5nR2_J.js",
       "_page-header-DT7FqDaN.js",
@@ -1821,7 +1850,7 @@
     ]
   },
   "resources/js/pages/institutional-sponsor/reports/index.tsx": {
-    "file": "assets/reports-D7Y0y77H.js",
+    "file": "assets/reports-D1zhmHQF.js",
     "name": "reports",
     "src": "resources/js/pages/institutional-sponsor/reports/index.tsx",
     "isDynamicEntry": true,
@@ -1830,7 +1859,7 @@
       "_utils-eqEE18YL.js",
       "_createLucideIcon-BcIYjSMj.js",
       "_activity-BBqmaqZA.js",
-      "_dashboard-yd3nM6YJ.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_heart-pulse-CZ2mzDXh.js",
       "_users-round-Cp5nR2_J.js",
       "_wallet-cards-DCfcpkTC.js",
@@ -1857,7 +1886,7 @@
     ]
   },
   "resources/js/pages/institutional-sponsor/team/index.tsx": {
-    "file": "assets/team-ee1vAolT.js",
+    "file": "assets/team-DyTHJApp.js",
     "name": "team",
     "src": "resources/js/pages/institutional-sponsor/team/index.tsx",
     "isDynamicEntry": true,
@@ -1866,7 +1895,7 @@
       "_dist-z3cHLQFW.js",
       "_utils-eqEE18YL.js",
       "_wallet-DuPjqX8w.js",
-      "_dashboard-yd3nM6YJ.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_select-BFeFmvSd.js",
       "_user-round-plus-c3SrPt5C.js",
       "_page-header-DT7FqDaN.js",
@@ -1918,28 +1947,28 @@
     ]
   },
   "resources/js/pages/sponsor/activity-log/index.tsx": {
-    "file": "assets/activity-log-DvPOoi3q.js",
+    "file": "assets/activity-log-D8TFXOaq.js",
     "name": "activity-log",
     "src": "resources/js/pages/sponsor/activity-log/index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "_dist-z3cHLQFW.js",
       "_utils-eqEE18YL.js",
-      "_dashboard-yd3nM6YJ.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_page-header-DT7FqDaN.js",
       "_button-CvuPAkli.js",
       "_card-BnB_Qbx-.js"
     ]
   },
   "resources/js/pages/sponsor/beneficiaries/index.tsx": {
-    "file": "assets/beneficiaries-4FL91W5a.js",
+    "file": "assets/beneficiaries-DPsvfkUX.js",
     "name": "beneficiaries",
     "src": "resources/js/pages/sponsor/beneficiaries/index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "_dist-z3cHLQFW.js",
       "_utils-eqEE18YL.js",
-      "_dashboard-yd3nM6YJ.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_page-header-DT7FqDaN.js",
       "_card-BnB_Qbx-.js",
       "resources/js/pages/sponsor/beneficiaries/partials/add-beneficiary-dialog.tsx",
@@ -2029,7 +2058,7 @@
     ]
   },
   "resources/js/pages/sponsor/dashboard.tsx": {
-    "file": "assets/dashboard-CwO27Z_h.js",
+    "file": "assets/dashboard-75RuGS-z.js",
     "name": "dashboard",
     "src": "resources/js/pages/sponsor/dashboard.tsx",
     "isDynamicEntry": true,
@@ -2037,21 +2066,21 @@
       "_dist-z3cHLQFW.js",
       "_utils-eqEE18YL.js",
       "_wallet-DuPjqX8w.js",
-      "_dashboard-yd3nM6YJ.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_page-header-DT7FqDaN.js",
       "_button-CvuPAkli.js",
       "resources/js/pages/sponsor/partials/dashboard-cards.tsx"
     ]
   },
   "resources/js/pages/sponsor/empty-state.tsx": {
-    "file": "assets/empty-state-CKjdQDgU.js",
+    "file": "assets/empty-state-Cyx5SjKV.js",
     "name": "empty-state",
     "src": "resources/js/pages/sponsor/empty-state.tsx",
     "isDynamicEntry": true,
     "imports": [
       "_dist-z3cHLQFW.js",
       "_utils-eqEE18YL.js",
-      "_dashboard-yd3nM6YJ.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_page-header-DT7FqDaN.js",
       "_button-CvuPAkli.js",
       "_plans-Nx9t3Nfx.js",
@@ -2060,14 +2089,14 @@
     ]
   },
   "resources/js/pages/sponsor/medical-access/index.tsx": {
-    "file": "assets/medical-access-BUGrOQ1g.js",
+    "file": "assets/medical-access-fMvCc9pq.js",
     "name": "medical-access",
     "src": "resources/js/pages/sponsor/medical-access/index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "_dist-z3cHLQFW.js",
       "_utils-eqEE18YL.js",
-      "_dashboard-yd3nM6YJ.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_page-header-DT7FqDaN.js",
       "resources/js/pages/sponsor/medical-access/partials/access-requests-table.tsx",
       "resources/js/pages/sponsor/medical-access/partials/request-access-dialog.tsx"
@@ -2149,16 +2178,16 @@
     ]
   },
   "resources/js/pages/wallet/index.tsx": {
-    "file": "assets/wallet-BNXpOAVm.js",
+    "file": "assets/wallet-yZdUkxP0.js",
     "name": "wallet",
     "src": "resources/js/pages/wallet/index.tsx",
     "isDynamicEntry": true,
     "imports": [
       "_dist-z3cHLQFW.js",
       "_utils-eqEE18YL.js",
-      "_dashboard-yd3nM6YJ.js",
+      "_dashboard-RGRBZ5Vu.js",
       "_page-header-DT7FqDaN.js",
-      "_payment-status-notice-4zov5G2i.js",
+      "_payment-status-notice-DErX8iwU.js",
       "resources/js/pages/wallet/partials/wallet-dialogs.tsx",
       "resources/js/pages/wallet/partials/wallet-overview.tsx"
     ]

@@ -22,10 +22,14 @@ export function PlanCard({
     plan,
     onSelect,
     billingCycle,
+    currentPlanActionLabel,
+    currentPlanUnavailableReason,
 }: {
     plan: Plan;
     onSelect?: (plan: Plan) => void;
     billingCycle?: IndividualPlanBillingCycle;
+    currentPlanActionLabel?: string;
+    currentPlanUnavailableReason?: string;
 }) {
     const billingOption = billingCycle
         ? plan.billing_options.find((option) => option.cycle === billingCycle)
@@ -33,15 +37,18 @@ export function PlanCard({
     const planChange = billingOption?.plan_change ?? plan.plan_change;
     const displayPrice = billingOption?.price ?? plan.price;
     const displayCadence = billingOption?.cadence ?? plan.cadence;
+    const hasCurrentPlanAction =
+        plan.is_current && currentPlanActionLabel !== undefined;
     const selectionDisabled = plan.is_current
-        ? true
+        ? !hasCurrentPlanAction
         : billingOption && !billingOption.available
           ? true
           : planChange
             ? !planChange.available
             : !plan.checkout_available;
-    const unavailableReason =
-        planChange?.unavailable_reason ?? plan.unavailable_reason;
+    const unavailableReason = plan.is_current
+        ? currentPlanUnavailableReason
+        : (planChange?.unavailable_reason ?? plan.unavailable_reason);
     const reasonId = `plan-${plan.id}-unavailable-reason`;
     const sponsorCoverageFeature = plan.capacity?.unit === 'beneficiary' && (
         <li
@@ -173,21 +180,19 @@ export function PlanCard({
                     className="w-full"
                     disabled={selectionDisabled}
                     variant={
-                        plan.is_current
-                            ? 'muted'
-                            : planChange?.direction === 'downgrade'
-                              ? 'outline'
-                              : 'primary'
+                        hasCurrentPlanAction
+                            ? 'outline'
+                            : plan.is_current
+                              ? 'muted'
+                              : planChange?.direction === 'downgrade'
+                                ? 'outline'
+                                : 'primary'
                     }
                     onClick={() => onSelect?.(plan)}
-                    aria-describedby={
-                        unavailableReason && !plan.is_current
-                            ? reasonId
-                            : undefined
-                    }
+                    aria-describedby={unavailableReason ? reasonId : undefined}
                 >
                     {plan.is_current
-                        ? 'Current plan'
+                        ? (currentPlanActionLabel ?? 'Current plan')
                         : planChange?.direction === 'upgrade'
                           ? 'Upgrade now'
                           : planChange?.direction === 'downgrade'
@@ -196,7 +201,7 @@ export function PlanCard({
                               ? 'Choose plan'
                               : 'Unavailable'}
                 </Button>
-                {unavailableReason && !plan.is_current && (
+                {unavailableReason && (
                     <p
                         id={reasonId}
                         className="text-xs leading-5 text-destructive"

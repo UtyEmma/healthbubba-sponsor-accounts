@@ -60,6 +60,16 @@ export type PlanBillingOption = {
     available: boolean;
     additional_unit_price: string | null;
     plan_change: PlanChange | null;
+    billing_cycle_change: BillingCycleChange | null;
+};
+
+export type BillingCycleChange = {
+    available: boolean;
+    current_amount: string;
+    target_amount: string;
+    amount_due_now: string;
+    target_ends_at: string | null;
+    unavailable_reason: string | null;
 };
 
 export type PlanChange = {

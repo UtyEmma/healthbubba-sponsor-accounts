@@ -14,6 +14,7 @@ final class PaymentReferenceGenerator
             PaymentPurpose::SUBSCRIPTION => 'SUB',
             PaymentPurpose::CAPACITY_PURCHASE => 'CAP',
             PaymentPurpose::PLAN_UPGRADE => 'UPG',
+            PaymentPurpose::BILLING_CYCLE_UPGRADE => 'CYC',
         };
 
         return $prefix.'-'.Str::upper((string) Str::ulid());

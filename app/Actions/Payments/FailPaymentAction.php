@@ -61,6 +61,7 @@ final readonly class FailPaymentAction
             PaymentPurpose::SUBSCRIPTION => 'Subscription payment',
             PaymentPurpose::CAPACITY_PURCHASE => 'Capacity purchase',
             PaymentPurpose::PLAN_UPGRADE => 'Plan upgrade payment',
+            PaymentPurpose::BILLING_CYCLE_UPGRADE => 'Billing-cycle upgrade payment',
         };
 
         $this->activities->record($payment->workspace, new WorkspaceActivityData(

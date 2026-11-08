@@ -2,17 +2,20 @@
 
 namespace App\DTOs\Payments;
 
+use App\Enums\Payments\SubscriptionPaymentSource;
 use App\Enums\Subscriptions\IndividualPlanBillingCycle;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Models\Workspace;
 
-final readonly class ScheduleSubscriptionBillingCycleData
+final readonly class StartBillingCycleUpgradeData
 {
     public function __construct(
         public Workspace $workspace,
         public User $user,
         public Subscription $subscription,
-        public IndividualPlanBillingCycle $billingCycle,
+        public IndividualPlanBillingCycle $targetCycle,
+        public string $callbackUrl,
+        public SubscriptionPaymentSource $paymentSource = SubscriptionPaymentSource::WALLET,
     ) {}
 }

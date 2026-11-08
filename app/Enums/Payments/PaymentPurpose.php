@@ -8,4 +8,5 @@ enum PaymentPurpose: string
     case SUBSCRIPTION = 'subscription';
     case CAPACITY_PURCHASE = 'capacity_purchase';
     case PLAN_UPGRADE = 'plan_upgrade';
+    case BILLING_CYCLE_UPGRADE = 'billing_cycle_upgrade';
 }

@@ -51,8 +51,7 @@ final class StorePlanChangeRequest extends AuthorizedWorkspacePaymentRequest
         if (! $this->has('billing_cycle') && $this->workspace()->type === AccountTypes::INDIVIDUAL) {
             $subscription = $this->subscription();
             $this->merge([
-                'billing_cycle' => ($subscription->scheduled_billing_cycle
-                    ?? $subscription->billing_cycle
+                'billing_cycle' => ($subscription->billing_cycle
                     ?? IndividualPlanBillingCycle::MONTHLY)->value,
             ]);
         }

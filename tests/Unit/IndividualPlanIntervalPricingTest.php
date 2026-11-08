@@ -3,11 +3,16 @@
 use App\Enums\AccountTypes;
 use App\Enums\Subscriptions\Features;
 use App\Enums\Subscriptions\IndividualPlanBillingCycle;
+use App\Exceptions\Payments\CheckoutUnavailable;
 use App\Models\Plan;
 use App\Models\PlanIntervalPrice;
+use App\Models\Subscription;
+use App\Services\Payments\BillingCycleUpgradePricingService;
 use App\Services\Payments\IndividualPlanIntervalPricingService;
 use App\Services\Payments\PlanPricingService;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
+use Revoltify\Subscriptionify\Enums\SubscriptionStatus;
 use Revoltify\Subscriptionify\Models\Feature;
 use Revoltify\Subscriptionify\Models\FeaturePlan;
 use Tests\TestCase;
@@ -79,6 +84,59 @@ it('charges additional individual beneficiaries at the full cycle multiplier', f
     [IndividualPlanBillingCycle::BIANNUAL, '168000.00'],
     [IndividualPlanBillingCycle::ANNUAL, '324000.00'],
 ]);
+
+it('charges the full period difference for an immediate billing cycle upgrade', function (): void {
+    $plan = individualPlan('20000.00', [
+        'quarterly' => '57000.00',
+        'biannual' => '108000.00',
+        'annual' => '204000.00',
+    ], withCapacity: true);
+    $startsAt = CarbonImmutable::parse('2026-11-01 00:00:00');
+    $subscription = new Subscription([
+        'status' => SubscriptionStatus::Active,
+        'billing_cycle' => IndividualPlanBillingCycle::MONTHLY,
+        'capacity_count' => 5,
+        'starts_at' => $startsAt,
+        'ends_at' => $startsAt->addMonth(),
+    ]);
+    $subscription->setRelation('plan', $plan);
+
+    $quote = app(BillingCycleUpgradePricingService::class)->quote(
+        $subscription,
+        IndividualPlanBillingCycle::QUARTERLY,
+        CarbonImmutable::parse('2026-11-08 12:00:00'),
+    );
+
+    expect($quote->currentAmount->toMajorAmount())->toBe('30000.00')
+        ->and($quote->targetAmount->toMajorAmount())->toBe('87000.00')
+        ->and($quote->amountDueNow->toMajorAmount())->toBe('57000.00')
+        ->and($quote->targetEndsAt->toDateString())->toBe('2027-02-01');
+});
+
+it('rejects a billing cycle downgrade', function (): void {
+    $plan = individualPlan('20000.00', [
+        'quarterly' => '57000.00',
+        'biannual' => '108000.00',
+        'annual' => '204000.00',
+    ]);
+    $startsAt = CarbonImmutable::parse('2026-11-01 00:00:00');
+    $subscription = new Subscription([
+        'status' => SubscriptionStatus::Active,
+        'billing_cycle' => IndividualPlanBillingCycle::QUARTERLY,
+        'capacity_count' => 1,
+        'starts_at' => $startsAt,
+        'ends_at' => $startsAt->addMonths(3),
+    ]);
+    $subscription->setRelation('plan', $plan);
+
+    expect(fn () => app(BillingCycleUpgradePricingService::class)->quote(
+        $subscription,
+        IndividualPlanBillingCycle::MONTHLY,
+    ))->toThrow(
+        CheckoutUnavailable::class,
+        'Billing-cycle downgrades are not available. Cancel the current subscription and purchase a new subscription with the shorter billing cycle.',
+    );
+});
 
 /** @param array<string, string> $prices */
 function individualPlan(string $monthlyPrice, array $prices, bool $withCapacity = false): Plan

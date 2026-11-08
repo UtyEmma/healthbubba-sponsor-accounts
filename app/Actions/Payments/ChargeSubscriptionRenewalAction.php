@@ -308,7 +308,10 @@ final readonly class ChargeSubscriptionRenewalAction
         return Payment::query()
             ->where('payable_type', $subscription->getMorphClass())
             ->where('payable_id', $subscription->getKey())
-            ->where('purpose', PaymentPurpose::PLAN_UPGRADE)
+            ->whereIn('purpose', [
+                PaymentPurpose::PLAN_UPGRADE,
+                PaymentPurpose::BILLING_CYCLE_UPGRADE,
+            ])
             ->whereIn('status', [
                 PaymentStatus::PENDING,
                 PaymentStatus::PROCESSING,

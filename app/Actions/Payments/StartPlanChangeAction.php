@@ -69,6 +69,13 @@ final readonly class StartPlanChangeAction
                 $this->ensurePlanCanReplaceSubscription($data, $subscription, $targetPlan);
                 if ($data->billingCycle !== null) {
                     $this->intervalPricing->price($targetPlan, $data->billingCycle);
+                    $currentCycle = $this->intervalPricing->currentCycle($subscription);
+
+                    if ($data->billingCycle !== $currentCycle) {
+                        throw new CheckoutUnavailable(
+                            'Upgrade the billing cycle on your current plan before changing plan tiers.',
+                        );
+                    }
                 }
                 $this->ensureNoConflictingOperations($subscription);
                 $direction = $this->pricing->direction($subscription, $targetPlan);
@@ -251,6 +258,21 @@ final readonly class StartPlanChangeAction
         if ($hasPendingRenewal) {
             throw new CheckoutUnavailable('A subscription renewal payment is already in progress.');
         }
+
+        $hasPendingCycleUpgrade = Payment::query()
+            ->where('payable_type', $subscription->getMorphClass())
+            ->where('payable_id', $subscription->getKey())
+            ->where('purpose', PaymentPurpose::BILLING_CYCLE_UPGRADE)
+            ->whereIn('status', [
+                PaymentStatus::PENDING,
+                PaymentStatus::PROCESSING,
+                PaymentStatus::REQUIRES_REVIEW,
+            ])
+            ->exists();
+
+        if ($hasPendingCycleUpgrade) {
+            throw new CheckoutUnavailable('A billing-cycle upgrade payment is already in progress.');
+        }
     }
 
     private function applyDowngrade(
@@ -269,7 +291,7 @@ final readonly class StartPlanChangeAction
             'capacity_count' => $targetCapacityCount,
             'scheduled_plan_id' => null,
             'scheduled_plan_change_at' => null,
-            'scheduled_billing_cycle' => $this->scheduledCycle($subscription, $data),
+            'scheduled_billing_cycle' => null,
         ]);
         $this->synchronizeSponsorCoverage->execute($data->workspace, $targetPlan);
 
@@ -330,7 +352,7 @@ final readonly class StartPlanChangeAction
             'capacity_count' => $quote->targetCapacityCount,
             'scheduled_plan_id' => null,
             'scheduled_plan_change_at' => null,
-            'scheduled_billing_cycle' => $this->scheduledCycle($subscription, $data),
+            'scheduled_billing_cycle' => null,
             'funding_source' => SubscriptionFundingSource::Wallet,
             'assigned_by_user_id' => null,
             'complimentary_renews' => false,
@@ -449,18 +471,5 @@ final readonly class StartPlanChangeAction
         }
 
         return $active;
-    }
-
-    private function scheduledCycle(
-        Subscription $subscription,
-        StartPlanChangeData $data,
-    ): ?IndividualPlanBillingCycle {
-        if ($data->billingCycle === null) {
-            return $subscription->scheduled_billing_cycle;
-        }
-
-        $current = $subscription->billing_cycle ?? IndividualPlanBillingCycle::MONTHLY;
-
-        return $data->billingCycle === $current ? null : $data->billingCycle;
     }
 }

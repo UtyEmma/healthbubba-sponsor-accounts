@@ -61,6 +61,7 @@ final readonly class RecordCompletedPaymentActivity
             ],
             PaymentPurpose::CAPACITY_PURCHASE => $this->capacityPurchase($payment, $amount),
             PaymentPurpose::PLAN_UPGRADE => $this->planUpgrade($payment, $amount),
+            PaymentPurpose::BILLING_CYCLE_UPGRADE => $this->billingCycleUpgrade($payment, $amount),
             PaymentPurpose::SUBSCRIPTION => $this->subscriptionPayment($payment, $amount),
         };
     }
@@ -97,6 +98,21 @@ final readonly class RecordCompletedPaymentActivity
             'subscription',
             $payment->payable_id,
             $name,
+        ];
+    }
+
+    /** @return array{WorkspaceActivityType, string, string, int|string|null, string} */
+    private function billingCycleUpgrade(Payment $payment, string $amount): array
+    {
+        $cycle = $payment->metadata['to_billing_cycle'] ?? 'new';
+        $label = is_string($cycle) ? str($cycle)->headline()->toString() : 'New';
+
+        return [
+            WorkspaceActivityType::PlanUpgradeCompleted,
+            "Upgraded billing cycle to {$label} for {$amount}",
+            'subscription',
+            $payment->payable_id,
+            "{$label} billing",
         ];
     }
 
