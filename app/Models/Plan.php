@@ -6,6 +6,7 @@ use App\Enums\AccountTypes;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Revoltify\Subscriptionify\Enums\Interval;
 use Revoltify\Subscriptionify\Models\Feature;
@@ -104,6 +105,12 @@ class Plan extends SubscriptionifyPlan
     public function payments(): MorphMany
     {
         return $this->morphMany(Payment::class, 'payable');
+    }
+
+    /** @return HasMany<PlanIntervalPrice, $this> */
+    public function intervalPrices(): HasMany
+    {
+        return $this->hasMany(PlanIntervalPrice::class)->orderBy('sort_order');
     }
 
     /** @return BelongsToMany<Feature, $this, FeaturePlan> */

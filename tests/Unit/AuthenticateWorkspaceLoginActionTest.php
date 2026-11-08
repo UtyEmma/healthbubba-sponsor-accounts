@@ -2,6 +2,7 @@
 
 use App\Actions\Auth\AuthenticateWorkspaceLoginAction;
 use App\DTOs\Auth\AuthenticatedWorkspaceLogin;
+use App\Enums\Account\Roles;
 use App\Enums\AccountTypes;
 use App\Enums\WorkspaceMembers\WorkspaceMemberRole;
 use App\Enums\WorkspaceMembers\WorkspaceMemberStatus;
@@ -118,6 +119,63 @@ it('returns a generic authentication failure for an unknown email', function ():
     );
 
     expect($authentication)->toBeNull();
+});
+
+it('rejects administrators from the sponsor portal after validating their credentials', function (Roles $role): void {
+    $administrator = User::withoutEvents(fn (): User => User::query()->create([
+        'name' => 'Portal Administrator',
+        'email' => $role->value.'@example.com',
+        'password' => 'correct-password',
+        'role' => $role,
+    ]));
+
+    expect(fn () => app(AuthenticateWorkspaceLoginAction::class)->execute(
+        $administrator->email,
+        'correct-password',
+        AccountTypes::INDIVIDUAL,
+    ))->toThrow(
+        ValidationException::class,
+        'Administrators are not authorized to access the sponsor portal.',
+    );
+})->with([Roles::ADMIN, Roles::SUPER_ADMIN]);
+
+it('does not disclose administrator access when the password is incorrect', function (): void {
+    $administrator = User::withoutEvents(fn (): User => User::query()->create([
+        'name' => 'Portal Administrator',
+        'email' => 'admin@example.com',
+        'password' => 'correct-password',
+        'role' => Roles::ADMIN,
+    ]));
+
+    $authentication = app(AuthenticateWorkspaceLoginAction::class)->execute(
+        $administrator->email,
+        'wrong-password',
+        AccountTypes::INDIVIDUAL,
+    );
+
+    expect($authentication)->toBeNull();
+});
+
+it('returns the unauthorized error from the sponsor login endpoint', function (): void {
+    $administrator = User::withoutEvents(fn (): User => User::query()->create([
+        'name' => 'Portal Administrator',
+        'email' => 'admin@example.com',
+        'password' => 'correct-password',
+        'role' => Roles::ADMIN,
+    ]));
+
+    $this->from(route('login'))
+        ->post(route('login.store'), [
+            'account_type' => AccountTypes::INDIVIDUAL->value,
+            'email' => $administrator->email,
+            'password' => 'correct-password',
+        ])
+        ->assertRedirect(route('login'))
+        ->assertSessionHasErrors([
+            'authorization' => 'Administrators are not authorized to access the sponsor portal.',
+        ]);
+
+    $this->assertGuest();
 });
 
 /** @return array{User, WorkspaceMember} */

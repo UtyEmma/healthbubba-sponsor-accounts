@@ -19,6 +19,7 @@ import type {
     BillingWallet,
     Plan,
     SubscriptionPaymentSource,
+    IndividualPlanBillingCycle,
 } from '@/types';
 import { PaymentSourceOptions } from './payment-source-options';
 
@@ -36,12 +37,14 @@ export function PlanCheckoutDialog({
     plan,
     open,
     onOpenChange,
+    billingCycle,
 }: {
     accountType: AccountType;
     wallet: BillingWallet;
     plan: Plan | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    billingCycle?: IndividualPlanBillingCycle;
 }) {
     const gateway = useActivePaymentGateway();
     const [additionalCapacity, setAdditionalCapacity] = useState(0);
@@ -57,15 +60,23 @@ export function PlanCheckoutDialog({
         onOpenChange(nextOpen);
     }
 
+    const billingOption = billingCycle
+        ? plan?.billing_options.find((option) => option.cycle === billingCycle)
+        : undefined;
     const capacity = plan?.capacity;
     const capacityEnabled = capacity?.purchases_enabled === true;
-    const additionalUnitPrice = Number(capacity?.additional_unit_price ?? 0);
+    const additionalUnitPrice = Number(
+        billingOption?.additional_unit_price ??
+            capacity?.additional_unit_price ??
+            0,
+    );
     const maximumAdditional =
         capacity?.maximum === null || capacity?.maximum === undefined
             ? 100000
             : Math.max(0, capacity.maximum - capacity.included);
     const total =
-        Number(plan?.price ?? 0) + additionalCapacity * additionalUnitPrice;
+        Number(billingOption?.price ?? plan?.price ?? 0) +
+        additionalCapacity * additionalUnitPrice;
     const accountLabel =
         accountType === 'business' ? 'business subscription' : 'subscription';
     const walletBalance = Number(wallet.balance);
@@ -93,6 +104,13 @@ export function PlanCheckoutDialog({
                         {({ errors, processing }) => (
                             <>
                                 <div className="grid gap-5 px-6 py-5">
+                                    {billingCycle && (
+                                        <input
+                                            type="hidden"
+                                            name="billing_cycle"
+                                            value={billingCycle}
+                                        />
+                                    )}
                                     <section
                                         className="grid gap-3 rounded-lg border bg-muted/30 p-4"
                                         aria-label="Order summary"
@@ -103,12 +121,16 @@ export function PlanCheckoutDialog({
                                                     {plan.name}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
-                                                    {plan.cadence}
+                                                    {billingOption?.cadence ??
+                                                        plan.cadence}
                                                 </p>
                                             </div>
                                             <p className="font-semibold">
                                                 {formatMoney(
-                                                    Number(plan.price),
+                                                    Number(
+                                                        billingOption?.price ??
+                                                            plan.price,
+                                                    ),
                                                     plan.currency,
                                                 )}
                                             </p>
@@ -180,7 +202,9 @@ export function PlanCheckoutDialog({
                                                     )}{' '}
                                                     per additional{' '}
                                                     {capacity.unit},{' '}
-                                                    {plan.cadence}.
+                                                    {billingOption?.cadence ??
+                                                        plan.cadence}
+                                                    .
                                                 </p>
                                                 {errors.additional_capacity && (
                                                     <p
@@ -208,7 +232,9 @@ export function PlanCheckoutDialog({
 
                                         <div className="flex items-end justify-between gap-4 border-t pt-3">
                                             <span className="text-sm font-medium">
-                                                Total {plan.cadence}
+                                                Total{' '}
+                                                {billingOption?.cadence ??
+                                                    plan.cadence}
                                             </span>
                                             <span className="text-xl font-semibold">
                                                 {formatMoney(

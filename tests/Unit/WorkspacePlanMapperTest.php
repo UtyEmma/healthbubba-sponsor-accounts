@@ -4,8 +4,11 @@ use App\Enums\AccountTypes;
 use App\Enums\Subscriptions\Features;
 use App\Mappers\WorkspacePlanMapper;
 use App\Models\Plan;
+use App\Models\Subscription;
+use App\Models\Workspace;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Revoltify\Subscriptionify\Enums\FeatureType;
+use Revoltify\Subscriptionify\Enums\SubscriptionStatus;
 use Revoltify\Subscriptionify\Models\Feature;
 use Revoltify\Subscriptionify\Models\FeaturePlan;
 use Tests\TestCase;
@@ -103,6 +106,26 @@ it('places unavailable toggle and limited features at the bottom of their lists'
         true,
         false,
         false,
+    ]);
+});
+
+it('does not expose an active subscription warning for unavailable checkout', function (): void {
+    $workspace = new Workspace(['type' => AccountTypes::INDIVIDUAL]);
+    $plan = new Plan(['account_type' => AccountTypes::INDIVIDUAL]);
+    $subscription = new Subscription(['status' => SubscriptionStatus::Active]);
+
+    $method = new ReflectionMethod(WorkspacePlanMapper::class, 'checkoutState');
+    $state = $method->invoke(
+        app(WorkspacePlanMapper::class),
+        $workspace,
+        $plan,
+        false,
+        $subscription,
+    );
+
+    expect($state)->toBe([
+        'available' => false,
+        'reason' => null,
     ]);
 });
 

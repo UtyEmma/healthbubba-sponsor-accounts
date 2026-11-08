@@ -33,6 +33,7 @@ final class StorePlanChangeController extends Controller
                 user: $user,
                 subscription: $request->subscription(),
                 targetPlan: $request->targetPlan(),
+                billingCycle: $request->billingCycle(),
                 callbackUrl: route('payments.callback'),
                 paymentSource: $request->paymentSource(),
             ));

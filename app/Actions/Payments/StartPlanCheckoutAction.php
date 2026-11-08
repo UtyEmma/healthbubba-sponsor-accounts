@@ -30,6 +30,7 @@ use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Payments\PaymentService;
 use App\Services\Activity\WorkspaceActivityLogger;
+use App\Services\Payments\IndividualPlanIntervalPricingService;
 use App\Services\Payments\PlanPricingService;
 use App\Support\Payments\PaymentReferenceGenerator;
 use App\ValueObjects\Money;
@@ -46,13 +47,14 @@ final readonly class StartPlanCheckoutAction
         private CompletePaymentAction $completePayment,
         private WorkspaceActivityLogger $activities,
         private SynchronizeIndividualSponsorCoverageAction $synchronizeSponsorCoverage,
+        private IndividualPlanIntervalPricingService $intervalPricing,
     ) {}
 
     public function execute(StartPlanCheckoutData $data): SubscriptionCheckoutResult
     {
         $this->ensurePlanCanBePurchased($data);
 
-        $quote = $this->pricing->checkout($data->plan, $data->additionalCapacity);
+        $quote = $this->pricing->checkout($data->plan, $data->additionalCapacity, $data->billingCycle);
         $this->ensureNoActiveSubscription($data);
 
         if ($data->paymentSource === SubscriptionPaymentSource::WALLET) {
@@ -93,8 +95,10 @@ final readonly class StartPlanCheckoutAction
                     'plan_id' => $data->plan->getKey(),
                     'capacity_count' => $quote->capacityCount,
                     'additional_capacity' => $quote->additionalCapacity,
-                    'billing_period' => $data->plan->billing_period,
-                    'billing_interval' => $data->plan->billing_interval->value,
+                    'billing_period' => $data->billingCycle?->billingPeriod() ?? $data->plan->billing_period,
+                    'billing_interval' => $data->billingCycle?->billingInterval()->value
+                        ?? $data->plan->billing_interval->value,
+                    'billing_cycle' => $data->billingCycle?->value,
                     'recurring_consent_at' => now()->toISOString(),
                     'payment_source' => $gateway->value,
                 ],
@@ -147,7 +151,7 @@ final readonly class StartPlanCheckoutAction
                 ->lockForUpdate()
                 ->firstOrFail();
             $this->ensureNoActiveOrPendingCheckout($data);
-            $quote = $this->pricing->checkout($data->plan, $data->additionalCapacity);
+            $quote = $this->pricing->checkout($data->plan, $data->additionalCapacity, $data->billingCycle);
             $wallet = $data->workspace->wallet()->firstOrCreate([], [
                 'balance' => '0.00',
                 'currency' => $quote->money->currency,
@@ -167,11 +171,12 @@ final readonly class StartPlanCheckoutAction
             }
 
             $startsAt = now();
-            $endsAt = $data->plan->calculateEndsAt($startsAt);
+            $endsAt = $this->intervalPricing->termEndsAt($data->plan, $startsAt, $data->billingCycle);
             $subscription = Subscription::query()->create([
                 'subscribable_type' => $data->workspace->getMorphClass(),
                 'subscribable_id' => $data->workspace->getKey(),
                 'plan_id' => $data->plan->getKey(),
+                'billing_cycle' => $data->billingCycle?->value,
                 'capacity_count' => $quote->capacityCount,
                 'status' => SubscriptionStatus::Active,
                 'starts_at' => $startsAt,
@@ -209,6 +214,7 @@ final readonly class StartPlanCheckoutAction
                     'description' => 'Plan subscription payment',
                     'payment_source' => SubscriptionPaymentSource::WALLET->value,
                     'plan_id' => $data->plan->getKey(),
+                    'billing_cycle' => $data->billingCycle?->value,
                 ],
             ]);
 
@@ -306,6 +312,9 @@ final readonly class StartPlanCheckoutAction
         if ((int) $payment->payable_id !== (int) $data->plan->getKey()
             || $payment->amount_minor !== $quote->money->amountInMinorUnits
             || $payment->currency !== $quote->money->currency
+            || (string) ($payment->metadata['billing_cycle'] ?? '') !== ($data->billingCycle === null
+                ? ''
+                : $data->billingCycle->value)
             || (int) ($payment->metadata['additional_capacity']
                 ?? $payment->metadata['additional_seats']
                 ?? 0) !== $quote->additionalCapacity) {

@@ -3,6 +3,7 @@
 use App\Enums\AccountTypes;
 use App\Enums\Subscriptions\Features;
 use App\Models\Plan;
+use App\Models\PlanIntervalPrice;
 use Database\Seeders\PlanFeatureSeeder;
 use Revoltify\Subscriptionify\Enums\Interval;
 use Revoltify\Subscriptionify\Models\Feature;
@@ -22,7 +23,8 @@ it('seeds account-specific plans and their UI feature allowances idempotently', 
         ->and(Plan::query()->whereNotIn('account_type', array_column(AccountTypes::cases(), 'value'))->doesntExist())->toBeTrue()
         ->and(Plan::query()->forAccountType(AccountTypes::INDIVIDUAL)->count())->toBe(3)
         ->and(Plan::query()->forAccountType(AccountTypes::BUSINESS)->count())->toBe(2)
-        ->and(Plan::query()->forAccountType(AccountTypes::INSTITUTION)->count())->toBe(1);
+        ->and(Plan::query()->forAccountType(AccountTypes::INSTITUTION)->count())->toBe(1)
+        ->and(PlanIntervalPrice::query()->count())->toBe(9);
 
     $individualPremium = Plan::query()
         ->with('features')
@@ -61,5 +63,6 @@ it('seeds account-specific plans and their UI feature allowances idempotently', 
 
     expect(Plan::query()->count())->toBe(6)
         ->and(Feature::query()->count())->toBe(26)
-        ->and(FeaturePlan::query()->count())->toBe(47);
+        ->and(FeaturePlan::query()->count())->toBe(47)
+        ->and(PlanIntervalPrice::query()->count())->toBe(9);
 });

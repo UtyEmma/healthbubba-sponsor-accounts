@@ -19,6 +19,7 @@ use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Models\Workspace;
 use App\Services\Activity\WorkspaceActivityLogger;
+use App\Services\Payments\IndividualPlanIntervalPricingService;
 use App\Services\Payments\PlanPricingService;
 use App\ValueObjects\Money;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +31,7 @@ final readonly class AttemptWalletSubscriptionRenewalAction
         private PlanPricingService $pricing,
         private WorkspaceActivityLogger $activities,
         private SynchronizeIndividualSponsorCoverageAction $synchronizeSponsorCoverage,
+        private IndividualPlanIntervalPricingService $intervalPricing,
     ) {}
 
     public function execute(int $subscriptionId, bool $allowPastDue = false): WalletRenewalResult
@@ -50,7 +52,8 @@ final readonly class AttemptWalletSubscriptionRenewalAction
                 ->lockForUpdate()
                 ->firstOrFail();
             $renewalPlan = $this->renewalPlan($subscription);
-            $quote = $this->pricing->renewalForPlan($subscription, $renewalPlan);
+            $renewalCycle = $this->intervalPricing->renewalCycle($subscription);
+            $quote = $this->pricing->renewalForPlan($subscription, $renewalPlan, $renewalCycle);
             $wallet = $workspace->wallet()->firstOrCreate([], [
                 'balance' => '0.00',
                 'currency' => $quote->money->currency,
@@ -82,7 +85,7 @@ final readonly class AttemptWalletSubscriptionRenewalAction
             $renewalBase = $subscription->ends_at?->isFuture() === true
                 ? $subscription->ends_at
                 : $now;
-            $endsAt = $renewalPlan->calculateEndsAt($renewalBase);
+            $endsAt = $this->intervalPricing->termEndsAt($renewalPlan, $renewalBase, $renewalCycle);
 
             $wallet->update([
                 'balance' => (new Money(
@@ -94,6 +97,8 @@ final readonly class AttemptWalletSubscriptionRenewalAction
                 'plan_id' => $renewalPlan->getKey(),
                 'scheduled_plan_id' => null,
                 'scheduled_plan_change_at' => null,
+                'billing_cycle' => $renewalCycle?->value,
+                'scheduled_billing_cycle' => null,
                 'capacity_count' => $quote->capacityCount,
                 'status' => SubscriptionStatus::Active,
                 'starts_at' => $now,
@@ -127,6 +132,7 @@ final readonly class AttemptWalletSubscriptionRenewalAction
                     'payment_source' => SubscriptionPaymentSource::WALLET->value,
                     'plan_id' => $renewalPlan->getKey(),
                     'renewal_due_at' => $dueAt->toISOString(),
+                    'billing_cycle' => $renewalCycle?->value,
                 ],
             ]);
 

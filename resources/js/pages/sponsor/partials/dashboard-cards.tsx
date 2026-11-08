@@ -22,7 +22,7 @@ export type DashboardStatistic = {
 
 export function MetricCard({ statistic }: { statistic: DashboardStatistic }) {
     return (
-        <Card className="flex min-h-[108px] items-center gap-4 p-5">
+        <Card className="flex items-center gap-4 p-5">
             <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-card shadow-card">
                 <img
                     src={`/images/sponsor/${statistic.icon}`}

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\Payments\PaymentGatewayName;
+use App\Enums\Subscriptions\IndividualPlanBillingCycle;
 use App\Enums\Subscriptions\SubscriptionFundingSource;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -15,6 +16,8 @@ use Revoltify\Subscriptionify\Models\Subscription as SubscriptionifySubscription
  * @property string $subscribable_type
  * @property int $subscribable_id
  * @property int $plan_id
+ * @property IndividualPlanBillingCycle|null $billing_cycle
+ * @property IndividualPlanBillingCycle|null $scheduled_billing_cycle
  * @property int|null $scheduled_plan_id
  * @property Carbon|null $scheduled_plan_change_at
  * @property int|null $payment_method_id
@@ -46,6 +49,8 @@ final class Subscription extends SubscriptionifySubscription
         'subscribable_type',
         'subscribable_id',
         'plan_id',
+        'billing_cycle',
+        'scheduled_billing_cycle',
         'scheduled_plan_id',
         'scheduled_plan_change_at',
         'payment_method_id',
@@ -106,6 +111,8 @@ final class Subscription extends SubscriptionifySubscription
         return [
             ...parent::casts(),
             'gateway' => PaymentGatewayName::class,
+            'billing_cycle' => IndividualPlanBillingCycle::class,
+            'scheduled_billing_cycle' => IndividualPlanBillingCycle::class,
             'funding_source' => SubscriptionFundingSource::class,
             'complimentary_renews' => 'boolean',
             'scheduled_plan_change_at' => 'datetime',

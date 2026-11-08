@@ -4,6 +4,8 @@ namespace App\Services\Payments;
 
 use App\DTOs\CapacityPurchases\CapacityConfiguration;
 use App\DTOs\Payments\PlanCharge;
+use App\Enums\AccountTypes;
+use App\Enums\Subscriptions\IndividualPlanBillingCycle;
 use App\Exceptions\Payments\CheckoutUnavailable;
 use App\Models\Plan;
 use App\Models\Subscription;
@@ -14,17 +16,23 @@ final readonly class PlanPricingService
 {
     public function __construct(
         private CapacityPricingService $capacityPricing,
+        private IndividualPlanIntervalPricingService $intervalPricing,
     ) {}
 
-    public function checkout(Plan $plan, int $additionalCapacity): PlanCharge
-    {
+    public function checkout(
+        Plan $plan,
+        int $additionalCapacity,
+        ?IndividualPlanBillingCycle $billingCycle = null,
+    ): PlanCharge {
         $this->ensurePlanIsBillable($plan);
+        $billingCycle = $this->normalizedCycle($plan, $billingCycle);
 
         if ($additionalCapacity < 0 || $additionalCapacity > 100000) {
             throw new CheckoutUnavailable('Additional capacity must be between 0 and 100,000.');
         }
 
-        $configuration = $this->capacityPricing->configuration($plan);
+        $configuration = $this->capacityPricing->configuration($plan, $billingCycle);
+        $basePrice = $this->basePrice($plan, $billingCycle);
 
         if (! $configuration instanceof CapacityConfiguration) {
             if ($additionalCapacity > 0) {
@@ -32,7 +40,7 @@ final readonly class PlanPricingService
             }
 
             return new PlanCharge(
-                money: Money::fromMajor($plan->price, $this->currency()),
+                money: $basePrice,
                 capacityCount: null,
                 additionalCapacity: 0,
             );
@@ -43,7 +51,7 @@ final readonly class PlanPricingService
         }
 
         $this->ensureAdditionalCapacityIsAvailable($configuration, $additionalCapacity);
-        $money = Money::fromMajor($plan->price, $this->currency());
+        $money = $basePrice;
 
         if ($additionalCapacity > 0 && $configuration->unitPrice instanceof Money) {
             $money = $money->add($configuration->unitPrice->multiply($additionalCapacity));
@@ -56,24 +64,34 @@ final readonly class PlanPricingService
         );
     }
 
-    public function renewal(Subscription $subscription): PlanCharge
-    {
-        return $this->renewalForPlan($subscription, $subscription->plan);
+    public function renewal(
+        Subscription $subscription,
+        ?IndividualPlanBillingCycle $billingCycle = null,
+    ): PlanCharge {
+        return $this->renewalForPlan($subscription, $subscription->plan, $billingCycle);
     }
 
-    public function renewalForPlan(Subscription $subscription, Plan $plan): PlanCharge
-    {
+    public function renewalForPlan(
+        Subscription $subscription,
+        Plan $plan,
+        ?IndividualPlanBillingCycle $billingCycle = null,
+    ): PlanCharge {
         $this->ensurePlanIsBillable($plan);
+        $billingCycle = $this->normalizedCycle(
+            $plan,
+            $billingCycle ?? $this->intervalPricing->renewalCycle($subscription),
+        );
 
         if ($plan->account_type !== $subscription->plan->account_type) {
             throw new CheckoutUnavailable('The selected plan is not available for this subscription.');
         }
 
-        $configuration = $this->capacityPricing->configuration($plan);
+        $configuration = $this->capacityPricing->configuration($plan, $billingCycle);
+        $basePrice = $this->basePrice($plan, $billingCycle, requireActive: false);
 
         if (! $configuration instanceof CapacityConfiguration) {
             return new PlanCharge(
-                money: Money::fromMajor($plan->price, $this->currency()),
+                money: $basePrice,
                 capacityCount: null,
                 additionalCapacity: 0,
             );
@@ -92,7 +110,7 @@ final readonly class PlanPricingService
         }
 
         $additionalCapacity = $configuration->additionalCapacity($capacityCount);
-        $money = Money::fromMajor($plan->price, $this->currency());
+        $money = $basePrice;
 
         if ($additionalCapacity > 0) {
             if (! $configuration->unitPrice instanceof Money) {
@@ -146,6 +164,33 @@ final readonly class PlanPricingService
         if ($base->amountInMinorUnits === 0) {
             throw new CheckoutUnavailable('A positive plan price is required for online checkout.');
         }
+    }
+
+    private function normalizedCycle(
+        Plan $plan,
+        ?IndividualPlanBillingCycle $billingCycle,
+    ): ?IndividualPlanBillingCycle {
+        if ($plan->account_type !== AccountTypes::INDIVIDUAL) {
+            return null;
+        }
+
+        return $billingCycle ?? IndividualPlanBillingCycle::MONTHLY;
+    }
+
+    private function basePrice(
+        Plan $plan,
+        ?IndividualPlanBillingCycle $billingCycle,
+        bool $requireActive = true,
+    ): Money {
+        if ($plan->account_type !== AccountTypes::INDIVIDUAL) {
+            return Money::fromMajor($plan->price, $this->currency());
+        }
+
+        return $this->intervalPricing->price(
+            $plan,
+            $billingCycle ?? IndividualPlanBillingCycle::MONTHLY,
+            $requireActive,
+        );
     }
 
     private function currency(): string

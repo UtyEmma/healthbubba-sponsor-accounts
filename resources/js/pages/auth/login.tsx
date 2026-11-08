@@ -24,6 +24,10 @@ interface LoginFormData {
     remember: boolean;
 }
 
+type LoginFormErrors = Partial<
+    Record<keyof LoginFormData | 'authorization', string>
+>;
+
 export default function Login({
     initialAccountType,
     initialEmail,
@@ -36,12 +40,14 @@ export default function Login({
     });
 
     const selectedType = form.data.account_type || null;
+    const errors = form.errors as LoginFormErrors;
     const accountLabel = accountTypeOptions.find(
         (option) => option.value === selectedType,
     )?.label;
 
-    const setupError = selectedType ? form.errors.account_type : undefined;
-    const credentialsError = form.errors.email || form.errors.password;
+    const setupError = selectedType ? errors.account_type : undefined;
+    const credentialsError = errors.email || errors.password;
+    const authorizationError = errors.authorization;
     const registrationUrl = register({
         query: {
             account_type: selectedType ?? undefined,
@@ -51,7 +57,7 @@ export default function Login({
 
     function chooseAccountType(accountType: AccountType) {
         form.setData('account_type', accountType);
-        form.clearErrors('account_type', 'email', 'password');
+        form.clearErrors();
     }
 
     function submit(event: FormEvent<HTMLFormElement>) {
@@ -98,7 +104,7 @@ export default function Login({
                                     'email',
                                     event.currentTarget.value,
                                 );
-                                form.clearErrors('email', 'account_type');
+                                form.clearErrors();
                             }}
                             type="email"
                             autoComplete="email"
@@ -126,17 +132,25 @@ export default function Login({
                                     'password',
                                     event.currentTarget.value,
                                 );
-                                form.clearErrors(
-                                    'email',
-                                    'password',
-                                    'account_type',
-                                );
+                                form.clearErrors();
                             }}
                             autoComplete="current-password"
                             aria-invalid={Boolean(credentialsError)}
                         />
                         <InputError error={form.errors?.password} />
                     </div>
+
+                    {authorizationError && (
+                        <div
+                            className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+                            role="alert"
+                        >
+                            <p className="font-medium">Unauthorized</p>
+                            <p className="mt-1 text-xs leading-5">
+                                {authorizationError}
+                            </p>
+                        </div>
+                    )}
 
                     {credentialsError && (
                         <div

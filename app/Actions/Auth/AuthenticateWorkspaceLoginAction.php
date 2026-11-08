@@ -21,6 +21,16 @@ final class AuthenticateWorkspaceLoginAction
             return null;
         }
 
+        if ($user->isAdmin()) {
+            if (! Hash::check($password, $user->password)) {
+                return null;
+            }
+
+            throw ValidationException::withMessages([
+                'authorization' => 'Administrators are not authorized to access the sponsor portal.',
+            ]);
+        }
+
         $membership = $user->workspaceMemberships()
             ->with('workspace')
             ->where('status', WorkspaceMemberStatus::Active)

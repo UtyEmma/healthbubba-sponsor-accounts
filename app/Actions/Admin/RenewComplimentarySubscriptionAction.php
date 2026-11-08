@@ -9,12 +9,16 @@ use App\Enums\Subscriptions\SubscriptionFundingSource;
 use App\Models\Subscription;
 use App\Models\Workspace;
 use App\Services\Activity\WorkspaceActivityLogger;
+use App\Services\Payments\IndividualPlanIntervalPricingService;
 use Illuminate\Support\Facades\DB;
 use Revoltify\Subscriptionify\Enums\SubscriptionStatus;
 
 final readonly class RenewComplimentarySubscriptionAction
 {
-    public function __construct(private WorkspaceActivityLogger $activities) {}
+    public function __construct(
+        private WorkspaceActivityLogger $activities,
+        private IndividualPlanIntervalPricingService $intervalPricing,
+    ) {}
 
     public function execute(int $subscriptionId): bool
     {
@@ -36,7 +40,8 @@ final readonly class RenewComplimentarySubscriptionAction
             $workspace = Workspace::query()->whereKey($subscription->subscribable_id)->lockForUpdate()->firstOrFail();
             $now = now();
             $base = $subscription->ends_at?->isFuture() === true ? $subscription->ends_at : $now;
-            $endsAt = $subscription->plan->calculateEndsAt($base);
+            $renewalCycle = $this->intervalPricing->renewalCycle($subscription);
+            $endsAt = $this->intervalPricing->termEndsAt($subscription->plan, $base, $renewalCycle);
 
             $subscription->update([
                 'status' => SubscriptionStatus::Active,
@@ -47,6 +52,8 @@ final readonly class RenewComplimentarySubscriptionAction
                 'renewal_attempts' => 0,
                 'renewal_retry_at' => null,
                 'cancelled_at' => null,
+                'billing_cycle' => $renewalCycle?->value,
+                'scheduled_billing_cycle' => null,
             ]);
 
             $this->activities->record($workspace, new WorkspaceActivityData(

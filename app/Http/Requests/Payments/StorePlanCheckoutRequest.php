@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Payments;
 
+use App\Enums\AccountTypes;
 use App\Enums\Payments\SubscriptionPaymentSource;
+use App\Enums\Subscriptions\IndividualPlanBillingCycle;
 use App\Models\Plan;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -16,6 +18,11 @@ final class StorePlanCheckoutRequest extends AuthorizedWorkspacePaymentRequest
             'additional_capacity' => ['nullable', 'integer', 'min:0', 'max:100000'],
             'recurring_consent' => ['required', 'accepted'],
             'payment_source' => ['required', Rule::enum(SubscriptionPaymentSource::class)],
+            'billing_cycle' => [
+                Rule::requiredIf(fn (): bool => $this->workspace()->type === AccountTypes::INDIVIDUAL),
+                'nullable',
+                Rule::enum(IndividualPlanBillingCycle::class),
+            ],
         ];
     }
 
@@ -27,6 +34,10 @@ final class StorePlanCheckoutRequest extends AuthorizedWorkspacePaymentRequest
 
         if (! $this->has('additional_capacity') && $this->has('additional_seats')) {
             $this->merge(['additional_capacity' => $this->input('additional_seats')]);
+        }
+
+        if (! $this->has('billing_cycle') && $this->workspace()->type === AccountTypes::INDIVIDUAL) {
+            $this->merge(['billing_cycle' => IndividualPlanBillingCycle::MONTHLY->value]);
         }
     }
 
@@ -47,5 +58,16 @@ final class StorePlanCheckoutRequest extends AuthorizedWorkspacePaymentRequest
     public function additionalCapacity(): int
     {
         return (int) ($this->validated('additional_capacity') ?? 0);
+    }
+
+    public function billingCycle(): ?IndividualPlanBillingCycle
+    {
+        if ($this->workspace()->type !== AccountTypes::INDIVIDUAL) {
+            return null;
+        }
+
+        $cycle = $this->validated('billing_cycle');
+
+        return is_string($cycle) ? IndividualPlanBillingCycle::from($cycle) : null;
     }
 }

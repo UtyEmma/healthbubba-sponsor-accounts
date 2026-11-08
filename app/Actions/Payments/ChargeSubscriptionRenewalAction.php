@@ -17,6 +17,7 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\Workspace;
 use App\Payments\PaymentService;
+use App\Services\Payments\IndividualPlanIntervalPricingService;
 use App\Services\Payments\PlanPricingService;
 use App\Support\Payments\PaymentReferenceGenerator;
 use App\ValueObjects\Money;
@@ -34,6 +35,7 @@ final readonly class ChargeSubscriptionRenewalAction
         private RecordRenewalFailureAction $recordFailure,
         private AttemptWalletSubscriptionRenewalAction $walletRenewal,
         private RenewComplimentarySubscriptionAction $complimentaryRenewal,
+        private IndividualPlanIntervalPricingService $intervalPricing,
     ) {}
 
     public function execute(int $subscriptionId): void
@@ -177,7 +179,8 @@ final readonly class ChargeSubscriptionRenewalAction
             }
 
             $renewalPlan = $this->renewalPlan($lockedSubscription);
-            $quote = $this->pricing->renewalForPlan($lockedSubscription, $renewalPlan);
+            $renewalCycle = $this->intervalPricing->renewalCycle($lockedSubscription);
+            $quote = $this->pricing->renewalForPlan($lockedSubscription, $renewalPlan, $renewalCycle);
             $paymentMethod = $lockedSubscription->paymentMethod;
             $email = $paymentMethod?->email;
 
@@ -214,6 +217,7 @@ final readonly class ChargeSubscriptionRenewalAction
                     'additional_capacity' => $quote->additionalCapacity,
                     'renewal_attempt' => $lockedSubscription->renewal_attempts + 1,
                     'renewal_due_at' => $lockedSubscription->next_charge_at?->toISOString(),
+                    'billing_cycle' => $renewalCycle?->value,
                 ],
                 'initialized_at' => now(),
             ]);

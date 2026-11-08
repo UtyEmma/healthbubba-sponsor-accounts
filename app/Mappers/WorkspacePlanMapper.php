@@ -5,12 +5,14 @@ namespace App\Mappers;
 use App\DTOs\WorkspacePlan;
 use App\Enums\AccountTypes;
 use App\Enums\Subscriptions\Features;
+use App\Enums\Subscriptions\IndividualPlanBillingCycle;
 use App\Enums\Subscriptions\PlanChangeDirection;
 use App\Exceptions\Payments\CheckoutUnavailable;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\Workspace;
 use App\Services\Payments\CapacityPricingService;
+use App\Services\Payments\IndividualPlanIntervalPricingService;
 use App\Services\Payments\PlanChangeEligibilityService;
 use App\Services\Payments\PlanChangePricingService;
 use App\Support\Billing\QuotaDescriptionFormatter;
@@ -28,6 +30,7 @@ final readonly class WorkspacePlanMapper
         private CapacityPricingService $capacityPricing,
         private PlanChangePricingService $planChangePricing,
         private PlanChangeEligibilityService $planChangeEligibility,
+        private IndividualPlanIntervalPricingService $intervalPricing,
     ) {}
 
     public function map(
@@ -83,7 +86,10 @@ final readonly class WorkspacePlanMapper
         return Plan::query()
             ->active()
             ->forAccountType($workspace->type)
-            ->with(['features' => fn ($query) => $query->orderBy('sort_order')])
+            ->with([
+                'features' => fn ($query) => $query->orderBy('sort_order'),
+                'intervalPrices',
+            ])
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();
@@ -103,6 +109,28 @@ final readonly class WorkspacePlanMapper
         $checkout = $this->checkoutState($workspace, $plan, $isCurrent, $subscription);
         $capacity = $this->capacityPricing->configuration($plan);
         $planChange = $this->planChangeState($workspace, $subscription, $plan, $isCurrent);
+        $billingOptions = $plan->account_type === AccountTypes::INDIVIDUAL
+            ? array_values($this->intervalPricing->options($plan)->map(function ($option) use (
+                $workspace,
+                $subscription,
+                $plan,
+                $isCurrent,
+            ): array {
+                $capacity = $this->capacityPricing->configuration($plan, $option->cycle);
+
+                return [
+                    ...$option->toArray(),
+                    'additional_unit_price' => $capacity?->unitPrice?->toMajorAmount(),
+                    'plan_change' => $this->planChangeState(
+                        $workspace,
+                        $subscription,
+                        $plan,
+                        $isCurrent,
+                        $option->cycle,
+                    ),
+                ];
+            })->all())
+            : [];
 
         return new WorkspacePlan(
             id: (int) $plan->getKey(),
@@ -132,6 +160,7 @@ final readonly class WorkspacePlanMapper
                 'unavailable_reason' => $capacity->unavailableReason,
             ],
             planChange: $planChange,
+            billingOptions: $billingOptions,
             unavailableReason: $planChange['unavailable_reason'] ?? $checkout['reason'],
             features: $mappedFeatures['features'],
             quotas: $mappedFeatures['quotas'],
@@ -164,7 +193,7 @@ final readonly class WorkspacePlanMapper
         if ($subscription instanceof Subscription && $subscription->valid()) {
             return [
                 'available' => false,
-                'reason' => 'An active subscription is already attached to this workspace.',
+                'reason' => null,
             ];
         }
 
@@ -241,6 +270,7 @@ final readonly class WorkspacePlanMapper
         ?Subscription $subscription,
         Plan $plan,
         bool $isCurrent,
+        ?IndividualPlanBillingCycle $billingCycle = null,
     ): ?array {
         if (! $subscription instanceof Subscription
             || $subscription->status !== SubscriptionStatus::Active
@@ -261,13 +291,17 @@ final readonly class WorkspacePlanMapper
                 $quoteSubscription->setAttribute('capacity_count', $eligibility->targetCapacityCount);
             }
 
-            $quote = $this->planChangePricing->quote($quoteSubscription, $plan);
+            $quote = $this->planChangePricing->quote(
+                $quoteSubscription,
+                $plan,
+                renewalCycle: $billingCycle,
+            );
         } catch (CheckoutUnavailable $exception) {
             return [
                 'available' => false,
                 'direction' => null,
                 'amount_due_now' => '0.00',
-                'renewal_amount' => $plan->price,
+                'renewal_amount' => $this->renewalAmount($plan, $billingCycle),
                 'effective_at' => $subscription->ends_at?->toISOString() ?? '',
                 'scheduled' => false,
                 'target_capacity_count' => $subscription->capacity_count,
@@ -422,6 +456,21 @@ final readonly class WorkspacePlanMapper
         return $additionalBeneficiaries > 0
             ? "Add up to {$additionalBeneficiaries} More Beneficiaries"
             : $feature->name;
+    }
+
+    private function renewalAmount(
+        Plan $plan,
+        ?IndividualPlanBillingCycle $billingCycle,
+    ): string {
+        if ($billingCycle === null) {
+            return $plan->price;
+        }
+
+        try {
+            return $this->intervalPricing->price($plan, $billingCycle, false)->toMajorAmount();
+        } catch (CheckoutUnavailable) {
+            return $plan->price;
+        }
     }
 
     private function featureAssignment(?Feature $feature): ?FeaturePlan

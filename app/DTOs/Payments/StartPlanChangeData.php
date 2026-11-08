@@ -3,6 +3,7 @@
 namespace App\DTOs\Payments;
 
 use App\Enums\Payments\SubscriptionPaymentSource;
+use App\Enums\Subscriptions\IndividualPlanBillingCycle;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
@@ -17,5 +18,6 @@ final readonly class StartPlanChangeData
         public Plan $targetPlan,
         public string $callbackUrl,
         public SubscriptionPaymentSource $paymentSource = SubscriptionPaymentSource::WALLET,
+        public ?IndividualPlanBillingCycle $billingCycle = null,
     ) {}
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\Subscriptions\IndividualPlanBillingCycle;
 use App\Models\Plan;
 use App\Models\Subscription;
 use Illuminate\Http\Request;
@@ -54,6 +55,15 @@ final class SubscriptionResource extends JsonResource
                     'billingLabel' => $this->billingLabelFor($this->scheduledPlan),
                 ]),
             'scheduledPlanChangeAt' => $this->scheduled_plan_change_at?->toISOString(),
+            'billingCycle' => $this->cycleResource(
+                $this->billing_cycle ?? ($this->plan->account_type->value === 'individual'
+                    ? IndividualPlanBillingCycle::MONTHLY
+                    : null),
+            ),
+            'scheduledBillingCycle' => $this->cycleResource($this->scheduled_billing_cycle),
+            'billingCycleEffectiveAt' => $this->scheduled_billing_cycle === null
+                ? null
+                : $this->ends_at?->toISOString(),
         ];
     }
 
@@ -73,6 +83,10 @@ final class SubscriptionResource extends JsonResource
 
     private function billingLabel(): string
     {
+        if ($this->billing_cycle instanceof IndividualPlanBillingCycle) {
+            return $this->billing_cycle->cadence();
+        }
+
         return $this->billingLabelFor($this->plan);
     }
 
@@ -84,5 +98,20 @@ final class SubscriptionResource extends JsonResource
         return $period === 1
             ? "per {$interval}"
             : "every {$period} {$interval}s";
+    }
+
+    /** @return array{cycle: string, label: string, months: int, cadence: string}|null */
+    private function cycleResource(?IndividualPlanBillingCycle $cycle): ?array
+    {
+        if (! $cycle instanceof IndividualPlanBillingCycle) {
+            return null;
+        }
+
+        return [
+            'cycle' => $cycle->value,
+            'label' => $cycle->label(),
+            'months' => $cycle->months(),
+            'cadence' => $cycle->cadence(),
+        ];
     }
 }

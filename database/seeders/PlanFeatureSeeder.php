@@ -4,7 +4,9 @@ namespace Database\Seeders;
 
 use App\Enums\AccountTypes;
 use App\Enums\Subscriptions\Features;
+use App\Enums\Subscriptions\IndividualPlanBillingCycle;
 use App\Models\Plan;
+use App\Models\PlanIntervalPrice;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use LogicException;
@@ -55,8 +57,48 @@ class PlanFeatureSeeder extends Seeder
                 }
 
                 $plan->features()->sync($pivots);
+
+                foreach ($this->intervalPrices()[$slug] ?? [] as $cycle => $price) {
+                    PlanIntervalPrice::query()->updateOrCreate(
+                        [
+                            'plan_id' => $plan->getKey(),
+                            'billing_cycle' => $cycle,
+                        ],
+                        [
+                            'price' => $price,
+                            'is_active' => true,
+                            'sort_order' => match ($cycle) {
+                                IndividualPlanBillingCycle::QUARTERLY->value => 1,
+                                IndividualPlanBillingCycle::BIANNUAL->value => 2,
+                                default => 3,
+                            },
+                        ],
+                    );
+                }
             }
         });
+    }
+
+    /** @return array<string, array<string, string>> */
+    private function intervalPrices(): array
+    {
+        return [
+            'individual-basic' => [
+                IndividualPlanBillingCycle::QUARTERLY->value => '57000.00',
+                IndividualPlanBillingCycle::BIANNUAL->value => '108000.00',
+                IndividualPlanBillingCycle::ANNUAL->value => '204000.00',
+            ],
+            'individual-premium' => [
+                IndividualPlanBillingCycle::QUARTERLY->value => '111150.00',
+                IndividualPlanBillingCycle::BIANNUAL->value => '210600.00',
+                IndividualPlanBillingCycle::ANNUAL->value => '399000.00',
+            ],
+            'individual-coordinated-care' => [
+                IndividualPlanBillingCycle::QUARTERLY->value => '168150.00',
+                IndividualPlanBillingCycle::BIANNUAL->value => '318600.00',
+                IndividualPlanBillingCycle::ANNUAL->value => '600000.00',
+            ],
+        ];
     }
 
     /**

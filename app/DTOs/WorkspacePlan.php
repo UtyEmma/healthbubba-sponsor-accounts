@@ -45,6 +45,7 @@ final readonly class WorkspacePlan implements Arrayable
      *     limit_violations: list<string>,
      *     unavailable_reason: string|null
      * }|null  $planChange
+     * @param  list<array<string, mixed>>  $billingOptions
      */
     public function __construct(
         public int $id,
@@ -62,6 +63,7 @@ final readonly class WorkspacePlan implements Arrayable
         public bool $coversSponsorByDefault,
         public ?array $capacity,
         public ?array $planChange,
+        public array $billingOptions,
         public ?string $unavailableReason,
         public array $features,
         public array $quotas,
@@ -102,6 +104,7 @@ final readonly class WorkspacePlan implements Arrayable
      *         limit_violations: list<string>,
      *         unavailable_reason: string|null
      *     }|null,
+     *     billing_options: list<array<string, mixed>>,
      *     unavailable_reason: string|null,
      *     features: list<array{
      *         slug: string,
@@ -140,6 +143,7 @@ final readonly class WorkspacePlan implements Arrayable
             'covers_sponsor_by_default' => $this->coversSponsorByDefault,
             'capacity' => $this->capacity,
             'plan_change' => $this->planChange,
+            'billing_options' => $this->billingOptions,
             'unavailable_reason' => $this->unavailableReason,
         ];
     }

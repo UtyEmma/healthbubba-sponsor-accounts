@@ -7,6 +7,7 @@ use App\DTOs\CapacityPurchases\CapacityPurchaseQuote;
 use App\DTOs\CapacityPurchases\CapacityPurchaseSummary;
 use App\Enums\AccountTypes;
 use App\Enums\Subscriptions\Features;
+use App\Enums\Subscriptions\IndividualPlanBillingCycle;
 use App\Exceptions\Payments\CheckoutUnavailable;
 use App\Models\Plan;
 use App\Models\Subscription;
@@ -19,10 +20,15 @@ use Revoltify\Subscriptionify\Models\FeaturePlan;
 
 final readonly class CapacityPricingService
 {
-    public function configuration(Plan $plan): ?CapacityConfiguration
-    {
+    public function configuration(
+        Plan $plan,
+        ?IndividualPlanBillingCycle $billingCycle = null,
+    ): ?CapacityConfiguration {
         return match ($plan->account_type) {
-            AccountTypes::INDIVIDUAL => $this->individualConfiguration($plan),
+            AccountTypes::INDIVIDUAL => $this->individualConfiguration(
+                $plan,
+                $billingCycle ?? IndividualPlanBillingCycle::MONTHLY,
+            ),
             AccountTypes::BUSINESS => $this->businessConfiguration($plan),
             AccountTypes::INSTITUTION => null,
         };
@@ -30,7 +36,10 @@ final readonly class CapacityPricingService
 
     public function currentCapacity(Subscription $subscription): int
     {
-        $configuration = $this->configuration($subscription->plan);
+        $configuration = $this->configuration(
+            $subscription->plan,
+            $subscription->billing_cycle ?? IndividualPlanBillingCycle::MONTHLY,
+        );
 
         return max(
             $subscription->capacity_count,
@@ -43,7 +52,10 @@ final readonly class CapacityPricingService
         int $quantity,
         ?CarbonInterface $quotedAt = null,
     ): CapacityPurchaseQuote {
-        $configuration = $this->configuration($subscription->plan);
+        $configuration = $this->configuration(
+            $subscription->plan,
+            $subscription->billing_cycle ?? IndividualPlanBillingCycle::MONTHLY,
+        );
 
         if (! $configuration instanceof CapacityConfiguration) {
             throw new CheckoutUnavailable('Additional capacity is not available for this plan.');
@@ -95,7 +107,10 @@ final readonly class CapacityPricingService
 
     public function summary(Subscription $subscription, ?Wallet $wallet): ?CapacityPurchaseSummary
     {
-        $configuration = $this->configuration($subscription->plan);
+        $configuration = $this->configuration(
+            $subscription->plan,
+            $subscription->billing_cycle ?? IndividualPlanBillingCycle::MONTHLY,
+        );
 
         if (! $configuration instanceof CapacityConfiguration) {
             return null;
@@ -132,8 +147,10 @@ final readonly class CapacityPricingService
         );
     }
 
-    private function individualConfiguration(Plan $plan): CapacityConfiguration
-    {
+    private function individualConfiguration(
+        Plan $plan,
+        IndividualPlanBillingCycle $billingCycle,
+    ): CapacityConfiguration {
         $plan->loadMissing('features');
         $features = $plan->features->keyBy('slug');
         $included = $this->featureAssignment($features->get(Features::BENEFICIARIES_INCLUDED->value));
@@ -141,7 +158,7 @@ final readonly class CapacityPricingService
 
         $includedCapacity = $this->positiveInteger($included?->getValue()) ?? 0;
         $maximumCapacity = $this->positiveInteger($maximum?->getValue());
-        $unitPrice = $this->money($included?->getUnitPrice());
+        $unitPrice = $this->money($included?->getUnitPrice())?->multiply($billingCycle->months());
         $reason = $this->unavailableReason(
             plan: $plan,
             includedCapacity: $includedCapacity,

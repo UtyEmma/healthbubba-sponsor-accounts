@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Subscriptions\Actions;
 
 use App\Actions\Admin\AssignWorkspaceSubscriptionAction;
 use App\DTOs\Admin\AssignWorkspaceSubscriptionData;
+use App\Enums\Subscriptions\IndividualPlanBillingCycle;
 use App\Enums\Subscriptions\SubscriptionFundingSource;
 use App\Exceptions\Payments\CheckoutUnavailable;
 use App\Models\Plan;
@@ -95,6 +96,14 @@ final class SubscriptionAdminActions
                     ->integer()
                     ->minValue(0)
                     ->default(0),
+                Select::make('billing_cycle')
+                    ->label('Individual billing interval')
+                    ->options(collect(IndividualPlanBillingCycle::cases())
+                        ->mapWithKeys(fn (IndividualPlanBillingCycle $cycle): array => [
+                            $cycle->value => $cycle->label(),
+                        ])->all())
+                    ->default(IndividualPlanBillingCycle::MONTHLY->value)
+                    ->helperText('Used only when the selected workspace is an Individual account.'),
                 Toggle::make('complimentary_renews')
                     ->label('Ongoing complimentary renewal')
                     ->helperText('Automatically renew without charging the workspace wallet.')
@@ -112,6 +121,9 @@ final class SubscriptionAdminActions
                         fundingSource: SubscriptionFundingSource::from((string) $data['funding_source']),
                         additionalCapacity: (int) ($data['additional_capacity'] ?? 0),
                         complimentaryRenews: (bool) ($data['complimentary_renews'] ?? false),
+                        billingCycle: isset($data['billing_cycle'])
+                            ? IndividualPlanBillingCycle::from((string) $data['billing_cycle'])
+                            : null,
                     ));
                 } catch (CheckoutUnavailable $exception) {
                     throw ValidationException::withMessages([

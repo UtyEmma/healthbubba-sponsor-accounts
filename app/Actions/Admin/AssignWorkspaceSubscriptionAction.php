@@ -6,8 +6,10 @@ use App\Actions\WorkspaceBeneficiaries\SynchronizeIndividualSponsorCoverageActio
 use App\DTOs\Activity\WorkspaceActivityActor;
 use App\DTOs\Activity\WorkspaceActivityData;
 use App\DTOs\Admin\AssignWorkspaceSubscriptionData;
+use App\Enums\AccountTypes;
 use App\Enums\Activity\WorkspaceActivityType;
 use App\Enums\Payments\PaymentPurpose;
+use App\Enums\Subscriptions\IndividualPlanBillingCycle;
 use App\Enums\Subscriptions\PlanChangeDirection;
 use App\Enums\Subscriptions\SubscriptionFundingSource;
 use App\Enums\Transactions\TransactionFlow;
@@ -21,6 +23,7 @@ use App\Models\User;
 use App\Models\Wallet;
 use App\Models\Workspace;
 use App\Services\Activity\WorkspaceActivityLogger;
+use App\Services\Payments\IndividualPlanIntervalPricingService;
 use App\Services\Payments\PlanChangeEligibilityService;
 use App\Services\Payments\PlanChangePricingService;
 use App\Services\Payments\PlanPricingService;
@@ -38,6 +41,7 @@ final readonly class AssignWorkspaceSubscriptionAction
         private PaymentReferenceGenerator $references,
         private WorkspaceActivityLogger $activities,
         private SynchronizeIndividualSponsorCoverageAction $synchronizeSponsorCoverage,
+        private IndividualPlanIntervalPricingService $intervalPricing,
     ) {}
 
     public function execute(User $administrator, AssignWorkspaceSubscriptionData $data): Subscription
@@ -73,14 +77,18 @@ final readonly class AssignWorkspaceSubscriptionAction
         Plan $plan,
         AssignWorkspaceSubscriptionData $data,
     ): Subscription {
-        $quote = $this->pricing->checkout($plan, $data->additionalCapacity);
+        $billingCycle = $plan->account_type === AccountTypes::INDIVIDUAL
+            ? ($data->billingCycle ?? IndividualPlanBillingCycle::MONTHLY)
+            : null;
+        $quote = $this->pricing->checkout($plan, $data->additionalCapacity, $billingCycle);
         $startsAt = now();
-        $endsAt = $plan->calculateEndsAt($startsAt);
+        $endsAt = $this->intervalPricing->termEndsAt($plan, $startsAt, $billingCycle);
 
         $subscription = Subscription::query()->create([
             'subscribable_type' => $workspace->getMorphClass(),
             'subscribable_id' => $workspace->getKey(),
             'plan_id' => $plan->getKey(),
+            'billing_cycle' => $billingCycle?->value,
             'capacity_count' => $quote->capacityCount ?? 1,
             'status' => SubscriptionStatus::Active,
             'starts_at' => $startsAt,
@@ -125,7 +133,11 @@ final readonly class AssignWorkspaceSubscriptionAction
 
         $quotedSubscription = clone $subscription;
         $quotedSubscription->setAttribute('capacity_count', $eligibility->targetCapacityCount);
-        $quote = $this->changePricing->quote($quotedSubscription, $plan);
+        $quote = $this->changePricing->quote(
+            $quotedSubscription,
+            $plan,
+            renewalCycle: $data->billingCycle,
+        );
 
         if ($data->fundingSource === SubscriptionFundingSource::Wallet
             && $direction === PlanChangeDirection::UPGRADE) {
@@ -144,6 +156,11 @@ final readonly class AssignWorkspaceSubscriptionAction
             'capacity_count' => $eligibility->targetCapacityCount,
             'scheduled_plan_id' => null,
             'scheduled_plan_change_at' => null,
+            'scheduled_billing_cycle' => $plan->account_type === AccountTypes::INDIVIDUAL
+                && $data->billingCycle !== null
+                && $data->billingCycle !== $subscription->billing_cycle
+                    ? $data->billingCycle->value
+                    : null,
             'status' => SubscriptionStatus::Active,
             'cancelled_at' => null,
             'funding_source' => $data->fundingSource,

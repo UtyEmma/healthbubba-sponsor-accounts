@@ -3,6 +3,7 @@
 namespace App\Services\Payments;
 
 use App\DTOs\Payments\PlanChangeQuote;
+use App\Enums\Subscriptions\IndividualPlanBillingCycle;
 use App\Enums\Subscriptions\PlanChangeDirection;
 use App\Exceptions\Payments\CheckoutUnavailable;
 use App\Models\Plan;
@@ -14,12 +15,14 @@ final readonly class PlanChangePricingService
 {
     public function __construct(
         private PlanPricingService $plans,
+        private IndividualPlanIntervalPricingService $intervalPricing,
     ) {}
 
     public function quote(
         Subscription $subscription,
         Plan $targetPlan,
         ?CarbonInterface $quotedAt = null,
+        ?IndividualPlanBillingCycle $renewalCycle = null,
     ): PlanChangeQuote {
         if ((int) $subscription->plan_id === (int) $targetPlan->getKey()) {
             throw new CheckoutUnavailable('This is already the current subscription plan.');
@@ -49,12 +52,19 @@ final readonly class PlanChangePricingService
             throw new CheckoutUnavailable('The subscription billing term is invalid.');
         }
 
-        $currentCharge = $this->plans->renewal($subscription);
-        $targetCharge = $this->plans->renewalForPlan($subscription, $targetPlan);
+        $currentCycle = $this->intervalPricing->currentCycle($subscription);
+        $renewalCycle ??= $this->intervalPricing->renewalCycle($subscription);
+        $currentCharge = $this->plans->renewal($subscription, $currentCycle);
+        $targetChargeAtCurrentCycle = $this->plans->renewalForPlan($subscription, $targetPlan, $currentCycle);
+        $targetCharge = $this->plans->renewalForPlan($subscription, $targetPlan, $renewalCycle);
 
         $amountDueNow = $direction === PlanChangeDirection::UPGRADE
             ? $this->prorateDifference(
-                differenceInMinor: $difference,
+                differenceInMinor: max(
+                    0,
+                    $targetChargeAtCurrentCycle->money->amountInMinorUnits
+                        - $currentCharge->money->amountInMinorUnits,
+                ),
                 termStartsAt: $subscription->starts_at,
                 termEndsAt: $termEndsAt,
                 quotedAt: $quotedAt,

@@ -1,6 +1,8 @@
 export type AccountType = 'individual' | 'business' | 'institution';
 
 export type SubscriptionPaymentSource = 'wallet' | 'paystack' | 'stripe';
+export type IndividualPlanBillingCycle =
+    'monthly' | 'quarterly' | 'biannual' | 'annual';
 
 export type BillingWallet = {
     balance: string;
@@ -42,9 +44,22 @@ export type Plan = {
     covers_sponsor_by_default: boolean;
     capacity: PlanCapacity | null;
     plan_change: PlanChange | null;
+    billing_options: PlanBillingOption[];
     unavailable_reason: string | null;
     features: PlanFeature[];
     quotas: PlanQuota[];
+};
+
+export type PlanBillingOption = {
+    cycle: IndividualPlanBillingCycle;
+    label: string;
+    months: number;
+    price: string;
+    cadence: string;
+    savings_percentage: number;
+    available: boolean;
+    additional_unit_price: string | null;
+    plan_change: PlanChange | null;
 };
 
 export type PlanChange = {
@@ -104,6 +119,16 @@ export type SubscriptionSummary = {
         billingLabel: string;
     } | null;
     scheduledPlanChangeAt: string | null;
+    billingCycle: SubscriptionBillingCycle | null;
+    scheduledBillingCycle: SubscriptionBillingCycle | null;
+    billingCycleEffectiveAt: string | null;
+};
+
+export type SubscriptionBillingCycle = {
+    cycle: IndividualPlanBillingCycle;
+    label: string;
+    months: number;
+    cadence: string;
 };
 
 export type CapacityPurchaseSummary = {

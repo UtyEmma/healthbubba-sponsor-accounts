@@ -14,7 +14,12 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { useActivePaymentGateway } from '@/hooks/use-active-payment-gateway';
-import type { BillingWallet, Plan, SubscriptionPaymentSource } from '@/types';
+import type {
+    BillingWallet,
+    IndividualPlanBillingCycle,
+    Plan,
+    SubscriptionPaymentSource,
+} from '@/types';
 import { PaymentSourceOptions } from './payment-source-options';
 
 function formatMoney(amount: string, currency: string): string {
@@ -33,6 +38,7 @@ export function PlanChangeDialog({
     plan,
     open,
     onOpenChange,
+    billingCycle,
 }: {
     subscriptionId: number;
     currentPlanName: string;
@@ -41,9 +47,13 @@ export function PlanChangeDialog({
     plan: Plan | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    billingCycle?: IndividualPlanBillingCycle;
 }) {
     const gateway = useActivePaymentGateway();
-    const change = plan?.plan_change;
+    const billingOption = billingCycle
+        ? plan?.billing_options.find((option) => option.cycle === billingCycle)
+        : undefined;
+    const change = billingOption?.plan_change ?? plan?.plan_change;
     const isUpgrade = change?.direction === 'upgrade';
     const amountDue = Number(change?.amount_due_now ?? 0);
     const walletBalance = Number(wallet.balance);
@@ -90,6 +100,13 @@ export function PlanChangeDialog({
                         {({ errors, processing }) => (
                             <>
                                 <div className="grid gap-5 px-6 py-5">
+                                    {billingCycle && (
+                                        <input
+                                            type="hidden"
+                                            name="billing_cycle"
+                                            value={billingCycle}
+                                        />
+                                    )}
                                     <section
                                         className="grid gap-3 rounded-lg border bg-muted/30 p-4"
                                         aria-label="Plan change summary"

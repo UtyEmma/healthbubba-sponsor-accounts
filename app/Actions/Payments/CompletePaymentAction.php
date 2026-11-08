@@ -5,10 +5,12 @@ namespace App\Actions\Payments;
 use App\Actions\WorkspaceBeneficiaries\SynchronizeIndividualSponsorCoverageAction;
 use App\DTOs\Payments\PaymentMethodData;
 use App\DTOs\Payments\PaymentVerification;
+use App\Enums\AccountTypes;
 use App\Enums\CapacityPurchases\CapacityPurchaseStatus;
 use App\Enums\Payments\PaymentGatewayName;
 use App\Enums\Payments\PaymentPurpose;
 use App\Enums\Payments\PaymentStatus;
+use App\Enums\Subscriptions\IndividualPlanBillingCycle;
 use App\Enums\Subscriptions\SubscriptionFundingSource;
 use App\Enums\Transactions\TransactionFlow;
 use App\Enums\Transactions\TransactionStatus;
@@ -25,6 +27,7 @@ use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Models\Workspace;
 use App\Payments\PaymentService;
+use App\Services\Payments\IndividualPlanIntervalPricingService;
 use App\Services\Payments\PlanChangePricingService;
 use App\Services\Payments\PlanPricingService;
 use App\ValueObjects\Money;
@@ -46,6 +49,7 @@ final readonly class CompletePaymentAction
         private PlanPricingService $planPricing,
         private PlanChangePricingService $planChangePricing,
         private SynchronizeIndividualSponsorCoverageAction $synchronizeSponsorCoverage,
+        private IndividualPlanIntervalPricingService $intervalPricing,
     ) {}
 
     public function execute(
@@ -316,8 +320,13 @@ final readonly class CompletePaymentAction
             throw new PaymentVerificationFailed('The upgrade target plan is no longer available.');
         }
 
-        $targetCharge = $this->planPricing->renewalForPlan($subscription, $targetPlan);
-        $currentCharge = $this->planPricing->renewal($subscription);
+        $targetCycle = $this->metadataBillingCycle($payment)
+            ?? $this->intervalPricing->renewalCycle($subscription);
+        $targetCharge = $this->planPricing->renewalForPlan($subscription, $targetPlan, $targetCycle);
+        $currentCharge = $this->planPricing->renewal(
+            $subscription,
+            $this->intervalPricing->currentCycle($subscription),
+        );
         $quotedAt = $payment->metadata['quoted_at'] ?? null;
 
         if (! is_string($quotedAt)) {
@@ -328,6 +337,7 @@ final readonly class CompletePaymentAction
             $subscription,
             $targetPlan,
             CarbonImmutable::parse($quotedAt),
+            $targetCycle,
         );
         $currentRenewalMinor = $this->positiveMetadataInteger(
             $payment,
@@ -363,6 +373,9 @@ final readonly class CompletePaymentAction
             'capacity_count' => $capacityCount,
             'scheduled_plan_id' => null,
             'scheduled_plan_change_at' => null,
+            'scheduled_billing_cycle' => $targetCycle !== $this->intervalPricing->currentCycle($subscription)
+                ? $targetCycle?->value
+                : null,
             'funding_source' => SubscriptionFundingSource::CustomerPaid,
             'assigned_by_user_id' => null,
             'complimentary_renews' => false,
@@ -397,6 +410,26 @@ final readonly class CompletePaymentAction
             throw new PaymentVerificationFailed('This workspace already has an active subscription.');
         }
 
+        $billingCycle = $this->metadataBillingCycle($payment)
+            ?? ($plan->account_type === AccountTypes::INDIVIDUAL
+                ? IndividualPlanBillingCycle::MONTHLY
+                : null);
+        $additionalCapacity = $payment->metadata['additional_capacity']
+            ?? $payment->metadata['additional_seats']
+            ?? 0;
+        $additionalCapacity = is_numeric($additionalCapacity) ? (int) $additionalCapacity : -1;
+
+        try {
+            $quotedCharge = $this->planPricing->checkout($plan, $additionalCapacity, $billingCycle);
+        } catch (CheckoutUnavailable $exception) {
+            throw new PaymentVerificationFailed('The subscription pricing changed before payment completed.', previous: $exception);
+        }
+
+        if ($payment->amount_minor !== $quotedCharge->money->amountInMinorUnits
+            || $payment->currency !== $quotedCharge->money->currency) {
+            throw new PaymentVerificationFailed('The subscription pricing changed before payment completed.');
+        }
+
         $startsAt = now();
         $endsAt = $this->initialSubscriptionEndsAt($payment, $startsAt);
         $autoRenew = $paymentMethod?->reusable === true;
@@ -406,6 +439,7 @@ final readonly class CompletePaymentAction
             'subscribable_type' => $workspace->getMorphClass(),
             'subscribable_id' => $workspace->getKey(),
             'plan_id' => $plan->getKey(),
+            'billing_cycle' => $billingCycle?->value,
             'status' => SubscriptionStatus::Active,
             'starts_at' => $startsAt,
             'ends_at' => $endsAt,
@@ -439,6 +473,12 @@ final readonly class CompletePaymentAction
         Payment $payment,
         CarbonInterface $startsAt,
     ): CarbonInterface {
+        $billingCycle = $this->metadataBillingCycle($payment);
+
+        if ($billingCycle instanceof IndividualPlanBillingCycle) {
+            return $billingCycle->calculateEndsAt($startsAt);
+        }
+
         $period = $payment->metadata['billing_period'] ?? null;
         $interval = $payment->metadata['billing_interval'] ?? null;
 
@@ -453,6 +493,13 @@ final readonly class CompletePaymentAction
         }
 
         return $billingInterval->addToDate($startsAt, $period);
+    }
+
+    private function metadataBillingCycle(Payment $payment): ?IndividualPlanBillingCycle
+    {
+        $cycle = $payment->metadata['billing_cycle'] ?? null;
+
+        return is_string($cycle) ? IndividualPlanBillingCycle::tryFrom($cycle) : null;
     }
 
     private function renewSubscription(
@@ -486,7 +533,9 @@ final readonly class CompletePaymentAction
             throw new PaymentVerificationFailed('The renewal plan is no longer available.');
         }
 
-        $renewalCharge = $this->planPricing->renewalForPlan($subscription, $renewalPlan);
+        $renewalCycle = $this->metadataBillingCycle($payment)
+            ?? $this->intervalPricing->renewalCycle($subscription);
+        $renewalCharge = $this->planPricing->renewalForPlan($subscription, $renewalPlan, $renewalCycle);
         $capacityCount = $this->positiveMetadataInteger(
             $payment,
             'capacity_count',
@@ -505,12 +554,14 @@ final readonly class CompletePaymentAction
         $renewalBase = $subscription->ends_at?->isFuture() === true
             ? $subscription->ends_at
             : $now;
-        $endsAt = $renewalPlan->calculateEndsAt($renewalBase);
+        $endsAt = $this->intervalPricing->termEndsAt($renewalPlan, $renewalBase, $renewalCycle);
 
         $subscription->update([
             'plan_id' => $renewalPlan->getKey(),
             'scheduled_plan_id' => null,
             'scheduled_plan_change_at' => null,
+            'billing_cycle' => $renewalCycle?->value,
+            'scheduled_billing_cycle' => null,
             'capacity_count' => $capacityCount,
             'status' => SubscriptionStatus::Active,
             'starts_at' => $now,

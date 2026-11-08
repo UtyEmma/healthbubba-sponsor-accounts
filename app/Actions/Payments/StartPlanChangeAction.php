@@ -18,6 +18,7 @@ use App\Enums\Payments\PaymentGatewayName;
 use App\Enums\Payments\PaymentPurpose;
 use App\Enums\Payments\PaymentStatus;
 use App\Enums\Payments\SubscriptionPaymentSource;
+use App\Enums\Subscriptions\IndividualPlanBillingCycle;
 use App\Enums\Subscriptions\PlanChangeDirection;
 use App\Enums\Subscriptions\SubscriptionFundingSource;
 use App\Enums\Transactions\TransactionFlow;
@@ -33,6 +34,7 @@ use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Payments\PaymentService;
 use App\Services\Activity\WorkspaceActivityLogger;
+use App\Services\Payments\IndividualPlanIntervalPricingService;
 use App\Services\Payments\PlanChangeEligibilityService;
 use App\Services\Payments\PlanChangePricingService;
 use App\Support\Payments\PaymentReferenceGenerator;
@@ -50,6 +52,7 @@ final readonly class StartPlanChangeAction
         private WorkspaceActivityLogger $activities,
         private PlanChangeEligibilityService $eligibility,
         private SynchronizeIndividualSponsorCoverageAction $synchronizeSponsorCoverage,
+        private IndividualPlanIntervalPricingService $intervalPricing,
     ) {}
 
     public function execute(StartPlanChangeData $data): PlanChangeResult
@@ -64,6 +67,9 @@ final readonly class StartPlanChangeAction
                     ->firstOrFail();
 
                 $this->ensurePlanCanReplaceSubscription($data, $subscription, $targetPlan);
+                if ($data->billingCycle !== null) {
+                    $this->intervalPricing->price($targetPlan, $data->billingCycle);
+                }
                 $this->ensureNoConflictingOperations($subscription);
                 $direction = $this->pricing->direction($subscription, $targetPlan);
                 $quoteSubscription = $subscription;
@@ -77,13 +83,13 @@ final readonly class StartPlanChangeAction
 
                     $quoteSubscription = clone $subscription;
                     $quoteSubscription->setAttribute('capacity_count', $eligibility->targetCapacityCount);
-                    $quote = $this->pricing->quote($quoteSubscription, $targetPlan);
+                    $quote = $this->pricing->quote($quoteSubscription, $targetPlan, renewalCycle: $data->billingCycle);
                     $this->applyDowngrade($data, $subscription, $targetPlan, $quote, $eligibility->targetCapacityCount);
 
                     return [$quote, null, false];
                 }
 
-                $quote = $this->pricing->quote($quoteSubscription, $targetPlan);
+                $quote = $this->pricing->quote($quoteSubscription, $targetPlan, renewalCycle: $data->billingCycle);
 
                 if ($data->paymentSource === SubscriptionPaymentSource::WALLET) {
                     $this->payUpgradeFromWallet($data, $subscription, $targetPlan, $quote);
@@ -94,7 +100,12 @@ final readonly class StartPlanChangeAction
                 $existingPayment = $this->unresolvedUpgradePayment($subscription);
 
                 if ($existingPayment instanceof Payment) {
-                    $this->ensurePaymentMatchesQuote($existingPayment, $targetPlan, $quote);
+                    $this->ensurePaymentMatchesQuote(
+                        $existingPayment,
+                        $targetPlan,
+                        $quote,
+                        $data->billingCycle,
+                    );
 
                     return [$quote, $existingPayment, false];
                 }
@@ -127,6 +138,7 @@ final readonly class StartPlanChangeAction
                         'quoted_at' => $quote->quotedAt->toISOString(),
                         'term_ends_at' => $subscription->ends_at?->toISOString(),
                         'payment_source' => $gateway->value,
+                        'billing_cycle' => $data->billingCycle?->value,
                     ],
                 ]);
                 $payment->update([
@@ -257,6 +269,7 @@ final readonly class StartPlanChangeAction
             'capacity_count' => $targetCapacityCount,
             'scheduled_plan_id' => null,
             'scheduled_plan_change_at' => null,
+            'scheduled_billing_cycle' => $this->scheduledCycle($subscription, $data),
         ]);
         $this->synchronizeSponsorCoverage->execute($data->workspace, $targetPlan);
 
@@ -317,6 +330,7 @@ final readonly class StartPlanChangeAction
             'capacity_count' => $quote->targetCapacityCount,
             'scheduled_plan_id' => null,
             'scheduled_plan_change_at' => null,
+            'scheduled_billing_cycle' => $this->scheduledCycle($subscription, $data),
             'funding_source' => SubscriptionFundingSource::Wallet,
             'assigned_by_user_id' => null,
             'complimentary_renews' => false,
@@ -379,6 +393,7 @@ final readonly class StartPlanChangeAction
         Payment $payment,
         Plan $targetPlan,
         PlanChangeQuote $quote,
+        ?IndividualPlanBillingCycle $billingCycle,
     ): void {
         if ($payment->status === PaymentStatus::REQUIRES_REVIEW) {
             throw new CheckoutUnavailable('The previous plan upgrade requires payment support review.');
@@ -396,6 +411,9 @@ final readonly class StartPlanChangeAction
                 !== $quote->currentBasePrice->amountInMinorUnits
             || (int) ($payment->metadata['target_base_minor'] ?? 0)
                 !== $quote->targetBasePrice->amountInMinorUnits
+            || (string) ($payment->metadata['billing_cycle'] ?? '') !== ($billingCycle === null
+                ? ''
+                : $billingCycle->value)
             || (string) ($payment->metadata['term_ends_at'] ?? '') !== $quote->termEndsAt->toISOString()) {
             throw new CheckoutUnavailable('A different plan upgrade is already in progress.');
         }
@@ -431,5 +449,18 @@ final readonly class StartPlanChangeAction
         }
 
         return $active;
+    }
+
+    private function scheduledCycle(
+        Subscription $subscription,
+        StartPlanChangeData $data,
+    ): ?IndividualPlanBillingCycle {
+        if ($data->billingCycle === null) {
+            return $subscription->scheduled_billing_cycle;
+        }
+
+        $current = $subscription->billing_cycle ?? IndividualPlanBillingCycle::MONTHLY;
+
+        return $data->billingCycle === $current ? null : $data->billingCycle;
     }
 }

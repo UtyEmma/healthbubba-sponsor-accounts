@@ -15,6 +15,7 @@ use App\Models\Wallet;
 use App\Models\Workspace;
 use App\Queries\Billing\GetFrequentlyAskedQuestions;
 use App\Services\Payments\CapacityPricingService;
+use App\Services\Payments\IndividualPlanIntervalPricingService;
 use App\Services\Payments\PlanPricingService;
 use App\Services\WorkspaceMembers\WorkspaceMemberAccessService;
 use Illuminate\Http\Request;
@@ -29,6 +30,7 @@ final class BillingController extends Controller
         private readonly PlanPricingService $planPricing,
         private readonly WorkspaceMemberAccessService $workspaceAccess,
         private readonly GetFrequentlyAskedQuestions $frequentlyAskedQuestions,
+        private readonly IndividualPlanIntervalPricingService $intervalPricing,
     ) {}
 
     public function __invoke(Request $request): Response
@@ -77,7 +79,11 @@ final class BillingController extends Controller
             $renewalPlan = $subscription->scheduledPlan ?? $subscription->plan;
 
             return $this->planPricing
-                ->renewalForPlan($subscription, $renewalPlan)
+                ->renewalForPlan(
+                    $subscription,
+                    $renewalPlan,
+                    $this->intervalPricing->renewalCycle($subscription),
+                )
                 ->money
                 ->toMajorAmount();
         } catch (CheckoutUnavailable) {

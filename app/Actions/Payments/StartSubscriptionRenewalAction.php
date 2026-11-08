@@ -19,6 +19,7 @@ use App\Models\Payment;
 use App\Models\Subscription;
 use App\Models\Workspace;
 use App\Payments\PaymentService;
+use App\Services\Payments\IndividualPlanIntervalPricingService;
 use App\Services\Payments\PlanPricingService;
 use App\Support\Payments\PaymentReferenceGenerator;
 use App\ValueObjects\Money;
@@ -33,6 +34,7 @@ final readonly class StartSubscriptionRenewalAction
         private PaymentService $payments,
         private PaymentReferenceGenerator $references,
         private FailPaymentAction $failPayment,
+        private IndividualPlanIntervalPricingService $intervalPricing,
     ) {}
 
     public function execute(StartSubscriptionRenewalData $data): SubscriptionCheckoutResult
@@ -87,7 +89,9 @@ final readonly class StartSubscriptionRenewalAction
                 return $existing;
             }
 
-            $quote = $this->pricing->renewal($subscription);
+            $renewalCycle = $this->intervalPricing->renewalCycle($subscription);
+            $renewalPlan = $subscription->scheduledPlan ?? $subscription->plan;
+            $quote = $this->pricing->renewalForPlan($subscription, $renewalPlan, $renewalCycle);
             $gateway = $this->activeExternalGateway($data->paymentSource, $data->workspace->type);
             $payment = Payment::query()->create([
                 'workspace_id' => $data->workspace->getKey(),
@@ -105,7 +109,7 @@ final readonly class StartSubscriptionRenewalAction
                     'workspace_id' => $data->workspace->getKey(),
                     'purpose' => PaymentPurpose::SUBSCRIPTION->value,
                     'subscription_id' => $subscription->getKey(),
-                    'plan_id' => $subscription->plan_id,
+                    'plan_id' => $renewalPlan->getKey(),
                     'previous_plan_id' => $subscription->plan_id,
                     'capacity_count' => $quote->capacityCount,
                     'additional_capacity' => $quote->additionalCapacity,
@@ -113,6 +117,7 @@ final readonly class StartSubscriptionRenewalAction
                     'renewal_due_at' => $subscription->next_charge_at?->toISOString(),
                     'recurring_consent_at' => now()->toISOString(),
                     'payment_source' => $gateway->value,
+                    'billing_cycle' => $renewalCycle?->value,
                 ],
             ]);
             $payment->update(['metadata' => [...$payment->metadata, 'payment_id' => $payment->getKey()]]);

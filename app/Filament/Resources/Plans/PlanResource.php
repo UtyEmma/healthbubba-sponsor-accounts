@@ -7,6 +7,7 @@ use App\Filament\Resources\Plans\Pages\EditPlan;
 use App\Filament\Resources\Plans\Pages\ListPlans;
 use App\Filament\Resources\Plans\Pages\ViewPlan;
 use App\Filament\Resources\Plans\RelationManagers\FeaturesRelationManager;
+use App\Filament\Resources\Plans\RelationManagers\IntervalPricesRelationManager;
 use App\Filament\Resources\Plans\Schemas\PlanForm;
 use App\Filament\Resources\Plans\Schemas\PlanInfolist;
 use App\Filament\Resources\Plans\Tables\PlansTable;
@@ -49,6 +50,7 @@ class PlanResource extends Resource
     {
         return [
             FeaturesRelationManager::class,
+            IntervalPricesRelationManager::class,
         ];
     }
 

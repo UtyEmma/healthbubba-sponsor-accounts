@@ -2,12 +2,14 @@
 
 namespace App\Http\Requests\Payments;
 
+use App\Enums\AccountTypes;
 use App\Enums\Payments\SubscriptionPaymentSource;
+use App\Enums\Subscriptions\IndividualPlanBillingCycle;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\Workspace;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Illuminate\Validation\Rule;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class StorePlanChangeRequest extends AuthorizedWorkspacePaymentRequest
 {
@@ -32,6 +34,11 @@ final class StorePlanChangeRequest extends AuthorizedWorkspacePaymentRequest
         return [
             'confirmed' => ['required', 'accepted'],
             'payment_source' => ['required', Rule::enum(SubscriptionPaymentSource::class)],
+            'billing_cycle' => [
+                Rule::requiredIf(fn (): bool => $this->workspace()->type === AccountTypes::INDIVIDUAL),
+                'nullable',
+                Rule::enum(IndividualPlanBillingCycle::class),
+            ],
         ];
     }
 
@@ -39,6 +46,15 @@ final class StorePlanChangeRequest extends AuthorizedWorkspacePaymentRequest
     {
         if (! $this->has('payment_source')) {
             $this->merge(['payment_source' => SubscriptionPaymentSource::WALLET->value]);
+        }
+
+        if (! $this->has('billing_cycle') && $this->workspace()->type === AccountTypes::INDIVIDUAL) {
+            $subscription = $this->subscription();
+            $this->merge([
+                'billing_cycle' => ($subscription->scheduled_billing_cycle
+                    ?? $subscription->billing_cycle
+                    ?? IndividualPlanBillingCycle::MONTHLY)->value,
+            ]);
         }
     }
 
@@ -63,5 +79,16 @@ final class StorePlanChangeRequest extends AuthorizedWorkspacePaymentRequest
         return $plan instanceof Plan
             ? $plan
             : throw new NotFoundHttpException('The selected plan was not found.');
+    }
+
+    public function billingCycle(): ?IndividualPlanBillingCycle
+    {
+        if ($this->workspace()->type !== AccountTypes::INDIVIDUAL) {
+            return null;
+        }
+
+        $cycle = $this->validated('billing_cycle');
+
+        return is_string($cycle) ? IndividualPlanBillingCycle::from($cycle) : null;
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\DTOs\Admin;
 
+use App\Enums\Subscriptions\IndividualPlanBillingCycle;
 use App\Enums\Subscriptions\SubscriptionFundingSource;
 
 final readonly class AssignWorkspaceSubscriptionData
@@ -12,5 +13,6 @@ final readonly class AssignWorkspaceSubscriptionData
         public SubscriptionFundingSource $fundingSource,
         public int $additionalCapacity = 0,
         public bool $complimentaryRenews = false,
+        public ?IndividualPlanBillingCycle $billingCycle = null,
     ) {}
 }

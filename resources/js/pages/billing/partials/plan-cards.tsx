@@ -8,7 +8,7 @@ import {
     CardHeader,
 } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import type { Plan } from '@/types';
+import type { IndividualPlanBillingCycle, Plan } from '@/types';
 
 function formatPrice(price: string, currency: string): string {
     return new Intl.NumberFormat('en-NG', {
@@ -21,16 +21,25 @@ function formatPrice(price: string, currency: string): string {
 export function PlanCard({
     plan,
     onSelect,
+    billingCycle,
 }: {
     plan: Plan;
     onSelect?: (plan: Plan) => void;
+    billingCycle?: IndividualPlanBillingCycle;
 }) {
-    const planChange = plan.plan_change;
+    const billingOption = billingCycle
+        ? plan.billing_options.find((option) => option.cycle === billingCycle)
+        : undefined;
+    const planChange = billingOption?.plan_change ?? plan.plan_change;
+    const displayPrice = billingOption?.price ?? plan.price;
+    const displayCadence = billingOption?.cadence ?? plan.cadence;
     const selectionDisabled = plan.is_current
         ? true
-        : planChange
-          ? !planChange.available
-          : !plan.checkout_available;
+        : billingOption && !billingOption.available
+          ? true
+          : planChange
+            ? !planChange.available
+            : !plan.checkout_available;
     const unavailableReason =
         planChange?.unavailable_reason ?? plan.unavailable_reason;
     const reasonId = `plan-${plan.id}-unavailable-reason`;
@@ -74,13 +83,18 @@ export function PlanCard({
                     {plan.description}
                 </p>
                 <p className="pt-3 text-3xl leading-9 font-semibold tracking-tight">
-                    {formatPrice(plan.price, plan.currency)}
+                    {formatPrice(displayPrice, plan.currency)}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     {plan.capacity?.unit === 'seat'
                         ? 'per employee / month'
-                        : plan.cadence}
-                </p>
+                        : displayCadence}
+                    {billingOption && billingOption.savings_percentage > 0 && (
+                        <span className="rounded-full bg-success/10 px-2 py-0.5 font-medium text-success">
+                            Save {billingOption.savings_percentage}%
+                        </span>
+                    )}
+                </div>
             </CardHeader>
 
             <CardContent className="flex flex-1 flex-col gap-4 px-4 pt-3">
@@ -141,10 +155,13 @@ export function PlanCard({
                             Additional Beneficiary:{' '}
                             <span className="font-medium text-foreground">
                                 {formatPrice(
-                                    plan.capacity.additional_unit_price,
+                                    billingOption?.additional_unit_price ??
+                                        plan.capacity.additional_unit_price,
                                     plan.currency,
                                 )}
-                                /month each
+                                {billingOption
+                                    ? ` ${billingOption.cadence} each`
+                                    : '/month each'}
                             </span>
                         </p>
                     )}

@@ -30,6 +30,7 @@ final class StorePlanCheckoutController extends Controller
                 user: $user,
                 plan: $request->plan(),
                 additionalCapacity: $request->additionalCapacity(),
+                billingCycle: $request->billingCycle(),
                 callbackUrl: route('payments.callback'),
                 paymentSource: $request->paymentSource(),
             ));
