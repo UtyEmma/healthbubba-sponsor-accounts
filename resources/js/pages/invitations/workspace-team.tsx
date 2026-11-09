@@ -124,6 +124,7 @@ export default function WorkspaceTeamInvitationPage({
                                                             name="password"
                                                             type="password"
                                                             autoComplete="new-password"
+                                                            minLength={6}
                                                             required
                                                         />
                                                         <InputError

@@ -86,6 +86,7 @@ export default function ResetPassword({ email, token }: ResetPasswordProps) {
                             id="password"
                             name="password"
                             value={form.data.password}
+                            minLength={6}
                             onChange={(event) => {
                                 form.setData(
                                     'password',

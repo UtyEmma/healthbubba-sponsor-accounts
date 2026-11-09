@@ -85,6 +85,7 @@ class UserForm
                                     ->password()
                                     ->revealable()
                                     ->required(fn (string $operation): bool => $operation === 'create')
+                                    ->minLength(6)
                                     ->dehydrated(fn (?string $state): bool => filled($state))
                                     ->maxLength(255)
                                     ->columnSpan(['default' => 'full', 'md' => 6]),

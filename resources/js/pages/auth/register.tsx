@@ -189,8 +189,8 @@ export default function Register({
             invalid = true;
         }
 
-        if (newUserForm.data.password.length < 8) {
-            newUserForm.setError('password', 'Use at least 8 characters.');
+        if (newUserForm.data.password.length < 6) {
+            newUserForm.setError('password', 'Use at least 6 characters.');
             invalid = true;
         }
 
@@ -492,6 +492,7 @@ export default function Register({
                         >
                             <InputPassword
                                 value={newUserForm.data.password}
+                                minLength={6}
                                 onChange={(event) =>
                                     newUserForm.setData(
                                         'password',

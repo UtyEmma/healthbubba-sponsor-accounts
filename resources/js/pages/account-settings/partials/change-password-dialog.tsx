@@ -18,20 +18,8 @@ import userPassword from '@/routes/user-password';
 
 const requirements = [
     {
-        label: 'Password should be minimum 12 characters',
-        test: (value: string) => value.length >= 12,
-    },
-    {
-        label: 'Include at least one uppercase letter',
-        test: (value: string) => /[A-Z]/.test(value),
-    },
-    {
-        label: 'Include at least one number',
-        test: (value: string) => /\d/.test(value),
-    },
-    {
-        label: 'Include at least one special character',
-        test: (value: string) => /[^A-Za-z0-9]/.test(value),
+        label: 'Use at least 6 characters',
+        test: (value: string) => value.length >= 6,
     },
 ];
 
@@ -88,6 +76,7 @@ export function ChangePasswordDialog({ onChanged }: { onChanged: () => void }) {
                                     label="New Password"
                                     name="password"
                                     autoComplete="new-password"
+                                    minLength={6}
                                     value={newPassword}
                                     onChange={(event) =>
                                         setNewPassword(event.target.value)

@@ -133,7 +133,7 @@ class CreateUser extends CreateRecord
                     TextInput::make('password')
                         ->password()
                         ->revealable()
-                        ->minLength(12)
+                        ->minLength(6)
                         ->maxLength(255)
                         ->visible(fn (Get $get): bool => $get('identity_mode') === 'new')
                         ->helperText('Leave blank to generate a secure credential and send a password setup invitation.'),
