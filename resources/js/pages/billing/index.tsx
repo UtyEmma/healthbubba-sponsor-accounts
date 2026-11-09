@@ -256,7 +256,7 @@ export default function ({
 
                         {billingCycles.length > 0 && (
                             <div
-                                className="mb-5 flex flex-wrap gap-4 rounded-lg bg-muted p-2"
+                                className="mb-5 flex flex-wrap justify-center md:justify-start gap-1 rounded-lg bg-muted p-2 px-1"
                                 aria-label="Billing interval"
                             >
                                 {billingCycles.map((option) => (
