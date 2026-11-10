@@ -66,8 +66,10 @@ export default function Register({
     const [selectedType, setSelectedType] = useState<AccountType | null>(
         initialAccountType,
     );
+
+    // initialAccountType ? 'email' : 
     const [step, setStep] = useState<RegistrationStep>(
-        initialAccountType ? 'email' : 'account-type',
+        'account-type',
     );
     const [availability, setAvailability] =
         useState<AccountAvailability | null>(null);
